@@ -33,7 +33,7 @@ function InitializeWebGL()
     if ( canvas_container === null )
         throw RangeError(`cannot find 'canvas_container_id' element`)
     
-    if ( gl != null || gl_canvas != null )
+    if ( gl != null || gl_canvas != null || gl_ver != 0 )
         throw RangeError(`cannot create webgl context twice`)
     
     gl_canvas = document.getElementById('gl_canvas_id');

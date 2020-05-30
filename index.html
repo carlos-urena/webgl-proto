@@ -20,12 +20,13 @@
 <script>
 // -------------------------------------------------------------------------------------------------
 
-var gl = null,      // WebGL rendering context
-    gl_canvas = null ; // canvas DOM element
+var gl        = null,  // WebGL rendering context
+    gl_canvas = null   // canvas DOM element
+    gl_ver    = 0      // = 0 -> WebGL not available, 1 -> WebGL ver. 1 available, 2 -> WebGL ver.2  
 
 // -------------------------------------------------------------------------------------------------
 
-function InitializeCanvas()
+function InitializeWebGL()
 {
     console.log(`hello world`)
     let canvas_container = document.getElementById('canvas_container_id')
@@ -42,12 +43,19 @@ function InitializeCanvas()
     gl_canvas.width = canvas_container.clientWidth
     gl_canvas.height = canvas_container.clientHeight
 
-    gl = gl_canvas.getContext('webgl2');
-    if ( gl === null ) 
+    gl_ver = 2 
+    gl = gl_canvas.getContext('webgl2')
+    if ( gl === null )
+    {   
+        gl_ver = 1 
+        gl = gl_canvas.getContext('webgl')
+    }
+    if ( gl === null )
     {
+        gl_ver = 0
         const str = 'Unable to initialize WebGL. Your browser or machine may not support it.'
         alert(str)
-        throw RangeError(str)
+        return 
     }
 
     gl.clearColor(0.0, 0.2, 0.3, 1.0);
@@ -73,7 +81,7 @@ function InitializeCanvas()
 
 function OnDocumentLoad()
 {
-    InitializeCanvas()
+    InitializeWebGL()
 }
 
 </script>

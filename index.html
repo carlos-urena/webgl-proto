@@ -42,7 +42,7 @@ function InitializeCanvas()
     gl_canvas.width = canvas_container.clientWidth
     gl_canvas.height = canvas_container.clientHeight
 
-    gl = gl_canvas.getContext('webgl');
+    gl = gl_canvas.getContext('webgl2');
     if ( gl === null ) 
     {
         const str = 'Unable to initialize WebGL. Your browser or machine may not support it.'

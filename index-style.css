@@ -1,0 +1,31 @@
+* 
+{  box-sizing  : border-box !important;  /** include content + border + padding in box size **/
+   font-family : 'Crimson Pro', serif;
+   font-size   : 22pt ; 
+}
+
+body
+{  /** font-size   :  14pt ; **/
+   margin      : 2em ;
+   border      : 0pt ;
+   padding     : 0pt ;
+   /**width   : 100% ; **/
+}
+h1, h2, h3
+{  font-family : 'Marcellus SC', sans-serif ;
+   font-weight : bold ;
+}
+
+#canvas_container_id
+{
+      background-color : rgb(80%,0%,0%); 
+      width   : 1024px ; 
+      height  : 1024px ;
+}
+
+/*** see flexbox template areas as an easy way to define layout **/
+/*** https://developer.mozilla.org/es/docs/Web/CSS/grid-template-areas **/
+
+
+/*** use flexbox to create a grid with specified proportions (ver 3x3 grid (1) y (2)).... **/
+/** https://tobiasahlin.com/blog/common-flexbox-patterns/ */

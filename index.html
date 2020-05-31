@@ -48,19 +48,24 @@ class WebGL
         if ( wgl != null  )
             throw RangeError(`No se puede incializar WebGL dos veces`)
 
-
         this.canvas_container = BuscarElemId('canvas_container_id')
         this.gl_canvas        = BuscarElemId('gl_canvas_id')
 
         this.gl_canvas.width  = this.canvas_container.clientWidth
         this.gl_canvas.height = this.canvas_container.clientHeight
 
-        // intentar obtener un contexto tipo 'WebGL2' (Web GL ver. 2), 
-        // si no está disponible, intentar con tipo 'WebGL' (versión 1)
-        // si tampoco está disponible , hay un error, el programa no puede funcionar
+        this.getWebGLContext() // uses this.gl_canvas, computes this.gl_ver and this.gl_context
+        this.showGLVersionInfo()
 
+        // creates the GPU Program (= vertex shader + fragment shader)
+        this.prog = new Program( this.gl )
+    }
+    // -------------------------------------------------------------------------------------------------
+    getWebGLContext()
+    {
         this.gl_ver = 2 
-        this.gl = this.gl_canvas.getContext('webgl2')
+        this.gl     = this.gl_canvas.getContext('webgl2')
+        
         if ( this.gl === null )
         {   
             this.gl_ver = 1 
@@ -80,10 +85,6 @@ class WebGL
             console.log(str)
         }
 
-        this.showGLVersionInfo()
-
-        // Crear el programa que se ejecuta en la GPU (= vertex shader + fragment shader)
-        this.prog = new Program( this.gl )
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -159,19 +160,36 @@ class Program
 
 }
 // -------------------------------------------------------------------------------------------------
+
+/** Adapts the canvar container size to the window size
+*/
+function ResizeCanvasContainer()
+{
+    let canvas_container = BuscarElemId('canvas_container_id')
+    canvas_container.clientWidth  = window.innerWidth*0.8
+    canvas_container.clientHeight = window.innerHeight*0.8
+    console.log(`ResizeCanvasContainer, w = ${canvas_container.clientWidth}, h = ${canvas_container.clientHeight}`)
+}
+
+// -------------------------------------------------------------------------------------------------
 /* this is executed once, after the body has finished loading
 */
 
 function OnDocumentLoad()
 {
+   ResizeCanvasContainer()
+
    // create the webgl singleton object
    wgl = new WebGL()
 
    // do a sample draw, just to check everything is fine
    wgl.sampleDraw() 
 }
+// -------------------------------------------------------------------------------------------------
+
 
 </script>
+
 <!-- ***************************************************************************************** -->
 
 <body onload="OnDocumentLoad()">

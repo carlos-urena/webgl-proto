@@ -63,6 +63,8 @@ class WebGL
     // -------------------------------------------------------------------------------------------------
     getWebGLContext()
     {
+        let first = (this.gl === null) 
+
         this.gl_ver = 2 
         this.gl     = this.gl_canvas.getContext('webgl2')
         
@@ -78,6 +80,7 @@ class WebGL
             throw RangeError(str)
         }
         
+        if ( first )
         if ( this.gl_ver == 1 )
         {   
             const str = `WebGL está disponible en la versión 1, no en la 2 - ¿podría estar limitado?`
@@ -85,6 +88,15 @@ class WebGL
             console.log(str)
         }
 
+    }
+    // ------------------------------------------------------------------------------------------------
+
+    resizeCanvas()
+    {
+        this.gl_canvas.width  = this.canvas_container.clientWidth
+        this.gl_canvas.height = this.canvas_container.clientHeight
+        this.getWebGLContext()
+        this.sampleDraw()
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -122,6 +134,7 @@ class WebGL
 
     sampleDraw()
     {
+        console.log(`sampleDraw`)
         let gl = this.gl
         gl.clearColor(0.0, 0.2, 0.3, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
@@ -166,9 +179,12 @@ class Program
 function ResizeCanvasContainer()
 {
     let canvas_container = BuscarElemId('canvas_container_id')
-    canvas_container.clientWidth  = window.innerWidth*0.8
-    canvas_container.clientHeight = window.innerHeight*0.8
+    canvas_container.style.width   = Math.floor(window.innerWidth*0.8).toString() + "px"
+    canvas_container.style.height  = Math.floor(window.innerHeight*0.8).toString() + "px"
     console.log(`ResizeCanvasContainer, w = ${canvas_container.clientWidth}, h = ${canvas_container.clientHeight}`)
+
+    if ( wgl != null )
+        wgl.resizeCanvas()  // resizes the canvas according to div dimensions
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -187,12 +203,18 @@ function OnDocumentLoad()
 }
 // -------------------------------------------------------------------------------------------------
 
+function OnBodyResize()
+{
+    ResizeCanvasContainer()
+}
+// -------------------------------------------------------------------------------------------------
+
 
 </script>
 
 <!-- ***************************************************************************************** -->
 
-<body onload="OnDocumentLoad()">
+<body onload="OnDocumentLoad()" onresize="OnBodyResize()">
 
 <h1>Lorem IPSUM.</h1>
 

@@ -20,68 +20,155 @@
 <script>
 // -------------------------------------------------------------------------------------------------
 
-var gl        = null,  // WebGL rendering context
-    gl_canvas = null   // canvas DOM element
-    gl_ver    = 0      // = 0 -> WebGL not available, 1 -> WebGL ver. 1 available, 2 -> WebGL ver.2  
+function BuscarElemId( id )
+{
+    let node = document.getElementById( id )
+    if ( node === null )
+    {
+        const str = `No encuentro en el documento el elemento con identificador'${id}' (ver consola)`
+        alert(str)
+        throw RangeError(str)
+    }
+    return node
+}
 
 // -------------------------------------------------------------------------------------------------
 
-function InitializeWebGL()
+// variable which holds the single WebGL class instance 
+
+var wgl = null 
+
+// singleton class with all the webgl related elements
+
+class WebGL
 {
-    console.log(`hello world`)
-    let canvas_container = document.getElementById('canvas_container_id')
-    if ( canvas_container === null )
-        throw RangeError(`cannot find 'canvas_container_id' element`)
-    
-    if ( gl != null || gl_canvas != null || gl_ver != 0 )
-        throw RangeError(`cannot create webgl context twice`)
-    
-    gl_canvas = document.getElementById('gl_canvas_id');
-    if ( gl_canvas == null )
-        throw RangeError(`cannot find 'gl_canvas' element`)
-
-    gl_canvas.width = canvas_container.clientWidth
-    gl_canvas.height = canvas_container.clientHeight
-
-    gl_ver = 2 
-    gl = gl_canvas.getContext('webgl2')
-    if ( gl === null )
-    {   
-        gl_ver = 1 
-        gl = gl_canvas.getContext('webgl')
-    }
-    if ( gl === null )
+    constructor()
     {
-        gl_ver = 0
-        const str = 'Unable to initialize WebGL. Your browser or machine may not support it.'
-        alert(str)
-        return 
+        console.log(`WebGL constructor`)
+        if ( wgl != null  )
+            throw RangeError(`No se puede incializar WebGL dos veces`)
+
+
+        this.canvas_container = BuscarElemId('canvas_container_id')
+        this.gl_canvas        = BuscarElemId('gl_canvas_id')
+
+        this.gl_canvas.width  = this.canvas_container.clientWidth
+        this.gl_canvas.height = this.canvas_container.clientHeight
+
+        // intentar obtener un contexto tipo 'WebGL2' (Web GL ver. 2), 
+        // si no está disponible, intentar con tipo 'WebGL' (versión 1)
+        // si tampoco está disponible , hay un error, el programa no puede funcionar
+
+        this.gl_ver = 2 
+        this.gl = this.gl_canvas.getContext('webgl2')
+        if ( this.gl === null )
+        {   
+            this.gl_ver = 1 
+            this.gl     = this.gl_canvas.getContext('webgl')
+        }
+        if ( this.gl === null )
+        {   
+            const str = 'Imposible inicializar WebGL en este navegador y dispositivo'
+            alert(str) 
+            throw RangeError(str)
+        }
+        
+        if ( this.gl_ver == 1 )
+        {   
+            const str = `WebGL está disponible en la versión 1, no en la 2 - ¿podría estar limitado?`
+            alert(str)
+            console.log(str)
+        }
+
+        this.showGLVersionInfo()
+
+        // Crear el programa que se ejecuta en la GPU (= vertex shader + fragment shader)
+        this.prog = new Program( this.gl )
     }
 
-    gl.clearColor(0.0, 0.2, 0.3, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // -------------------------------------------------------------------------------------------------
+    /** 
+    * shows info about WebGL/OpenGL version, if the element with id 'info_div_id' exists 
+    */
+    showGLVersionInfo()
+    {
+        // if 'info_div_id' does not exists, does nothing
+        let info_div = document.getElementById('info_div_id')
+        if ( info_div === null )
+            return
 
+        // gather info
+        let 
+            gl         = this.gl, 
+            ctx_class  = gl.constructor.name,
+            gl_vendor  = gl.getParameter(gl.VENDOR),
+            gl_version = gl.getParameter(gl.VERSION)
+        
+        // show info on the div (as a table)
+        const 
+            info_str   = 
+            `
+                <table style='background-color : rgb(80%,80%,80%);'>
+                    <tr><td><i>Class</i></td>   <td>:</td> <td>${ctx_class}</td></tr> 
+                    <tr><td><i>Vendor</i></td>  <td>:</td> <td>${gl_vendor}</td></tr>
+                    <tr><td><i>Version</i></td> <td>:</td> <td>${gl_version}</td></tr>
+                </table>
+            `
+        info_div.innerHTML = info_str
+        
+    }
+    // -------------------------------------------------------------------------------------------------
 
-    let ctx_class = gl.constructor.name,
-        gl_vendor = gl.getParameter(gl.VENDOR),
-        gl_version = gl.getParameter(gl.VERSION)
+    sampleDraw()
+    {
+        let gl = this.gl
+        gl.clearColor(0.0, 0.2, 0.3, 1.0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+    }
+}
 
-    const info_str = 
-            `<table style='background-color : rgb(80%,80%,80%);'>
-                 <tr><td><i>class</i></td><td>${ctx_class}</td></tr> 
-                 <tr><td><i>vendor</i></td><td>${gl_vendor}</td></tr>
-                <tr><td><i>version</i></td><td>${gl_version}</td></tr>
-            </table>`
+// -------------------------------------------------------------------------------------------------
+/** 
+ * A class for a shader program 
+**/
 
-    let info_div = document.getElementById('info_div_id')
-    info_div.innerHTML = info_str
-    
+class Program
+{
+    constructor( gl )
+    {
+        this.gl = gl
+        this.vs_source =
+        `
+            attribute vec4 aVertexPosition;
+            attribute vec4 aVertexColor;
+
+            uniform mat4 uModelViewMatrix;
+            uniform mat4 uProjectionMatrix;
+
+            varying lowp vec4 vColor;
+
+            void main(void) 
+            {
+                gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+                vColor = aVertexColor;
+            }
+        `
+
+        console.log(`Shader program constructor: vs_source=${this.vs_source}`)
+    }
+
 }
 // -------------------------------------------------------------------------------------------------
+/* this is executed once, after the body has finished loading
+*/
 
 function OnDocumentLoad()
 {
-    InitializeWebGL()
+   // create the webgl singleton object
+   wgl = new WebGL()
+
+   // do a sample draw, just to check everything is fine
+   wgl.sampleDraw() 
 }
 
 </script>

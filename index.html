@@ -15,224 +15,27 @@
    <link rel='stylesheet'   type='text/css' href='index-style.css'>
    <link rel="stylesheet"   href="https://fonts.googleapis.com/css2?family=Marcellus+SC">
    <link rel="stylesheet"   href="https://fonts.googleapis.com/css2?family=Crimson+Pro">
-   <!-- script src='index-code.js'></script>  -->
+   <script src='main.js'></script>  
 </head>
-<script>
-// -------------------------------------------------------------------------------------------------
-
-function BuscarElemId( id )
-{
-    let node = document.getElementById( id )
-    if ( node === null )
-    {
-        const str = `No encuentro en el documento el elemento con identificador'${id}' (ver consola)`
-        alert(str)
-        throw RangeError(str)
-    }
-    return node
-}
-
-// -------------------------------------------------------------------------------------------------
-
-// variable which holds the single WebGL class instance 
-
-var wgl = null 
-
-// singleton class with all the webgl related elements
-
-class WebGL
-{
-    constructor()
-    {
-        console.log(`WebGL constructor`)
-        if ( wgl != null  )
-            throw RangeError(`No se puede incializar WebGL dos veces`)
-
-        this.canvas_container = BuscarElemId('canvas_container_id')
-        this.gl_canvas        = BuscarElemId('gl_canvas_id')
-
-        this.gl_canvas.width  = this.canvas_container.clientWidth
-        this.gl_canvas.height = this.canvas_container.clientHeight
-
-        this.getWebGLContext() // uses this.gl_canvas, computes this.gl_ver and this.gl_context
-        this.showGLVersionInfo()
-
-        // creates the GPU Program (= vertex shader + fragment shader)
-        this.prog = new Program( this.gl )
-    }
-    // -------------------------------------------------------------------------------------------------
-    getWebGLContext()
-    {
-        let first = (this.gl === null) 
-
-        this.gl_ver = 2 
-        this.gl     = this.gl_canvas.getContext('webgl2')
-        
-        if ( this.gl === null )
-        {   
-            this.gl_ver = 1 
-            this.gl     = this.gl_canvas.getContext('webgl')
-        }
-        if ( this.gl === null )
-        {   
-            const str = 'Imposible inicializar WebGL en este navegador y dispositivo'
-            alert(str) 
-            throw RangeError(str)
-        }
-        
-        if ( first )
-        if ( this.gl_ver == 1 )
-        {   
-            const str = `WebGL está disponible en la versión 1, no en la 2 - ¿podría estar limitado?`
-            alert(str)
-            console.log(str)
-        }
-
-    }
-    // ------------------------------------------------------------------------------------------------
-
-    resizeCanvas()
-    {
-        this.gl_canvas.width  = this.canvas_container.clientWidth
-        this.gl_canvas.height = this.canvas_container.clientHeight
-        this.getWebGLContext()
-        this.sampleDraw()
-    }
-
-    // -------------------------------------------------------------------------------------------------
-    /** 
-    * shows info about WebGL/OpenGL version, if the element with id 'info_div_id' exists 
-    */
-    showGLVersionInfo()
-    {
-        // if 'info_div_id' does not exists, does nothing
-        let info_div = document.getElementById('info_div_id')
-        if ( info_div === null )
-            return
-
-        // gather info
-        let 
-            gl         = this.gl, 
-            ctx_class  = gl.constructor.name,
-            gl_vendor  = gl.getParameter(gl.VENDOR),
-            gl_version = gl.getParameter(gl.VERSION)
-        
-        // show info on the div (as a table)
-        const 
-            info_str   = 
-            `
-                <table style='background-color : rgb(80%,80%,80%);'>
-                    <tr><td><i>Class</i></td>   <td>:</td> <td>${ctx_class}</td></tr> 
-                    <tr><td><i>Vendor</i></td>  <td>:</td> <td>${gl_vendor}</td></tr>
-                    <tr><td><i>Version</i></td> <td>:</td> <td>${gl_version}</td></tr>
-                </table>
-            `
-        info_div.innerHTML = info_str
-        
-    }
-    // -------------------------------------------------------------------------------------------------
-
-    sampleDraw()
-    {
-        console.log(`sampleDraw`)
-        let gl = this.gl
-        gl.clearColor(0.0, 0.2, 0.3, 1.0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
-/** 
- * A class for a shader program 
-**/
-
-class Program
-{
-    constructor( gl )
-    {
-        this.gl = gl
-        this.vs_source =
-        `
-            attribute vec4 aVertexPosition;
-            attribute vec4 aVertexColor;
-
-            uniform mat4 uModelViewMatrix;
-            uniform mat4 uProjectionMatrix;
-
-            varying lowp vec4 vColor;
-
-            void main(void) 
-            {
-                gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-                vColor = aVertexColor;
-            }
-        `
-
-        console.log(`Shader program constructor: vs_source=${this.vs_source}`)
-    }
-
-}
-// -------------------------------------------------------------------------------------------------
-
-/** Adapts the canvar container size to the window size
-*/
-function ResizeCanvasContainer()
-{
-    let canvas_container = BuscarElemId('canvas_container_id')
-    canvas_container.style.width   = Math.floor(window.innerWidth*0.8).toString() + "px"
-    canvas_container.style.height  = Math.floor(window.innerHeight*0.8).toString() + "px"
-    console.log(`ResizeCanvasContainer, w = ${canvas_container.clientWidth}, h = ${canvas_container.clientHeight}`)
-
-    if ( wgl != null )
-        wgl.resizeCanvas()  // resizes the canvas according to div dimensions
-}
-
-// -------------------------------------------------------------------------------------------------
-/* this is executed once, after the body has finished loading
-*/
-
-function OnDocumentLoad()
-{
-   ResizeCanvasContainer()
-
-   // create the webgl singleton object
-   wgl = new WebGL()
-
-   // do a sample draw, just to check everything is fine
-   wgl.sampleDraw() 
-}
-// -------------------------------------------------------------------------------------------------
-
-function OnBodyResize()
-{
-    ResizeCanvasContainer()
-}
-// -------------------------------------------------------------------------------------------------
-
-
-</script>
 
 <!-- ***************************************************************************************** -->
 
 <body onload="OnDocumentLoad()" onresize="OnBodyResize()">
-
-<h1>Lorem IPSUM.</h1>
-
-<p>
-This page bla bla ....
-</p>
-
-<div id='canvas_container_id' >
-    <canvas id='gl_canvas_id'>
-        Tu navegador u ordendor parece no soportar <code>&lt;canvas&gt;</code>.<br/>
-        <i>Looks like your browser or computer does not support <code>&lt;canvas&gt;</code> element.</i>
-    </canvas>
-
+<div id='outer_div_id'>
+    <div id='upper_container_id'>
+        <h1>Lorem IPSUM.</h1>    
+        This page bla bla lorem ipsum bla bla, here you can find all the preamble material
+    </div>
+    <div id='canvas_container_id'>
+    </div>
+    <div id='lower_container_id'>
+        <div id=''>
+        </div>
+        <hr noshade>
+        This is all the footer related material
+    </div>
 </div>
-<hr noshade>
-<div id='info_div_id'>
-</div>
-
-<!-- ***************************************************************************************** -->
 </body>
 </html>
+
+<!-- ***************************************************************************************** -->

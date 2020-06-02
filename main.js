@@ -134,6 +134,8 @@ class WebGLCanvas
         }
         if ( this.debug_mode )
             console.log(`WebGLCanvas getWebGLcontext: end`)
+        
+        alert('getWebGLContext ends')
 
     }
     // ------------------------------------------------------------------------------------------------
@@ -185,6 +187,8 @@ class WebGLCanvas
         let gl = this.context
         gl.clearColor(0.0, 0.2, 0.3, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
+
+        alert('sampleDraw ends')
     }
 }
 

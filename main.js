@@ -122,6 +122,7 @@ class WebGLCanvas
         if ( this.context === null )
         {   
             const str = 'Unable to properly create a WebGL canvas on this device'
+            this.webgl_version = 0
             alert(str) 
             throw RangeError(str)
         }
@@ -135,7 +136,7 @@ class WebGLCanvas
         if ( this.debug_mode )
             console.log(`WebGLCanvas getWebGLcontext: end`)
         
-        alert('getWebGLContext ends')
+        //alert('getWebGLContext ends')
 
     }
     // ------------------------------------------------------------------------------------------------
@@ -159,6 +160,12 @@ class WebGLCanvas
         if ( info_div === null )
             return
 
+        if ( this.webgl_version == 0 )
+        {
+            info_div.innerHTML = "Not able to initialize WebGL properly..."
+            return 
+        }
+
         // gather info
         let 
             gl         = this.context, 
@@ -171,9 +178,10 @@ class WebGLCanvas
             info_str   = 
             `
                 <table style='background-color : rgb(80%,80%,80%);'>
-                    <tr><td><i>Class</i></td>   <td>:</td> <td>${ctx_class}</td></tr> 
-                    <tr><td><i>Vendor</i></td>  <td>:</td> <td>${gl_vendor}</td></tr>
-                    <tr><td><i>Version</i></td> <td>:</td> <td>${gl_version}</td></tr>
+                    <tr><td><i>WebGL ver</i></td><td>:</td> <td>${this.webgl_version}</td></tr> 
+                    <tr><td><i>Class</i></td>    <td>:</td> <td>${ctx_class}</td></tr> 
+                    <tr><td><i>Vendor</i></td>   <td>:</td> <td>${gl_vendor}</td></tr>
+                    <tr><td><i>Version</i></td>  <td>:</td> <td>${gl_version}</td></tr>
                 </table>
             `
         info_div.innerHTML = info_str
@@ -183,12 +191,18 @@ class WebGLCanvas
 
     sampleDraw()
     {
-        console.log(`sampleDraw`)
         let gl = this.context
+
+        const sx = gl.drawingBufferWidth, 
+              sy = gl.drawingBufferHeight 
+
+        console.log(`sampleDraw, sx == ${sx}, sy == ${sy} `)
+        
         gl.clearColor(0.0, 0.2, 0.3, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
 
-        alert('sampleDraw ends')
+        gl.viewport(0, 0, sx, sy );
+        
     }
 }
 
@@ -204,24 +218,28 @@ class SimpleGPUProgram
         this.debug_mode = true
         this.gl = wgl_ctx
         this.vs_source =
-        `
-            attribute vec4 aVertexPosition;
-            attribute vec4 aVertexColor;
-
-            uniform mat4 uModelViewMatrix;
-            uniform mat4 uProjectionMatrix;
-
-            varying lowp vec4 vColor;
-
-            void main(void) 
+        `   attribute vec4  vertex_pos;
+            void main() 
             {
-                gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-                vColor = aVertexColor;
+                gl_Position = vertex_pos;
+            }
+        `
+        this.fs_source =
+        `
+            precision mediump float;
+            void main() 
+            {
+                gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
             }
         `
 
         if ( this.debug_mode )
+        {   
             console.log(`Shader program constructor: vs_source=${this.vs_source}`)
+            console.log(`Shader program constructor: fs_source=${this.fs_source}`)
+        }
+
+
     }
 
 }

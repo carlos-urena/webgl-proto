@@ -88,12 +88,14 @@ class WebGLCanvas
                                    <i>It looks like your browser or computer does not support <code>&lt;canvas&gt;</code> element.</i>`
         this.parent_elem.appendChild( this.canvas_elem )
 
-        // Create the WebGL context for this canvas
+        // Create the WebGL context for this canvas, if it is not possible, return.
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
         this.showGLVersionInfo()
+        if ( this.webgl_version == 0 )
+            return 
 
         // creates the GPU Program (= vertex shader + fragment shader)
-        this.program = new SimpleGPUProgram( this.gl )
+        this.program = new SimpleGPUProgram( this.context )
 
         if ( this.debug_mode )
             console.log(`WebGLCanvas constructor: end`)
@@ -162,7 +164,7 @@ class WebGLCanvas
 
         if ( this.webgl_version == 0 )
         {
-            info_div.innerHTML = "Not able to initialize WebGL properly..."
+            info_div.innerHTML = "Error: unable to initialize WebGL properly."
             return 
         }
 
@@ -178,7 +180,7 @@ class WebGLCanvas
             info_str   = 
             `
                 <table style='background-color : rgb(80%,80%,80%);'>
-                    <tr><td><i>WebGL ver</i></td><td>:</td> <td>${this.webgl_version}</td></tr> 
+                    <tr><td><i>WebGL</i></td>    <td>:</td> <td>${this.webgl_version}</td></tr> 
                     <tr><td><i>Class</i></td>    <td>:</td> <td>${ctx_class}</td></tr> 
                     <tr><td><i>Vendor</i></td>   <td>:</td> <td>${gl_vendor}</td></tr>
                     <tr><td><i>Version</i></td>  <td>:</td> <td>${gl_version}</td></tr>
@@ -191,17 +193,20 @@ class WebGLCanvas
 
     sampleDraw()
     {
+        console.log(`sampleDraw: begins`)
         let gl = this.context
 
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
 
-        console.log(`sampleDraw, sx == ${sx}, sy == ${sy} `)
+        console.log(`sampleDraw: sx == ${sx}, sy == ${sy} `)
         
         gl.clearColor(0.0, 0.2, 0.3, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
 
         gl.viewport(0, 0, sx, sy );
+
+        console.log(`sampleDraw: ends`)
         
     }
 }
@@ -215,9 +220,13 @@ class SimpleGPUProgram
 {
     constructor( wgl_ctx )
     {
+        console.log("SimpleGPUProgram: begins")
+        let gl = wgl_ctx
+        
+
         this.debug_mode = true
-        this.gl = wgl_ctx
-        this.vs_source =
+        this.context    = gl
+        this.vs_source  =
         `   attribute vec4  vertex_pos;
             void main() 
             {
@@ -226,7 +235,7 @@ class SimpleGPUProgram
         `
         this.fs_source =
         `
-            precision mediump float;
+            precision mediump float; // ??? pq??
             void main() 
             {
                 gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -235,10 +244,19 @@ class SimpleGPUProgram
 
         if ( this.debug_mode )
         {   
-            console.log(`Shader program constructor: vs_source=${this.vs_source}`)
-            console.log(`Shader program constructor: fs_source=${this.fs_source}`)
+            console.log(`    Shader program constructor: vs_source=${this.vs_source}`)
+            console.log(`    Shader program constructor: fs_source=${this.fs_source}`)
         }
 
+        this.vertex_shader   = gl.createShader( gl.VERTEX_SHADER )   ; CheckType( this.vertex_shader, 'WebGLShader' )
+        this.fragment_shader = gl.createShader( gl.FRAGMENT_SHADER ) ; CheckType( this.vertex_shader, 'WebGLShader' )
+        this.program         = gl.createProgram() ;                    CheckType( this.program, 'WebGLProgram' ) 
+
+        gl.shaderSource( this.vertex_shader, vs_source )
+
+        gl.compileShader( this.vertex_shader ) ....
+
+        console.log("SimpleGPUProgram: ends")
 
     }
 

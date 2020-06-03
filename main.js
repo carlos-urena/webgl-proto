@@ -179,7 +179,7 @@ class WebGLCanvas
         const 
             info_str   = 
             `
-                <table style='background-color : rgb(80%,80%,80%);'>
+                <table id='info_table_id'>
                     <tr><td><i>WebGL</i></td>    <td>:</td> <td>${this.webgl_version}</td></tr> 
                     <tr><td><i>Class</i></td>    <td>:</td> <td>${ctx_class}</td></tr> 
                     <tr><td><i>Vendor</i></td>   <td>:</td> <td>${gl_vendor}</td></tr>
@@ -201,7 +201,7 @@ class WebGLCanvas
 
         console.log(`sampleDraw: sx == ${sx}, sy == ${sy} `)
         
-        gl.clearColor(0.0, 0.2, 0.3, 1.0)
+        gl.clearColor(0.0, 0.1, 0.15, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
 
         gl.viewport(0, 0, sx, sy );

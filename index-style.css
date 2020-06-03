@@ -4,6 +4,12 @@
    font-size   : 16pt ; 
 }
 
+body
+{
+   background-color : rgb(20%,20%,20%) ;
+   color            : rgb(95%,95%,95%) ;
+}
+
 #outer_div_id
 {
    width           : 100% ;
@@ -29,6 +35,11 @@
    border-width     : 5px ;
    background-color : rgb(95%,80%,80%) ;  
    **/
+}
+
+#upper_container_id
+{
+   padding-bottom : 1em ;
 }
 
 #canvas_container_id

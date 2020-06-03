@@ -30,6 +30,7 @@ function ResizeCanvasContainer()
 
 function OnDocumentLoad()
 {
+    Log("OnDocumentLoad: begins")
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   
@@ -40,6 +41,8 @@ function OnDocumentLoad()
 
     // do a sample draw, just to check everything is fine
     canvas.sampleDraw() 
+
+    Log("OnDocumentLoad: ends")
 }
 // -------------------------------------------------------------------------------------------------
 

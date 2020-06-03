@@ -55,3 +55,14 @@ function LogLines( title, source )
     }
     console.log('-----------------------------------------------------------')
 }
+// -------------------------------------------------------------------------------------------------
+
+function Log( msg )
+{
+    console.log( msg )
+    let log_elem = document.getElementById('log_div_id')
+    if ( log_elem == null )
+        return
+    const str = msg+'<br/>'
+    log_elem.innerHTML = log_elem.innerHTML + str
+}

@@ -12,7 +12,7 @@ class WebGLCanvas
     {
         this.debug_mode = true 
         if ( this.debug_mode )
-            console.log(`WebGLCanvas constructor: begin`)
+            Log(`WebGLCanvas constructor: begin`)
 
         // check that a valid string has been given
         CheckType( parent_id, 'string' )
@@ -55,7 +55,7 @@ class WebGLCanvas
         this.program = new SimpleGPUProgram( this.context )
 
         if ( this.debug_mode )
-            console.log(`WebGLCanvas constructor: end`)
+            Log(`WebGLCanvas constructor: end`)
     }
     // -------------------------------------------------------------------------------------------------
 

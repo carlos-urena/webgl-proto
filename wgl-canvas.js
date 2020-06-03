@@ -19,7 +19,7 @@ class WebGLCanvas
         if ( parent_id == '' )
         {
             const msg = "An empty parent id string has been given to 'WebGLCanvas' constructor"
-            alert( msg )
+            Log( msg )
             throw RangeError( msg )
         }
         
@@ -34,7 +34,7 @@ class WebGLCanvas
         this.canvas_elem   = document.getElementById( this.canvas_id )
         if ( this.canvas_elem != null )
         {   let msg = "Error: the page tried to create a canvas with an identifier already in use" 
-            alert( msg )
+            Log( msg )
             throw RangeError( msg )
         }
         this.canvas_elem        = document.createElement('canvas')
@@ -49,8 +49,10 @@ class WebGLCanvas
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
         this.showGLVersionInfo()
         if ( this.webgl_version == 0 )
+        {
+            Log('Unable to create a webgl canvas, neither ver 1 nor ver 2')
             return 
-
+        }
         // creates the GPU Program (= vertex shader + fragment shader)
         this.program = new SimpleGPUProgram( this.context )
 
@@ -62,7 +64,7 @@ class WebGLCanvas
     getWebGLContext()
     {
         if ( this.debug_mode )
-            console.log(`WebGLCanvas getWebGLcontext: begins`)
+            Log(`WebGLCanvas getWebGLcontext: begins`)
 
         let first = false 
         if ( typeof(this.webgl_context) == 'undefined' ) 
@@ -75,6 +77,7 @@ class WebGLCanvas
         
         if ( this.context === null )
         {   
+            Log("cannot have a webgl 2 canvas, trying web gl 1")
             this.webgl_version = 1 
             this.context       = this.gl_canvas.getContext('webgl')
         }
@@ -82,18 +85,17 @@ class WebGLCanvas
         {   
             const str = 'Unable to properly create a WebGL canvas on this device'
             this.webgl_version = 0
-            alert(str) 
+            Log(str) 
             throw RangeError(str)
         }
         
         if ( this.debug_mode && first && this.webgl_version == 1 )
         {   
             const str = `WebGL 2 is not available, using WebGL 1 instead`
-            alert(str)
-            console.log(str)
+            Log(str)
         }
         if ( this.debug_mode )
-            console.log(`WebGLCanvas getWebGLcontext: end`)
+            Log(`WebGLCanvas getWebGLcontext: end`)
         
         //alert('getWebGLContext ends')
 

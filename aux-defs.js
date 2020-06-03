@@ -56,7 +56,10 @@ function LogLines( title, source )
     console.log('-----------------------------------------------------------')
 }
 // -------------------------------------------------------------------------------------------------
-
+/**
+ * Logs a message both in the console and in the web page (when a div with id 'log_div_id' exists)
+ * @param {string} msg -- message to log. 
+ */
 function Log( msg )
 {
     console.log( msg )

@@ -174,8 +174,9 @@ class WebGLCanvas
 
 
         // done
-        Log(`WebGLCanvas.sampleDraw: ends`)
         
+        Log(`WebGLCanvas.sampleDraw: ends`)
+        Log(`---------------------------------------------------------`)
     }
 }
 

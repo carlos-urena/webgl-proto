@@ -125,6 +125,8 @@ class SimpleGPUProgram
     {
         if ( this.program == null )
             throw Error("SimpleGPUProgram.use : the program has not been created, unable to use it")
+
+        // use  (note: this.context refers to the same object referred from the canvas' context)
         this.context.useProgram( this.program )
     }
 

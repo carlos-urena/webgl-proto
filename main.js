@@ -20,7 +20,7 @@ function ResizeCanvasContainer()
 
     canvas_container_elem.style.width   = nx.toString() + "px"
     canvas_container_elem.style.height  = ny.toString() + "px"
-    console.log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
+    Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
     canvas.resize()  // resizes the canvas according to div dimensions
 }
 

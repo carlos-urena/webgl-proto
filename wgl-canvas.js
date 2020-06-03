@@ -79,7 +79,7 @@ class WebGLCanvas
         {   
             Log("cannot have a webgl 2 canvas, trying web gl 1")
             this.webgl_version = 1 
-            this.context       = this.gl_canvas.getContext('webgl')
+            this.context       = this.canvas_elem.getContext('webgl')
         }
         if ( this.context === null )
         {   

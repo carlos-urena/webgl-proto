@@ -69,3 +69,20 @@ function Log( msg )
     // const str = msg+'<br/>'
     // log_elem.innerHTML = log_elem.innerHTML + str
 }
+
+
+// -------------------------------------------------------------------------------------------------
+/**
+ * Checks that the parameter is a valid WebGLrendering context object, throws an exception otherwise
+ * @param {WebGL2RenderingContext} context -- the context (it can also be a 'WebGLRenderingContext')
+ */
+function CheckWGLContext( context )
+{
+    const glclass = context.constructor.name 
+    if ( glclass == 'WebGLRenderingContext' || glclass == 'WebGL2RenderingContext')
+        return 
+
+    const msg = `Context object is not a WebGL rendering context, but a '${glclass}'`
+    Log( msg )
+    throw msg 
+}

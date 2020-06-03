@@ -4,13 +4,19 @@
  * Creates and compiles a vertex or fragment shader, if there are errors, shows the source and the errors,
  * and raises an exception, if it is correct, returns the shader.
  * 
- * @param {WebGLContext} gl -- webgl context
- * @param {string} source   -- string with shader source, may contain newlines
- * @param {*} type          -- shader type either gl.FRAGMENT_SHADER or gl.VERTEX_SHADER
- * @returns {WebGLShader}   -- compiled shader
+ * @param   {WebGLContext} gl      -- webgl context
+ * @param   {string}       source  -- string with shader source, may contain newlines
+ * @param   {GLenum}       type    -- shader type either gl.FRAGMENT_SHADER or gl.VERTEX_SHADER
+ * @returns {WebGLShader}          -- compiled shader
  */
 function CreateAndCompileShader( gl, source, type )
 {
+    const glclass = gl.constructor.name 
+    if ( glclass != 'WebGLRenderingContext' && glclass != 'WebGL2RenderingContext')
+        throw "Error: invalid parameter 'gl', it is not a webgl rendering context"
+
+    CheckType( source, 'string' )
+
     if ( type != gl.VERTEX_SHADER && type != gl.FRAGMENT_SHADER )
         throw RangeError('invalid shader type')
 
@@ -23,10 +29,10 @@ function CreateAndCompileShader( gl, source, type )
     gl.compileShader( shader )
     const msg = gl.getShaderInfoLog( shader )
 
-    if ( msg != "" )
+    if ( ! gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) 
     {
         LogLines(`${type_str} shader:`, source )
-        console.log(`Errors from ${type_str} shader compilation:`)
+        console.log(`Compilation of ${type_str} shader was not succesfull:`)
         console.log('------------------------------------------------')
         console.log(`${msg}------------------------------------------------`)
         throw RangeError(`Unable to compile the ${type_str} shader, see console`)
@@ -41,12 +47,12 @@ function CreateAndCompileShader( gl, source, type )
  *  Creates and compiles a program, given its two (already compiled) shaders.
  *  If there is any error, it is reported and an exception is thrown, otherwise the program is returned
  * 
- * @param {WebGLRenderingContext} gl -- a rendering context (it can be a WebGL2RenderingContext)
- * @param {WebGLShader} vertex_shader -- already compiled vertex shader 
- * @param {WebGLShader} fragment_shader -- already compiled fragment shader
- * @param {string} vertex_source   -- vertex shader source (just used to show it if an error happens)
- * @param {string} fragment_source -- fragment shader source (just used to show it if an error happens)
- * @returns {WebGLProgram} -- the newly created program
+ * @param   {WebGL2RenderingContext} gl             -- a rendering context (it can be a 'WebGLRenderingContext' instead)
+ * @param   {WebGLShader}           vertex_shader   -- already compiled vertex shader 
+ * @param   {WebGLShader}           fragment_shader -- already compiled fragment shader
+ * @param   {string}                vertex_source   -- vertex shader source (just used to show it if an error happens)
+ * @param   {string}                fragment_source -- fragment shader source (just used to show it if an error happens)
+ * @returns {WebGLProgram}                          -- the newly created program
  */
 
 function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader,  fragment_source )
@@ -89,8 +95,8 @@ class SimpleGPUProgram
 {
     constructor( wgl_ctx )
     {
-        this.debug_mode = true
-
+        this.program = null
+       
         if ( this.debug_mode )
             console.log("SimpleGPUProgram.constructor : begins")
         
@@ -113,6 +119,13 @@ class SimpleGPUProgram
         this.fragment_shader = CreateAndCompileShader( gl, this.fragment_source, gl.FRAGMENT_SHADER )
         this.program         = CreateAndLinkProgram  ( gl, this.vertex_shader,   this.vertex_source, 
                                                            this.fragment_shader, this.fragment_source )
+                        
+    }
+    use()
+    {
+        if ( this.program == null )
+            throw Error("SimpleGPUProgram.use : the program has not been created, unable to use it")
+        this.context.useProgram( this.program )
     }
 
 }

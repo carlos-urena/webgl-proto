@@ -1,4 +1,6 @@
 
+var redraws_count = 0
+
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
 
@@ -147,20 +149,32 @@ class WebGLCanvas
 
     sampleDraw()
     {
-        console.log(`sampleDraw: begins`)
-        let gl = this.context
-
+        redraws_count = redraws_count +1 
+        Log(`---------------------------------------------------------`)
+        Log(`WebGLCanvas.sampleDraw: begins`)
+        Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
+       
+        // retrive context and size
+        let gl   = this.context
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
 
-        console.log(`sampleDraw: sx == ${sx}, sy == ${sy} `)
+        console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
         
-        gl.clearColor(0.0, 0.1, 0.15, 1.0)
+        // clear screen, set viewport
+        gl.clearColor(0.0, 0.1, 0.13, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.viewport(0, 0, sx, sy )
 
-        gl.viewport(0, 0, sx, sy );
+        // activate fragment+vertex shader
+        this.program.use()
 
-        console.log(`sampleDraw: ends`)
+        // actually draw something.....(test)
+
+
+
+        // done
+        Log(`WebGLCanvas.sampleDraw: ends`)
         
     }
 }

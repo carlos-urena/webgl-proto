@@ -63,8 +63,7 @@ class WebGLCanvas
 
     getWebGLContext()
     {
-        if ( this.debug_mode )
-            Log(`WebGLCanvas getWebGLcontext: begins`)
+       Log(`WebGLCanvas getWebGLcontext: begins`)
 
         let first = false 
         if ( typeof(this.webgl_context) == 'undefined' ) 
@@ -94,11 +93,7 @@ class WebGLCanvas
             const str = `WebGL 2 is not available, using WebGL 1 instead`
             Log(str)
         }
-        if ( this.debug_mode )
-            Log(`WebGLCanvas getWebGLcontext: end`)
-        
-        //alert('getWebGLContext ends')
-
+        Log(`WebGLCanvas getWebGLcontext: end`)
     }
     // ------------------------------------------------------------------------------------------------
 

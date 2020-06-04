@@ -48,7 +48,7 @@ class DataTable
      */
     enable( gl, attr_index )
     {
-        const fname = "DataTable.enable(): "
+        const fname = `DataTable.enable( gl, ${attr_index} ):`
         Check( this.data_type_str == 'Float32Array', fname+'cannot enable an index table' )
 
         CheckGLError( gl )
@@ -56,19 +56,20 @@ class DataTable
         if ( this.buffer == null )
         {
             this.buffer = gl.createBuffer()
-            CheckGLError( gl )
-            //Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
             gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer )
             gl.bufferData( gl.ARRAY_BUFFER, this.size_bytes, gl.STATIC_DRAW )
             CheckGLError( gl )
+            console.log(`${fname} buffer created.`)
         }
         else
             gl.bindBuffer(  gl.ARRAY_BUFFER, this.buffer )
 
-        console.log(`${fname} attr_index == ${attr_index}`)
+        Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
+
         gl.enableVertexAttribArray( attr_index )
         gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
         CheckGLError( gl )
+        console.log(`${fname} buffer enabled.`)
     }
 }
 
@@ -92,6 +93,7 @@ class VertexSeq
         const fname = 'VertexSeq constructor:'
         console.log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
         const num_vertexes = vertex_array.length/num_floats_per_vertex
+        console.log(`num_ver == ${num_vertexes}`)
         Check( 1 <= num_vertexes, "vertex array length is too small" )
         Check( Math.floor( num_vertexes ) == num_vertexes, "vertex array length is not multiple of num of floats per vertex")
        
@@ -105,12 +107,14 @@ class VertexSeq
     draw( gl, mode )
     {
         CheckWGLContext( gl )
-        //CheckType( mode, 'GLEnum' )
         CheckGLError( gl )
 
         this.vertexes.enable( gl, 0 )
-        if ( this.colors != null )  this.colors.enable( gl, 1 )
-        else                        gl.disableVertexAttribArray( 1 )
+        
+        if ( this.colors != null )
+            this.colors.enable( gl, 1 )
+        else
+            gl.disableVertexAttribArray( 1 )
 
         if ( this.indexes == null )
             gl.drawArrays( mode, 0, this.num_vertexes )
@@ -133,11 +137,11 @@ class SimpleVertexSeq extends VertexSeq
 {
     constructor()
     {
-        let verts = new Float32Array(4)
-        verts[0] = -0.9 ; verts[1] = -0.9 
-        verts[2] =  0.9 ; verts[3] = 0.9
-
-        super( 2, verts )
+        super( 3, new Float32Array
+            ([
+                -0.9, -0.9, 0.0, 
+                +0.9, +0.9, 0.0
+            ])) 
     }
 }
 // -------------------------------------------------------------------------------------------------

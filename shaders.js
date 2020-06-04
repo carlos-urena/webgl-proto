@@ -156,13 +156,15 @@ class SimpleGPUProgram
     
     setModelview( new_modelview_mat  )
     {
-        this.program.uniform4fv( this.modelview_mat_loc, new_modelview_mat )        
+        CheckType( new_modelview_mat, 'Float32Array' )
+        this.context.uniformMatrix4fv( this.modelview_mat_loc, false, new_modelview_mat )        
     }
     // ------------------------------------------------------------------------------------------------
     
     setProjection( new_projection_mat  )
     {
-        this.program.uniform4fv( this.projection_mat_loc, new_projection_mat )        
+        CheckType( new_projection_mat, 'Float32Array' )
+        this.context.uniformMatrix4fv( this.projection_mat_loc, false, new_projection_mat )        
     }
     // ------------------------------------------------------------------------------------------------
 }
@@ -171,12 +173,13 @@ class SimpleGPUProgram
 
 function Mat4f_Identity()
 {
-    let res = new Float32Array
+    return new Float32Array
         ([  1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
             0, 0, 0, 1 
         ])
+
 }
 
 
@@ -184,10 +187,10 @@ function Mat4f_Identity()
 
 function Mat4f_Projection2D( sx, sy )
 {
-    let res = new Float32Array
-        ([  sx, 0,  0, 0,
-            0,  sy, 0, 0,
-            0,  0,  1, 0,
-            0,  0,  0, 1 
+    return new Float32Array
+        ([  sx/2, 0,    0,  sx/2,
+            0,    sy/2, 0,  sy/2,
+            0,    0,    1,  0,
+            0,    0,    0,  1 
         ])
 }

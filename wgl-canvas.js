@@ -150,8 +150,6 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
-   
-
     sampleDraw()
     {
         redraws_count = redraws_count +1 
@@ -182,8 +180,10 @@ class WebGLCanvas
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
 
         // set projection and modelview matrixes 
+        CheckGLError( gl )
         this.program.setModelview( Mat4f_Identity() )
         this.program.setProjection( Mat4f_Projection2D( sx, sy ) )
+        CheckGLError( gl )
 
 
         // actually draw something.....(test)

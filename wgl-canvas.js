@@ -158,26 +158,39 @@ class WebGLCanvas
         Log(`---------------------------------------------------------`)
         Log(`WebGLCanvas.sampleDraw: begins`)
         Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
-       
+
+        CheckGLError( this.context )
+
         // retrive context and size
         let gl   = this.context
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
 
         console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
-        
+       
+
         // clear screen, set viewport
         gl.clearColor(0.0, 0.1, 0.13, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.viewport(0, 0, sx, sy )
+        CheckGLError( gl )
 
         // activate fragment+vertex shader
         this.program.use()
+
+        // set default color (attribute location 1)
+        gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
+
+        // set projection and modelview matrixes 
+        this.program.setModelview( Mat4f_Identity() )
+        this.program.setProjection( Mat4f_Projection2D( sx, sy ) )
+
 
         // actually draw something.....(test)
         this.simple_vertex_seq.draw( gl, gl.LINE_STRIP )
 
         // done
+        CheckGLError( gl )
         Log(`WebGLCanvas.sampleDraw: ends`)
         Log(`---------------------------------------------------------`)
     }

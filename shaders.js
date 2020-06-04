@@ -18,7 +18,7 @@ function CreateAndCompileShader( gl, source, type )
     CheckType( source, 'string' )
 
     if ( type != gl.VERTEX_SHADER && type != gl.FRAGMENT_SHADER )
-        throw RangeError('invalid shader type')
+        throw new Error('invalid shader type')
 
     const type_str = ( type === gl.VERTEX_SHADER ) ? "Vertex" : "Fragment" 
 
@@ -35,7 +35,7 @@ function CreateAndCompileShader( gl, source, type )
         console.log(`Compilation of ${type_str} shader was not succesfull:`)
         console.log('------------------------------------------------')
         console.log(`${msg}------------------------------------------------`)
-        throw RangeError(`Unable to compile the ${type_str} shader, see console`)
+        throw new Error(`Unable to compile the ${type_str} shader, see console`)
     }
     else 
         console.log(`CreateAndCompileShader: ${type_str} shader compiled ok.`)   
@@ -59,7 +59,7 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
 {
     const glclass = gl.constructor.name 
     if ( glclass != 'WebGLRenderingContext' && glclass != 'WebGL2RenderingContext')
-        throw "Error: invalid parameter 'gl', it is not a webgl rendering context"
+        throw new Error("Error: invalid parameter 'gl', it is not a webgl rendering context")
 
     CheckType( vertex_shader,   'WebGLShader' )
     CheckType( vertex_source,   'string' )
@@ -81,7 +81,7 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
         console.log(`Errors from program linking:`)
         console.log('------------------------------------------------')
         console.log(`${msg}------------------------------------------------`)
-        throw RangeError(`Unable to link program, see console`)
+        throw new Error(`Unable to link program, see console`)
     }       
     return program
 }
@@ -100,27 +100,50 @@ class SimpleGPUProgram
         if ( this.debug_mode )
             console.log("SimpleGPUProgram.constructor : begins")
         
-        let gl          = wgl_ctx
-        this.context    = gl
+        let gl       = wgl_ctx
+        this.context = gl
+
         this.vertex_source  =
-        `   attribute vec4  vertex_pos;
-            void main(  ) 
-            {   
-                gl_Position = vertex_pos; 
-            }
-        `
+            `   #version 300 es 
+                uniform  mat4 modelview_mat ;
+                uniform  mat4 projection_mat ;  
+
+                layout(location = 0) in vec3 in_vertex_pos_mcc ;
+                layout(location = 1) in vec3 in_vertex_color ;
+
+                out vec3 vertex_color ;
+
+                void main(  ) 
+                {   
+                    gl_Position  = projection_mat * (modelview_mat * vec4( in_vertex_pos_mcc, 1) ); 
+                    vertex_color = in_vertex_color ;
+                }
+            `
         this.fragment_source =
-        `   void main() 
-            {
-                gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-            }
-        `
+            `   #version 300 es
+                precision highp float;  
+
+                in vec3 vertex_color ;
+                out vec4 frag_color ;
+
+                void main() 
+                {
+                    frag_color = vec4( vertex_color, 1.0 ) ;
+                }
+            `
         this.vertex_shader   = CreateAndCompileShader( gl, this.vertex_source,   gl.VERTEX_SHADER )
         this.fragment_shader = CreateAndCompileShader( gl, this.fragment_source, gl.FRAGMENT_SHADER )
         this.program         = CreateAndLinkProgram  ( gl, this.vertex_shader,   this.vertex_source, 
                                                            this.fragment_shader, this.fragment_source )
-                        
+        
+        this.modelview_mat_loc  = gl.getUniformLocation( this.program, 'modelview_mat' )
+        this.projection_mat_loc = gl.getUniformLocation( this.program, 'projection_mat' )
+
+        Check( this.modelview_mat_loc  != null, 'unable to get location of modelview matrix' )
+        Check( this.projection_mat_loc != null, 'unable to get location of projection matrix' )
     }
+    // ------------------------------------------------------------------------------------------------
+
     use()
     {
         if ( this.program == null )
@@ -129,5 +152,42 @@ class SimpleGPUProgram
         // use  (note: this.context refers to the same object referred from the canvas' context)
         this.context.useProgram( this.program )
     }
+    // ------------------------------------------------------------------------------------------------
+    
+    setModelview( new_modelview_mat  )
+    {
+        this.program.uniform4fv( this.modelview_mat_loc, new_modelview_mat )        
+    }
+    // ------------------------------------------------------------------------------------------------
+    
+    setProjection( new_projection_mat  )
+    {
+        this.program.uniform4fv( this.projection_mat_loc, new_projection_mat )        
+    }
+    // ------------------------------------------------------------------------------------------------
+}
 
+// ------------------------------------------------------------------------------------------------
+
+function Mat4f_Identity()
+{
+    let res = new Float32Array
+        ([  1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1 
+        ])
+}
+
+
+// ------------------------------------------------------------------------------------------------
+
+function Mat4f_Projection2D( sx, sy )
+{
+    let res = new Float32Array
+        ([  sx, 0,  0, 0,
+            0,  sy, 0, 0,
+            0,  0,  1, 0,
+            0,  0,  0, 1 
+        ])
 }

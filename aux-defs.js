@@ -7,8 +7,8 @@ function BuscarElemId( id )
     if ( node === null )
     {
         const str = `No encuentro en el documento el elemento con identificador'${id}' (ver consola)`
-        alert(str)
-        throw RangeError(str)
+        Log( msg )
+        throw new Error(str)
     }
     return node
 }
@@ -33,7 +33,7 @@ function CheckType( obj, expected_type_name )
       return
 
    let msg = `object is not a '${expected_type_name}', but a '${obj_type_name}'`
-   throw TypeError( msg )
+   throw new Error( msg )
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -84,5 +84,28 @@ function CheckWGLContext( context )
 
     const msg = `Context object is not a WebGL rendering context, but a '${glclass}'`
     Log( msg )
-    throw msg 
+    throw new Error(msg) 
+}
+
+// -------------------------------------------------------------------------------------------------
+
+function Check( is_ok, msg )
+{
+    if ( ! is_ok )
+    {
+        Log( msg )
+        throw new Error( msg )
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+function CheckGLError( gl )
+{
+    const err = gl.getError()
+    if ( err === gl.NO_ERROR )
+        return 
+    
+    const msg = 'An OpenGL error ocurred'
+    Log( msg )
+    throw new Error( msg )
 }

@@ -1,24 +1,4 @@
 
-function Check( is_ok, msg )
-{
-    if ( ! is_ok )
-    {
-        //alert(msg)
-        throw new Error( msg )
-    }
-}
-// -------------------------------------------------------------------------------------------------
-
-function CheckGLError( gl )
-{
-    const err = gl.getError()
-    if ( err === gl.NO_ERROR )
-        return 
-    
-    const msg = 'An OpenGL error ocurred'
-    //alert( msg )
-    throw new Error( msg )
-}
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -107,7 +87,7 @@ class VertexSeq
     {
         CheckType( vertex_array, "Float32Array" )
 
-        Check( num_floats_per_vertex == 2 || num_floats_per_vertex == 3, "num of floats per vertex must be 2 or 3")
+        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2 or 3")
    
         const fname = 'VertexSeq constructor:'
         console.log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
@@ -146,7 +126,7 @@ class VertexSeq
 
 // -------------------------------------------------------------------------------------------------
 /**
- * A simple sequence with two vertexes across the diagonal, used for testing
+ * A simple sequence with two vertexes across the diagonal in NDC, used for testing
  */
 
 class SimpleVertexSeq extends VertexSeq
@@ -154,8 +134,8 @@ class SimpleVertexSeq extends VertexSeq
     constructor()
     {
         let verts = new Float32Array(4)
-        verts[0] = 0.1 ; verts[1] = 0.1 
-        verts[2] = 0.9 ; verts[3] = 0.9
+        verts[0] = -0.9 ; verts[1] = -0.9 
+        verts[2] =  0.9 ; verts[3] = 0.9
 
         super( 2, verts )
     }

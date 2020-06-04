@@ -3,106 +3,94 @@ function Check( is_ok, msg )
 {
     if ( ! is_ok )
     {
-        alert(msg)
-        throw msg
+        //alert(msg)
+        throw new Error( msg )
     }
+}
+// -------------------------------------------------------------------------------------------------
+
+function CheckGLError( gl )
+{
+    const err = gl.getError()
+    if ( err === gl.NO_ERROR )
+        return 
     
+    const msg = 'An OpenGL error ocurred'
+    //alert( msg )
+    throw new Error( msg )
 }
 
 // -------------------------------------------------------------------------------------------------
 /**
  * A class for a table containing a sequence of integer or float values, for vertex positions, normals,
  * colors, texture coords and indexes in indexed sequences. 
+ * A single buffer is created for each 'DataTable' instance.
  */
 
 class DataTable
 {
-    constructor( attr_index, num_items, data )
+    constructor( num_items, data )
     {
         const pre = 'DataTable constructor: '
+        CheckType( num_items, 'number' )
         Check( num_items > 0 , pre+"'num_items' cannot be cero")
         Check( Math.floor(num_items) == num_items, pre+"'num_items' must be an integer number")
         Check( data != null,   pre+"'data' cannot be 'null'" )
-        CheckType( attr_index, "Number" )
-        Check( attr_index > 0 && Math.floor( attr_index )== attr_index , "invalid 'attr_index'")
-
-        const data_type = data.constructor.name
-        Check( data_type == 'Uint32Array' || data_type == 'Float32Array', pre+"invalid data type" )
+       
+        const data_type_str = data.constructor.name
+        Check( data_type_str == 'Uint32Array' || data_type_str == 'Float32Array', pre+"invalid data type" )
 
         const data_length = data.length  
         Check( data_length > 0 , pre+"'data' cannot have 0 length" )
 
-        const num_elems_item = data_length/num_items 
-        Check( Math.floor( num_elems_item ) == num_elems_item, pre+" data length is not divisible by 'num_items'" )
-        if ( data_type == 'Uint32Array' )
-            Check( num_elems_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
+        const num_vals_item = data_length/num_items 
+        Check( Math.floor( num_vals_item ) == num_vals_item, pre+" data length is not divisible by 'num_items'" )
+        if ( data_type_str == 'Uint32Array' )
+            Check( num_vals_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
         else
-            Check( num_elems_item <= 4, pre+"num of elems per item cannot be larger than 4" )
+            Check( num_vals_item <= 4, pre+"num of elems per item cannot be larger than 4" )
 
-        const bytes_per_elem = 4   // either floats or uints use 4 bytes each
-        const target = this.data_type == 'Uint32Array' ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER ;
-
+        const bytes_per_value = 4   // either floats or uints use 4 bytes pe value
+        
         this.data           = data
-        this.data_type      = data_type
-        this.attr_index     = GLUint( attr_index )
+        this.data_type_str  = data_type_str
         this.num_items      = num_items 
-        this.num_elems_item = GLint( num_elems_item )
+        this.num_vals_item  = num_vals_item 
         this.buffer         = null
-        this.size_bytes     = GLSizeiptr( num_items*bytes_per_elem )
-        this.target         = target
+        this.size_bytes     = num_items * num_vals_item * bytes_per_value  // overflow???? precision lost ??
+        
     }
-
-    /*** C/C++ 'enable' 
-      
-        // check preconditions
-        assert( size_in_bytes > 0 );
-        assert( cpu_data != nullptr );
-        CheckGLError();
-
-        // if the VBO is not created, create and bind it, and send data to GPU
-        // otherwise just bind
-        if ( vbo_name == 0 )
-        {
-            glGenBuffers( 1, &vbo_name );  assert( 0 < vbo_name );
-            glBindBuffer( table_type, vbo_name );
-            glBufferData( table_type, size_in_bytes, cpu_data, GL_DYNAMIC_DRAW );
-        }
-        else
-            glBindBuffer( table_type, vbo_name );
-
-        CheckGLError();
-
-        // for attributes tables, enable and set pointer to data in th GPU
-        if ( table_type == GL_ARRAY_BUFFER )
-        {
-            glEnableVertexAttribArray( attr_index );
-            glVertexAttribPointer( attr_index, values_per_tuple, values_type, GL_FALSE, 0, 0 );
-            CheckGLError();
-        } 
-    */
-
-    enable( gl )
+    // -------------------------------------------------------------------------------------------
+    /**
+     * Enables this data table for a vertex attribute index in a rendering context 
+     * @param {WebGLRenderingContext} gl  -- rendering context
+     * @param {GLuint} attr_index         -- vertex attribute index
+     */
+    enable( gl, attr_index )
     {
         const fname = "DataTable.enable(): "
-        CheckType( attr_num, "Number" )
+        Check( this.data_type_str == 'Float32Array', fname+'cannot enable an index table' )
+
+        CheckGLError( gl )
 
         if ( this.buffer == null )
         {
             this.buffer = gl.createBuffer()
-            Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
-            gl.bindBuffer( this.buffer )
-            gl.bufferData( target, this.size_bytes, gl.STATIC_DRAW )
+            CheckGLError( gl )
+            //Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
+            gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer )
+            gl.bufferData( gl.ARRAY_BUFFER, this.size_bytes, gl.STATIC_DRAW )
+            CheckGLError( gl )
         }
         else
-            gl.bindBuffer( this.buffer )
+            gl.bindBuffer(  gl.ARRAY_BUFFER, this.buffer )
 
-        
-
+        console.log(`${fname} attr_index == ${attr_index}`)
+        gl.enableVertexAttribArray( attr_index )
+        gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
+        CheckGLError( gl )
     }
 }
-
-
-
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -111,53 +99,66 @@ class DataTable
 
 class VertexSeq
 {
-    constructor()
+    /**
+     * @param {Number} num_floats_per_vertex -- must be 2 or 3
+     * @param {Float32Array} vertexes        -- vertex positions, length is multiple of num.floats per vertex
+     */
+    constructor( num_floats_per_vertex, vertex_array )
     {
-        this.vertexes = null
-        this.indexes  = null 
+        CheckType( vertex_array, "Float32Array" )
+
+        Check( num_floats_per_vertex == 2 || num_floats_per_vertex == 3, "num of floats per vertex must be 2 or 3")
+   
+        const fname = 'VertexSeq constructor:'
+        console.log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
+        const num_vertexes = vertex_array.length/num_floats_per_vertex
+        Check( 1 <= num_vertexes, "vertex array length is too small" )
+        Check( Math.floor( num_vertexes ) == num_vertexes, "vertex array length is not multiple of num of floats per vertex")
+       
+        this.num_vertexes = num_vertexes 
+        this.vertexes     = new DataTable( num_vertexes, vertex_array )
+        this.colors       = null
+        this.indexes      = null 
     }
     // ---------------------------------------------------------------------------------------------
 
     draw( gl, mode )
     {
         CheckWGLContext( gl )
-        CheckType( mode, 'GLEnum' )
+        //CheckType( mode, 'GLEnum' )
+        CheckGLError( gl )
 
-        if ( this.vertexes == null  )
+        this.vertexes.enable( gl, 0 )
+        if ( this.colors != null )  this.colors.enable( gl, 1 )
+        else                        gl.disableVertexAttribArray( 1 )
+
+        if ( this.indexes == null )
+            gl.drawArrays( mode, 0, this.num_vertexes )
+        else
         {
-            let msg = 'Error: trying to draw an empty mesh with no vertexes'
-            Log( msg )
-            throw msg
+            const msg = 'VertexSeq draw(): sorry, indexed sequences are still not supported'
+            alert( msg )
+            throw new Error(msg)
         }
-        gl.vertexAttribPointer( 0, 2, )
-        if ( this.indexes == null )   // non indexed sequence
-            gl.drawArrays( mode, 0, num_vertexes )
+        CheckGLError( gl )
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 /**
- * A simple sequence of two vertex across the diagonal, used for testing
+ * A simple sequence with two vertexes across the diagonal, used for testing
  */
 
 class SimpleVertexSeq extends VertexSeq
 {
     constructor()
     {
-        super()
-        this.vertexes       = new Float32Array(4)
-        this.num_components = 2
-        this.type           = gl.FLOAT
-        this.stride         = 0
-        this.offset         = 0
+        let verts = new Float32Array(4)
+        verts[0] = 0.1 ; verts[1] = 0.1 
+        verts[2] = 0.9 ; verts[3] = 0.9
 
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
-        // work here on Tabledescriptor objects , this is very WIP
-        let v = this.vertexes
-
-        v[0] = 0.1 ; v[1] = 0.1 
-        v[2] = 0.9 ; v[2] = 0.9
-     }
+        super( 2, verts )
+    }
 }
 // -------------------------------------------------------------------------------------------------
 

@@ -58,6 +58,9 @@ class WebGLCanvas
         // creates the GPU Program (= vertex shader + fragment shader)
         this.program = new SimpleGPUProgram( this.context )
 
+        // creates a sample vertex sequence to test drawing 
+        this.simple_vertex_seq = new SimpleVertexSeq()
+
         if ( this.debug_mode )
             Log(`WebGLCanvas constructor: end`)
     }
@@ -147,6 +150,8 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
+   
+
     sampleDraw()
     {
         redraws_count = redraws_count +1 
@@ -170,11 +175,9 @@ class WebGLCanvas
         this.program.use()
 
         // actually draw something.....(test)
-
-
+        this.simple_vertex_seq.draw( gl, gl.LINE_STRIP )
 
         // done
-        
         Log(`WebGLCanvas.sampleDraw: ends`)
         Log(`---------------------------------------------------------`)
     }

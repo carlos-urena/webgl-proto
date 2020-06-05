@@ -1,3 +1,4 @@
+var debug_shaders = false 
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -37,7 +38,7 @@ function CreateAndCompileShader( gl, source, type )
         console.log(`${msg}------------------------------------------------`)
         throw new Error(`Unable to compile the ${type_str} shader, see console`)
     }
-    else 
+    else if ( debug_shaders )
         console.log(`CreateAndCompileShader: ${type_str} shader compiled ok.`)   
 
     return shader
@@ -95,13 +96,14 @@ class SimpleGPUProgram
 {
     constructor( wgl_ctx )
     {
-        this.program = null
+        this.debug_mode = debug_shaders
        
         if ( this.debug_mode )
             console.log("SimpleGPUProgram.constructor : begins")
         
         let gl       = wgl_ctx
         this.context = gl
+        this.program = null
 
         this.vertex_source  =
             `   #version 300 es 

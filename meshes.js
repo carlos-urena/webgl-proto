@@ -11,7 +11,7 @@ class DataTable
 {
     constructor( num_items, data )
     {
-        this.debug = true
+        this.debug = false
 
         const pre           = 'DataTable constructor(): '
         const data_type_str = data.constructor.name
@@ -33,7 +33,7 @@ class DataTable
         if ( is_uint ) Check( num_vals_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
         else           Check( num_vals_item <= 4, pre+"num of elems per item must be between 2 and 4" )
 
-        this.data           = data.length
+        this.data           = data
         this.data_type_str  = data_type_str
         this.is_index_table = is_uint
         this.is_index_u32   = data_type_str == 'Uint32Array'
@@ -46,13 +46,16 @@ class DataTable
     /**
      * Enables this data table for a vertex attribute index in a rendering context 
      * @param {WebGLRenderingContext} gl  -- rendering context
-     * @param {GLuint} attr_index         -- vertex attribute index
+     * @param {GLuint} attr_index         -- vertex attribute index (only used when 'is_index_table' == false)
      */
     enable( gl, attr_index )
     {
         let fname = null 
         if ( this.debug )
             fname = `DataTable.enable( gl, ${attr_index} ):`
+
+        if ( this.debug )
+            Log(`${fname} begins, is index table == ${this.is_index_table}`)
         
         const target = this.is_index_table ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER ;
 
@@ -67,27 +70,26 @@ class DataTable
             gl.bufferData( target, this.data, gl.STATIC_DRAW )
             CheckGLError( gl )
             Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data, or buffer is corrupted')
-            if ( this.debug )
-                console.log(`${fname} buffer created.`)
+           
         }
         else
             // just bind the buffer when it is already created
             gl.bindBuffer(  target, this.buffer )
 
+        CheckGLError(gl)
+
         // for positions or other attributes, enable and set the pointer to the table
         if ( ! this.is_index_table )
         {
             if ( this.debug )
-            {
-                console.log(`${fname}, num_vals_item == ${this.num_vals_item}`)
-            }
-            gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
+                Log(`${fname}, num_vals_item == ${this.num_vals_item}`)
             gl.enableVertexAttribArray( attr_index )
+            gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
         }
 
         CheckGLError( gl )
         if ( this.debug )
-            console.log(`${fname} buffer enabled.`)
+            Log(`${fname} ends.`)
     }
 }
 
@@ -100,18 +102,22 @@ class VertexSeq
 {
     /**
      * @param {Number} num_floats_per_vertex -- must be 2 or 3
-     * @param {Float32Array} vertexes        -- vertex positions, length is multiple of num.floats per vertex
+     * @param {Float32Array} vertex_array    -- vertex positions, length is multiple of num.floats per vertex
      */
     constructor( num_floats_per_vertex, vertex_array )
     {
+        this.debug = false
         CheckType( vertex_array, "Float32Array" )
 
-        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2,3 or 4")
-   
-        const fname = 'VertexSeq constructor:'
-        console.log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
+        const fname        = 'VertexSeq constructor:'
         const num_vertexes = vertex_array.length/num_floats_per_vertex
-        console.log(`num_ver == ${num_vertexes}`)
+        
+        if ( this.debug )
+        {   Log(`${fname} num_ver == ${num_vertexes}`)
+            Log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
+        }
+
+        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2,3 or 4")
         Check( 1 <= num_vertexes, "vertex array length is too small" )
         Check( Math.floor( num_vertexes ) == num_vertexes, "vertex array length is not multiple of num of floats per vertex")
        
@@ -143,8 +149,13 @@ class VertexSeq
 
     draw( gl, mode )
     {
+        const fname = 'VertexSeq.draw():'
+        if ( this.debug )
+            Log(`${fname} begins.`)
+
         CheckWGLContext( gl )
         CheckGLError( gl )
+        Check( this.vertexes != null, 'Cannot draw, no vertexes coordinates table')
 
         this.vertexes.enable( gl, 0 )
         
@@ -153,10 +164,12 @@ class VertexSeq
 
         CheckGLError( gl )
 
-        console.log(`about to draw: this.num_vertexes == ${this.num_vertexes}`)
+        
 
         if ( this.indexes == null )
         {
+            if ( this.debug )
+                Log(`${fname} about to drawArrays: this.num_vertexes == ${this.num_vertexes}`)
             gl.drawArrays( mode, 0, this.num_vertexes )
             CheckGLError( gl )
         }
@@ -166,9 +179,15 @@ class VertexSeq
                 throw new Error("Sorry, looks like I cannot use unsigned ints (32 bits) for indexes")
             this.indexes.enable( gl, 0 ) 
             const format = this.indexes.is_index_u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
-            gl.drawElements( mode, this.indexes.length, format, 0 )
+
+            if ( this.debug )
+                Log(`${fname} about to drawArrays: this.indexes.length == ${this.indexes.num_items}`)
+            gl.drawElements( mode, this.indexes.num_items, format, 0 )
             CheckGLError( gl )
         }
+
+        if ( this.debug )
+            Log(`${fname} ends.`)
         
     }
 }
@@ -190,7 +209,7 @@ class SimpleVertexSeq extends VertexSeq
 
                 -0.9, -0.9, 0.0, 
                 +0.9, +0.9, 0.0,
-                -0.9, +0.9, 0.0,
+                -0.9, +0.9, 0.0
                 
             ]
         const vertex_colors = 
@@ -205,7 +224,7 @@ class SimpleVertexSeq extends VertexSeq
             ]
 
         super( 3, new Float32Array( vertex_coords ) )
-        this.setColors( new Float32Array( vertex_colors ))       
+        this.setColors( new Float32Array( vertex_colors ) )       
     }
 }
 

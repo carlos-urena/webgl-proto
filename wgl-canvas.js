@@ -51,10 +51,12 @@ class WebGLCanvas
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
 
         // check if we can use 'unsigned int' for the indexes in a mesh ....
-        console.log( 'Extensions:'+this.context.getSupportedExtensions() )
+        if ( this.debug )
+            console.log( 'Extensions:'+this.context.getSupportedExtensions() )
+        
         if ( this.context.getExtension('OES_element_index_uint') == null )
         {
-            const msg = "WARNING: WebGLCanvas constructor():  required extension for uint indexes is not supported in this device"
+            const msg = "WARNING: recommended extension 'OES_element_index_uint' is not supported in this device"
             Log( msg )
             //throw Error( msg )
         }
@@ -68,7 +70,8 @@ class WebGLCanvas
         this.program = new SimpleGPUProgram( this.context )
 
         // creates a sample vertex sequence to test drawing 
-        this.simple_vertex_seq = new SimpleVertexSeq()
+        this.test_vertex_seq     = new SimpleVertexSeq()
+        this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
 
         if ( this.debug )
             Log(`WebGLCanvas constructor: end`)
@@ -202,7 +205,7 @@ class WebGLCanvas
 
 
         // actually draw something.....(test)
-        this.simple_vertex_seq.draw( gl, gl.TRIANGLES )
+        this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
 
         // done
         CheckGLError( gl )

@@ -4,7 +4,7 @@
 /**
  * A class for a table containing a sequence of integer or float values, for vertex positions, normals,
  * colors, texture coords and indexes in indexed sequences. 
- * A single buffer is created for each 'DataTable' instance.
+ * A single WebGL buffer is created for each 'DataTable' instance.
  */
 
 class DataTable
@@ -30,12 +30,13 @@ class DataTable
         if ( data_type_str == 'Uint32Array' )
             Check( num_vals_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
         else
-            Check( num_vals_item <= 4, pre+"num of elems per item cannot be larger than 4" )
+            Check( num_vals_item <= 4, pre+"num of elems per item must be between 2 and 4" )
 
         const bytes_per_value = 4   // either floats or uints use 4 bytes pe value
         
         this.data           = data
         this.data_type_str  = data_type_str
+        this.is_index_table = data_type_str == 'Uint32Array'
         this.num_items      = num_items 
         this.num_vals_item  = num_vals_item 
         this.buffer         = null
@@ -50,27 +51,36 @@ class DataTable
      */
     enable( gl, attr_index )
     {
-        const fname = `DataTable.enable( gl, ${attr_index} ):`
-        Check( this.data_type_str == 'Float32Array', fname+'cannot enable an index table' )
+        let fname = null 
+        if ( this.debug )
+            fname = `DataTable.enable( gl, ${attr_index} ):`
+        
+        const target = this.is_index_table ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER ;
 
         CheckGLError( gl )
 
+        // create the buffer (if neccesary)  and bind the buffer
         if ( this.buffer == null )
         {
+            // create the buffer and fill it with data from 'this.data'
             this.buffer = gl.createBuffer()
-            gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer )
-            gl.bufferData( gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW )
+            gl.bindBuffer( target, this.buffer )
+            gl.bufferData( target, this.data, gl.STATIC_DRAW )
             CheckGLError( gl )
+            Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data, or buffer is corrupted')
             if ( this.debug )
                 console.log(`${fname} buffer created.`)
         }
         else
-            gl.bindBuffer(  gl.ARRAY_BUFFER, this.buffer )
+            // just bind the buffer when it is already created
+            gl.bindBuffer(  target, this.buffer )
 
-        Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
-
-        gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
-        gl.enableVertexAttribArray( attr_index )
+        // for positions or other attributes, enable and set the pointer to the table
+        if ( ! this.is_index_table )
+        {
+            gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
+            gl.enableVertexAttribArray( attr_index )
+        }
 
         CheckGLError( gl )
         if ( this.debug )
@@ -107,6 +117,21 @@ class VertexSeq
         this.colors       = null
         this.indexes      = null 
     }
+    // -------------------------------------------------------------------------------------------
+    setIndexes( indexes )
+    {
+        CheckType( indexes, 'Uint32Array' )
+        Check( 0 < indexes.length, 'VertexSeq.setIndexes(): cannot use an empty indexes array' )
+        this.indexes = new DataTable( indexes.length, indexes )
+    }
+    // -------------------------------------------------------------------------------------------
+    setColors( colors )
+    {
+        CheckType( colors, 'Float32Array' )
+        Check( 0 < colors.length, 'VertexSeq.setColors(): cannot use an empty indexes array' )
+        Check( colors.length == this.num_vertexes*3, 'VertexSeq.setColors(): incoherent color array length (must be 3*num_vertexes)')
+        this.colors = new DataTable( this.num_vertexes, colors )
+    }
     // ---------------------------------------------------------------------------------------------
 
     draw( gl, mode )
@@ -127,9 +152,9 @@ class VertexSeq
             gl.drawArrays( mode, 0, this.num_vertexes )
         else
         {
-            const msg = 'VertexSeq draw(): sorry, indexed sequences are still not supported'
-            alert( msg )
-            throw new Error(msg)
+            this.indexes.enable( gl, 0 ) // attr index 0 is not used
+            const count = this.indexes.length
+            gl.drawElements( mode, this.indexes.length, gl.UNSIGNED_INT, 0 )
         }
         CheckGLError( gl )
     }
@@ -137,20 +162,37 @@ class VertexSeq
 
 // -------------------------------------------------------------------------------------------------
 /**
- * A simple sequence with two vertexes across the diagonal in NDC, used for testing
+ * A simple indexed vertex sequence (with colors)
  */
 
 class SimpleVertexSeq extends VertexSeq
 {
     constructor()
     {
-        const vertex_coords = [
-            -0.9, -0.9, 0.0, 
-            +0.9, -0.9, 0.0,
-            +0.9, +0.9, 0.0,
-            -0.9, +0.9, 0.0
-        ]
+        const vertex_coords = 
+            [
+                -0.9, -0.9, 0.0, 
+                +0.9, -0.9, 0.0,
+                -0.9, +0.9, 0.0,
+                +0.9, +0.9, 0.0
+            ]
+        const vertex_colors = 
+            [
+                1.0,  0.0, 0.0, 
+                0.0,  1.0, 0.0, 
+                0.0,  0.0, 1.0, 
+                1.0,  1.0, 1.0
+            ]
+
+        const indexes = 
+            [   0,1,3, 
+                0,3,2 
+            ]
+
         super( 3, new Float32Array( vertex_coords ) )
+        this.setColors( new Float32Array( vertex_colors ))
+        //this.setIndexes( new Uint32Array( indexes ))
+       
     }
 }
 // -------------------------------------------------------------------------------------------------

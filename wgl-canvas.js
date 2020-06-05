@@ -49,6 +49,15 @@ class WebGLCanvas
 
         // Create the WebGL context for this canvas, if it is not possible, return.
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
+
+        // check if we can use 'unsigned int' for the indexes in a mesh ....
+        console.log( 'Extensions:'+this.context.getSupportedExtensions() )
+        if ( this.context.getExtension('OES_element_index_uint') == null )
+        {
+            const msg = "WARNING: WebGLCanvas constructor():  required extension for uint indexes is not supported in this device"
+            Log( msg )
+            //throw Error( msg )
+        }
         this.showGLVersionInfo()
         if ( this.webgl_version == 0 )
         {
@@ -193,7 +202,7 @@ class WebGLCanvas
 
 
         // actually draw something.....(test)
-        this.simple_vertex_seq.draw( gl, gl.LINE_LOOP )
+        this.simple_vertex_seq.draw( gl, gl.TRIANGLES )
 
         // done
         CheckGLError( gl )

@@ -1,4 +1,6 @@
 
+var debug = false
+
 // -------------------------------------------------------------------------------------------------
 // variable which holds the single WebGLCanvas class instance 
 
@@ -20,7 +22,8 @@ function ResizeCanvasContainer()
 
     canvas_container_elem.style.width   = nx.toString() + "px"
     canvas_container_elem.style.height  = ny.toString() + "px"
-    Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
+    if ( debug )
+        Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
     canvas.resize()  // resizes the canvas according to div dimensions
 }
 
@@ -30,7 +33,8 @@ function ResizeCanvasContainer()
 
 function OnDocumentLoad()
 {
-    Log("OnDocumentLoad: begins")
+    if ( debug )
+        Log("OnDocumentLoad: begins")
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   
@@ -42,7 +46,8 @@ function OnDocumentLoad()
     // do a sample draw, just to check everything is fine
     canvas.sampleDraw() 
 
-    Log("OnDocumentLoad: ends")
+    if ( debug )
+        Log("OnDocumentLoad: ends")
 }
 // -------------------------------------------------------------------------------------------------
 

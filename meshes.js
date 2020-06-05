@@ -11,36 +11,35 @@ class DataTable
 {
     constructor( num_items, data )
     {
-        this.debug = false
+        this.debug = true
 
-        const pre = 'DataTable constructor: '
+        const pre           = 'DataTable constructor(): '
+        const data_type_str = data.constructor.name
+        const is_float      = ['Float32Array'].includes( data_type_str )
+        const is_uint       = ['Uint32Array','Uint16Array'].includes( data_type_str ) 
+        
         CheckType( num_items, 'number' )
         Check( num_items > 0 , pre+"'num_items' cannot be cero")
         Check( Math.floor(num_items) == num_items, pre+"'num_items' must be an integer number")
         Check( data != null,   pre+"'data' cannot be 'null'" )
-       
-        const data_type_str = data.constructor.name
-        Check( data_type_str == 'Uint32Array' || data_type_str == 'Float32Array', pre+"invalid data type" )
-
-        const data_length = data.length  
-        Check( data_length > 0 , pre+"'data' cannot have 0 length" )
-
-        const num_vals_item = data_length/num_items 
-        Check( Math.floor( num_vals_item ) == num_vals_item, pre+" data length is not divisible by 'num_items'" )
-        if ( data_type_str == 'Uint32Array' )
-            Check( num_vals_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
-        else
-            Check( num_vals_item <= 4, pre+"num of elems per item must be between 2 and 4" )
-
-        const bytes_per_value = 4   // either floats or uints use 4 bytes pe value
+        Check( is_float || is_uint , `${pre} data array with invalid type '${data_type_str}'` )
         
-        this.data           = data
+        const data_length   = data.length
+        const num_vals_item = data_length/num_items  
+        
+        Check( data_length > 0 , pre+"'data' cannot have 0 length" )
+        Check( Math.floor( num_vals_item ) == num_vals_item, pre+" data length is not divisible by 'num_items'" )
+
+        if ( is_uint ) Check( num_vals_item == 1, pre+"'num_items' must be equal to 'data.length' for indexes table" )
+        else           Check( num_vals_item <= 4, pre+"num of elems per item must be between 2 and 4" )
+
+        this.data           = data.length
         this.data_type_str  = data_type_str
-        this.is_index_table = data_type_str == 'Uint32Array'
+        this.is_index_table = is_uint
+        this.is_index_u32   = data_type_str == 'Uint32Array'
         this.num_items      = num_items 
         this.num_vals_item  = num_vals_item 
         this.buffer         = null
-        this.size_bytes     = num_items * num_vals_item * bytes_per_value  // overflow???? precision lost ??
         
     }
     // -------------------------------------------------------------------------------------------
@@ -78,6 +77,10 @@ class DataTable
         // for positions or other attributes, enable and set the pointer to the table
         if ( ! this.is_index_table )
         {
+            if ( this.debug )
+            {
+                console.log(`${fname}, num_vals_item == ${this.num_vals_item}`)
+            }
             gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
             gl.enableVertexAttribArray( attr_index )
         }
@@ -103,7 +106,7 @@ class VertexSeq
     {
         CheckType( vertex_array, "Float32Array" )
 
-        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2 or 3")
+        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2,3 or 4")
    
         const fname = 'VertexSeq constructor:'
         console.log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
@@ -118,13 +121,17 @@ class VertexSeq
         this.indexes      = null 
     }
     // -------------------------------------------------------------------------------------------
+    
     setIndexes( indexes )
     {
-        CheckType( indexes, 'Uint32Array' )
+        Check(['Uint32Array','Uint16Array'].includes( indexes.constructor.name ), 
+                 `VertexSeq.setIndexes(): indexes array of invalid type ${indexes.constructor.name}`  )
+
         Check( 0 < indexes.length, 'VertexSeq.setIndexes(): cannot use an empty indexes array' )
         this.indexes = new DataTable( indexes.length, indexes )
     }
     // -------------------------------------------------------------------------------------------
+
     setColors( colors )
     {
         CheckType( colors, 'Float32Array' )
@@ -141,22 +148,28 @@ class VertexSeq
 
         this.vertexes.enable( gl, 0 )
         
-        if ( this.colors != null )
-            this.colors.enable( gl, 1 )
-        else
-            gl.disableVertexAttribArray( 1 )
+        if ( this.colors != null ) this.colors.enable( gl, 1 )
+        else                       gl.disableVertexAttribArray( 1 )
 
         CheckGLError( gl )
+
+        console.log(`about to draw: this.num_vertexes == ${this.num_vertexes}`)
 
         if ( this.indexes == null )
+        {
             gl.drawArrays( mode, 0, this.num_vertexes )
+            CheckGLError( gl )
+        }
         else
         {
-            this.indexes.enable( gl, 0 ) // attr index 0 is not used
-            const count = this.indexes.length
-            gl.drawElements( mode, this.indexes.length, gl.UNSIGNED_INT, 0 )
+            if ( this.indexes.is_index_u32 ) // REVIEW
+                throw new Error("Sorry, looks like I cannot use unsigned ints (32 bits) for indexes")
+            this.indexes.enable( gl, 0 ) 
+            const format = this.indexes.is_index_u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
+            gl.drawElements( mode, this.indexes.length, format, 0 )
+            CheckGLError( gl )
         }
-        CheckGLError( gl )
+        
     }
 }
 
@@ -166,6 +179,42 @@ class VertexSeq
  */
 
 class SimpleVertexSeq extends VertexSeq
+{
+    constructor()
+    {
+        const vertex_coords = 
+            [
+                -0.9, -0.9, 0.0, 
+                +0.9, -0.9, 0.0,
+                +0.9, +0.9, 0.0,
+
+                -0.9, -0.9, 0.0, 
+                +0.9, +0.9, 0.0,
+                -0.9, +0.9, 0.0,
+                
+            ]
+        const vertex_colors = 
+            [
+                1.0,  0.0, 0.0, 
+                0.0,  1.0, 0.0, 
+                0.0,  0.0, 1.0, 
+
+                0.0,  1.0, 1.0,
+                1.0,  0.0, 1.0,
+                1.0,  1.0, 0.0
+            ]
+
+        super( 3, new Float32Array( vertex_coords ) )
+        this.setColors( new Float32Array( vertex_colors ))       
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+/**
+ * A simple indexed vertex sequence (with colors)
+ */
+
+class SimpleVertexSeqIndexed extends VertexSeq
 {
     constructor()
     {
@@ -191,7 +240,7 @@ class SimpleVertexSeq extends VertexSeq
 
         super( 3, new Float32Array( vertex_coords ) )
         this.setColors( new Float32Array( vertex_colors ))
-        //this.setIndexes( new Uint32Array( indexes ))
+        this.setIndexes( new Uint16Array( indexes ))
        
     }
 }

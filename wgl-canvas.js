@@ -12,8 +12,8 @@ class WebGLCanvas
      */
     constructor( parent_id )
     {
-        this.debug_mode = true 
-        if ( this.debug_mode )
+        this.debug = false
+        if ( this.debug )
             Log(`WebGLCanvas constructor: begin`)
 
         // check that a valid string has been given
@@ -61,14 +61,15 @@ class WebGLCanvas
         // creates a sample vertex sequence to test drawing 
         this.simple_vertex_seq = new SimpleVertexSeq()
 
-        if ( this.debug_mode )
+        if ( this.debug )
             Log(`WebGLCanvas constructor: end`)
     }
     // -------------------------------------------------------------------------------------------------
 
     getWebGLContext()
     {
-       Log(`WebGLCanvas getWebGLcontext: begins`)
+        if ( this.debug)
+            Log(`WebGLCanvas getWebGLcontext: begins`)
 
         let first = false 
         if ( typeof(this.webgl_context) == 'undefined' ) 
@@ -93,12 +94,14 @@ class WebGLCanvas
             throw RangeError(str)
         }
         
-        if ( this.debug_mode && first && this.webgl_version == 1 )
-        {   
-            const str = `WebGL 2 is not available, using WebGL 1 instead`
-            Log(str)
+        if ( this.debug )
+        {   if ( this.debug_mode && first && this.webgl_version == 1 )
+            {   
+                const str = `WebGL 2 is not available, using WebGL 1 instead`
+                Log(str)
+            }
+            Log(`WebGLCanvas getWebGLcontext: end`)
         }
-        Log(`WebGLCanvas getWebGLcontext: end`)
     }
     // ------------------------------------------------------------------------------------------------
 
@@ -153,10 +156,12 @@ class WebGLCanvas
     sampleDraw()
     {
         redraws_count = redraws_count +1 
-        Log(`---------------------------------------------------------`)
-        Log(`WebGLCanvas.sampleDraw: begins`)
-        Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
-
+        if ( this.debug )
+        {
+            Log(`---------------------------------------------------------`)
+            Log(`WebGLCanvas.sampleDraw: begins`)
+            Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
+        }
         CheckGLError( this.context )
 
         // retrive context and size
@@ -164,7 +169,8 @@ class WebGLCanvas
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
 
-        console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
+        if ( this.debug )
+            console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
        
 
         // clear screen, set viewport
@@ -182,17 +188,20 @@ class WebGLCanvas
         // set projection and modelview matrixes 
         CheckGLError( gl )
         this.program.setModelview( Mat4f_Identity() )
-        this.program.setProjection( Mat4f_Projection2D( sx, sy ) )
+        this.program.setProjection( Mat4f_Identity() )
         CheckGLError( gl )
 
 
         // actually draw something.....(test)
-        this.simple_vertex_seq.draw( gl, gl.LINE_STRIP )
+        this.simple_vertex_seq.draw( gl, gl.LINE_LOOP )
 
         // done
         CheckGLError( gl )
-        Log(`WebGLCanvas.sampleDraw: ends`)
-        Log(`---------------------------------------------------------`)
+        if ( this.debug )
+        {   
+            Log(`WebGLCanvas.sampleDraw: ends`)
+            Log(`---------------------------------------------------------`)
+        }
     }
 }
 

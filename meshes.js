@@ -11,6 +11,8 @@ class DataTable
 {
     constructor( num_items, data )
     {
+        this.debug = false
+
         const pre = 'DataTable constructor: '
         CheckType( num_items, 'number' )
         Check( num_items > 0 , pre+"'num_items' cannot be cero")
@@ -57,19 +59,22 @@ class DataTable
         {
             this.buffer = gl.createBuffer()
             gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer )
-            gl.bufferData( gl.ARRAY_BUFFER, this.size_bytes, gl.STATIC_DRAW )
+            gl.bufferData( gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW )
             CheckGLError( gl )
-            console.log(`${fname} buffer created.`)
+            if ( this.debug )
+                console.log(`${fname} buffer created.`)
         }
         else
             gl.bindBuffer(  gl.ARRAY_BUFFER, this.buffer )
 
         Check( gl.isBuffer( this.buffer ), fname+'unable to create a buffer for vertex data')
 
-        gl.enableVertexAttribArray( attr_index )
         gl.vertexAttribPointer( attr_index, this.num_vals_item, gl.FLOAT, false, 0, 0  )
+        gl.enableVertexAttribArray( attr_index )
+
         CheckGLError( gl )
-        console.log(`${fname} buffer enabled.`)
+        if ( this.debug )
+            console.log(`${fname} buffer enabled.`)
     }
 }
 
@@ -116,6 +121,8 @@ class VertexSeq
         else
             gl.disableVertexAttribArray( 1 )
 
+        CheckGLError( gl )
+
         if ( this.indexes == null )
             gl.drawArrays( mode, 0, this.num_vertexes )
         else
@@ -137,11 +144,13 @@ class SimpleVertexSeq extends VertexSeq
 {
     constructor()
     {
-        super( 3, new Float32Array
-            ([
-                -0.9, -0.9, 0.0, 
-                +0.9, +0.9, 0.0
-            ])) 
+        const vertex_coords = [
+            -0.9, -0.9, 0.0, 
+            +0.9, -0.9, 0.0,
+            +0.9, +0.9, 0.0,
+            -0.9, +0.9, 0.0
+        ]
+        super( 3, new Float32Array( vertex_coords ) )
     }
 }
 // -------------------------------------------------------------------------------------------------

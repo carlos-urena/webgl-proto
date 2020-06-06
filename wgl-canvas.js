@@ -1,6 +1,11 @@
 
 var redraws_count = 0
 
+function Test( event )
+{
+    console.log("Test....")
+}
+
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
 
@@ -12,7 +17,7 @@ class WebGLCanvas
      */
     constructor( parent_id )
     {
-        this.debug = false
+        this.debug = true
         if ( this.debug )
             Log(`WebGLCanvas constructor: begin`)
 
@@ -72,6 +77,11 @@ class WebGLCanvas
         // creates a sample vertex sequence to test drawing 
         this.test_vertex_seq     = new SimpleVertexSeq()
         this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
+
+        // sets events handlers (mostly mouse events)
+        this.canvas_elem.addEventListener( "mousedown", e => this.handleEvent(e), true )
+        this.canvas_elem.addEventListener( "mouseup",   e => this.handleEvent(e), true )
+        this.canvas_elem.addEventListener( "mousemove", e => this.handleEvent(e), true )
 
         if ( this.debug )
             Log(`WebGLCanvas constructor: end`)
@@ -162,6 +172,25 @@ class WebGLCanvas
             `
         info_div.innerHTML = info_str
         
+    }
+    // -------------------------------------------------------------------------------------------------
+
+    /** handles an event
+     * 
+     */
+    handleEvent( event )
+    {
+        if ( event.constructor.name != 'MouseEvent' )
+            return 
+
+        if ( event.type != 'mousedown')
+            return
+
+        const fname = `WebGLCanvas.handleEvent():`
+        Log(`${fname} begins`)
+        Log(`${fname} event type  == ${event.type}`)
+        Log(`${fname} button      == ${event.button}`)
+        Log(`${fname} ends`)
     }
     // -------------------------------------------------------------------------------------------------
 

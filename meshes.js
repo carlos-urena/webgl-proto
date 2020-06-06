@@ -93,6 +93,153 @@ class DataTable
     }
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * A class for a OpenGL buffer containing a sequence of float values encoding a set of 
+ * vectors for vertex coordinates or vertex attributes (colors,normals,t.cc.,etc...)
+ */
+
+class AttrBuffer
+{
+    /**
+     * Builds an 'AttrBuffer', given its data. It just records the data, does not allocs GPU memory
+     * 
+     * @param {number}       vec_len  -- number of float values in each vector ( >1, <5 ) 
+     * @param {Float32Array} data     -- typed array with float values (is interpreted a set of equal-length vectors)
+     */
+    constructor( vec_len, data )
+    {
+        this.debug   = false
+        const fname  = `AttrBuffer.constructor(data,${vec_len}):`
+        
+        CheckType( data, 'Float32Array' )
+        CheckNat( vec_len )  
+        CheckNat( data.lengh/vec_len )
+        Check( 2 <= vec_len && vec_len <= 4 , `${fname} 'vec_len' (== ${vec_len}) must be between 2 and 4`)
+        Check( 1 <= data.length/vec_len,      `${fname} 'vec_len' (== ${vec_len}) cannot be greather than 'data.length' (== ${data.length})` )
+
+        this.data      = data
+        this.num_vecs  = data.length/vec_len  
+        this.vec_len   = vec_len
+        this.gl_buffer = null   
+    }
+    // -------------------------------------------------------------------------------------------
+    /**
+     * Enables this data table for a vertex attribute index in a rendering context 
+     * @param {WebGLRenderingContext} gl  -- rendering context
+     * @param {GLuint} attr_index         -- vertex attribute index (only used when 'is_index_table' == false)
+     */
+    enable( gl, attr_index )
+    {
+        let fname = ''
+        if ( this.debug )
+            fname = `AttrBuffer.enable(gl, ${attr_index} ):`
+
+        if ( this.debug )
+            Log(`${fname} begins.`)
+        
+        CheckNat( attr_index )
+        CheckGLError( gl )
+
+        // create (if first enable) and bind the buffer
+        if ( this.gl_buffer == null )
+        {
+            this.gl_buffer = gl.createBuffer()
+            gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_buffer )
+            gl.bufferData( gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW )
+            CheckGLError( gl )
+            Check( gl.isBuffer( this.gl_buffer ), `${fname} unable to create a buffer for vertex data, or buffer is corrupted`)
+        }
+        else
+            gl.bindBuffer( gl.ARRAY_BUFFER, this.gl_buffer )
+
+        // enable and set the pointer to the table
+        gl.enableVertexAttribArray( attr_index )
+        gl.vertexAttribPointer( attr_index, this.vec_len, gl.FLOAT, false, 0, 0  )
+        
+        CheckGLError( gl )
+        if ( this.debug )
+            Log(`${fname} ends.`)
+    }
+    // -------------------------------------------------------------------------------------------
+
+    disable( gl, attr_index )
+    {
+        CheckNat( attr_index )
+        gl.disableVertexAttribArray( attr_index )
+    }
+}
+
+
+// -------------------------------------------------------------------------------------------------
+/**
+ * A class for an OpenGL element buffer 
+ * (an element buffer contains a sequence of integers, used as indexes for indexed vertex 
+ * sequences) 
+ */
+
+class IndexesBuffer
+{
+    /**
+     * Builds an 'IndexBuffer', given its data. It just records the data, does not allocs GPU memory
+     * 
+     * @param {Uint*Array} data  -- sequence of indexes, can be an Uint16Array or Uint32Array
+     */
+    constructor( data )
+    {
+        this.debug  = false
+        const fname = `IndexBuffer.constructor(): `
+        
+        Check( data != null, `${fname} 'data' cannot be 'null'` )
+        const dcn = data.constructor.name // 'data' class name
+        Check( ['Uint32Array','Uint16Array'].includes( dcn ), `${fname} 'data' must an integer typed array (16 or 32 bits integers), but is '${dcn}'` )
+        Check( 0 < data.length , `'data' is an empty array` )
+       
+        this.data       = data
+        this.is_ui32    = ( dcn === 'Uint32Array' )
+        this.gl_buffer  = null
+    }
+    // -------------------------------------------------------------------------------------------
+    /**
+     * Enables this data table for a vertex attribute index in a rendering context 
+     * @param {WebGLRenderingContext} gl  -- rendering context
+     * @param {GLuint} attr_index         -- vertex attribute index (only used when 'is_index_table' == false)
+     */
+    enable( gl )
+    {
+        let fname = `IndexBuffer.enable(): `
+
+        if ( this.debug ) Log(`${fname} begins.`)
+        
+        CheckGLError( gl )
+
+        // create (if first enable) and bind the buffer
+        if ( this.gl_buffer == null )
+        {
+            this.gl_buffer = gl.createBuffer()
+            gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.gl_buffer )
+            gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, this.data, gl.STATIC_DRAW )
+            CheckGLError( gl )
+            Check( gl.isBuffer( this.gl_buffer ), `${fname} unable to create a buffer for vertex data, or buffer is corrupted`)
+        }
+        else
+            gl.bindBuffer(  gl.ELEMENT_ARRAY_BUFFER, this.gl_buffer )
+
+        CheckGLError(gl)
+        if ( this.debug ) Log(`${fname} ends.`)
+    }
+    // ----------------------------------------------------------------------------------
+    drawElements( gl, mode )
+    {
+        const format = this.indexes_buffer.is_ui32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
+        enable( gl ) 
+        gl.drawElements( mode, this.data.length, format, 0 )
+        CheckGLError(gl)
+    }
+}
+
+
+
 // -------------------------------------------------------------------------------------------------
 /**
  * A class for a sequence of vertexes position (and optionaly their attributes and indexes)
@@ -101,93 +248,115 @@ class DataTable
 class VertexSeq
 {
     /**
-     * @param {Number} num_floats_per_vertex -- must be 2 or 3
-     * @param {Float32Array} vertex_array    -- vertex positions, length is multiple of num.floats per vertex
+     * @param {number}       vec_len       -- length of each vector with a vertex' coordinates, must be 2,3, or 4
+     * @param {Float32Array} coords_array  -- vertex positions, length is multiple of num.floats per vertex
      */
-    constructor( num_floats_per_vertex, vertex_array )
+    constructor( vec_len, coords_array )
     {
         this.debug = false
-        CheckType( vertex_array, "Float32Array" )
-
-        const fname        = 'VertexSeq constructor:'
-        const num_vertexes = vertex_array.length/num_floats_per_vertex
+        const fname         = 'VertexSeq constructor:'
+        let coords_buffer   = new AttrBuffer( vec_len, coords_array )
         
-        if ( this.debug )
-        {   Log(`${fname} num_ver == ${num_vertexes}`)
-            Log(`${fname} v.a.length == ${vertex_array.length}, num.f.x v. == ${num_floats_per_vertex}`)
-        }
-
-        Check( 2 <= num_floats_per_vertex && num_floats_per_vertex <= 4, "num of floats per vertex must be 2,3 or 4")
-        Check( 1 <= num_vertexes, "vertex array length is too small" )
-        Check( Math.floor( num_vertexes ) == num_vertexes, "vertex array length is not multiple of num of floats per vertex")
-       
-        this.num_vertexes = num_vertexes 
-        this.vertexes     = new DataTable( num_vertexes, vertex_array )
-        this.colors       = null
-        this.indexes      = null 
+        this.num_vertexes   = coords_buffer.num_vecs
+        this.attr_buffers   = [ coords_buffer, null ]   // array with vertexes attributes buffers (index 0 allways refers to the vertexes coordinates buffer)
+        this.indexes_buffer = null 
     }
     // -------------------------------------------------------------------------------------------
     
-    setIndexes( indexes )
+    setIndexes( indexes_array )
     {
-        Check(['Uint32Array','Uint16Array'].includes( indexes.constructor.name ), 
-                 `VertexSeq.setIndexes(): indexes array of invalid type ${indexes.constructor.name}`  )
-
-        Check( 0 < indexes.length, 'VertexSeq.setIndexes(): cannot use an empty indexes array' )
-        this.indexes = new DataTable( indexes.length, indexes )
+        this.indexes_buffer = new IndexBuffer( indexes_array )
     }
     // -------------------------------------------------------------------------------------------
-
-    setColors( colors )
+    
+    /**
+     * Sets a new vertex attribute buffer (other than vertex coordinates)
+     * @param {number}       attr_index   -- attribute index, must be >0 (we cannot set the coordinates), and less than 'attr_buffers' length.
+     * @param {number}       vec_len      -- length of each vector in 'attr_array' 
+     * @param {Float32Array} attr_array   -- new attributes array, can be 'null', then the corresponding buffer is removed from this vertex seq.
+     */
+    setAttrArray( attr_index, vec_len, attr_array )
     {
-        CheckType( colors, 'Float32Array' )
-        Check( 0 < colors.length, 'VertexSeq.setColors(): cannot use an empty indexes array' )
-        Check( colors.length == this.num_vertexes*3, 'VertexSeq.setColors(): incoherent color array length (must be 3*num_vertexes)')
-        this.colors = new DataTable( this.num_vertexes, colors )
+        const fname = `VertexSeq.setArray(): `
+        CheckNat( attr_index )
+        Check( 0 < attr_index && attr_index < this.buffers.length , `${fname} 'attr_index' (==${attr_index}) must be between 1 and ${this.buffers.length-1}, both included` )
+        
+        let attr_buffer = null 
+        if ( attr_array != null )
+        {
+            CheckType( attr_array, 'Float32Array' )
+            Check( attr_array.length/vec_len === this.num_vertexes, `${fname} attr. array length not coherent with num of vertexes of this vertex seq.`)
+            attr_buffer = new AttrBuffer( vec_len, attr_array )
+        }
+        this.attr_buffers[attr_index] = attr_buffer
     }
     // ---------------------------------------------------------------------------------------------
 
+    // draw( gl, mode )
+    // {
+    //     const fname = 'VertexSeq.draw():'
+    //     if ( this.debug )
+    //         Log(`${fname} begins.`)
+
+    //     CheckWGLContext( gl )
+    //     CheckGLError( gl )
+    //     Check( this.vertexes != null, 'Cannot draw, no vertexes coordinates table')
+
+    //     this.vertexes.enable( gl, 0 )
+        
+    //     if ( this.colors != null ) this.colors.enable( gl, 1 )
+    //     else                       gl.disableVertexAttribArray( 1 )
+
+    //     CheckGLError( gl )
+
+        
+
+    //     if ( this.indexes == null )
+    //     {
+    //         if ( this.debug )
+    //             Log(`${fname} about to drawArrays: this.num_vertexes == ${this.num_vertexes}`)
+    //         gl.drawArrays( mode, 0, this.num_vertexes )
+    //         CheckGLError( gl )
+    //     }
+    //     else
+    //     {
+    //         if ( this.indexes.is_index_u32 ) // REVIEW
+    //             throw new Error("Sorry, looks like I cannot use unsigned ints (32 bits) for indexes")
+    //         this.indexes.enable( gl, 0 ) 
+    //         const format = this.indexes.is_index_u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
+
+    //         if ( this.debug )
+    //             Log(`${fname} about to drawArrays: this.indexes.length == ${this.indexes.num_items}`)
+    //         gl.drawElements( mode, this.indexes.num_items, format, 0 )
+    //         CheckGLError( gl )
+    //     }
+
+    //     if ( this.debug )
+    //         Log(`${fname} ends.`)
+        
+    // }
     draw( gl, mode )
     {
         const fname = 'VertexSeq.draw():'
-        if ( this.debug )
-            Log(`${fname} begins.`)
-
-        CheckWGLContext( gl )
-        CheckGLError( gl )
-        Check( this.vertexes != null, 'Cannot draw, no vertexes coordinates table')
-
-        this.vertexes.enable( gl, 0 )
-        
-        if ( this.colors != null ) this.colors.enable( gl, 1 )
-        else                       gl.disableVertexAttribArray( 1 )
+        if ( this.debug ) Log(`${fname} begins.`)
 
         CheckGLError( gl )
 
-        
-
-        if ( this.indexes == null )
+        // enable/disable each attribute array
+        for( i = 0 ; i < this.attr_buffers.length ; i++  )
         {
-            if ( this.debug )
-                Log(`${fname} about to drawArrays: this.num_vertexes == ${this.num_vertexes}`)
+            let b = this.attr_buffers[i]
+            if ( b != null  ) b.enable( gl, i )
+            else              gl.disableVertexAttribArray( i )
+        }
+        
+        if ( this.indexes_buffer  == null )
             gl.drawArrays( mode, 0, this.num_vertexes )
-            CheckGLError( gl )
-        }
         else
-        {
-            if ( this.indexes.is_index_u32 ) // REVIEW
-                throw new Error("Sorry, looks like I cannot use unsigned ints (32 bits) for indexes")
-            this.indexes.enable( gl, 0 ) 
-            const format = this.indexes.is_index_u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT
-
-            if ( this.debug )
-                Log(`${fname} about to drawArrays: this.indexes.length == ${this.indexes.num_items}`)
-            gl.drawElements( mode, this.indexes.num_items, format, 0 )
-            CheckGLError( gl )
-        }
-
-        if ( this.debug )
-            Log(`${fname} ends.`)
+            this.indexes_buffer.drawElements( mode )
+            
+        CheckGLError( gl )
+        if ( this.debug ) Log(`${fname} ends.`)
         
     }
 }

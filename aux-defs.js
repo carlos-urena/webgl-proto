@@ -20,21 +20,60 @@ function BuscarElemId( id )
  * @param {String} expected_type_name - a string with the expected type or constructor name  for that object
  */
  
-function CheckType( obj, expected_type_name )
+function CheckType( obj, expected_type_name_str )
 {
-   if ( obj == null )
-      throw TypeError("object is 'null'")
+    if (typeof obj === 'undefined')   // this is neccesary ? (or it is allways defined?)
+        throw new TypeError("object is undefined")
 
-   let obj_type_name = typeof(obj)
-   if ( obj_type_name == 'object' )
-      obj_type_name = obj.constructor.name
+    if ( obj == null )
+        throw new TypeError("object is 'null'")
+
+    let obj_type_name = typeof(obj)
+    if ( obj_type_name == 'object' )
+        obj_type_name = obj.constructor.name
    
-    if ( obj_type_name == expected_type_name )
-      return
+    if ( obj_type_name == expected_type_name_str )
+        return
 
-   let msg = `object is not a '${expected_type_name}', but a '${obj_type_name}'`
-   throw new Error( msg )
+    let msg = `object is not a '${expected_type_name_str}', but a '${obj_type_name}'`
+    throw new TypeError( msg )
 }
+
+// ------------------------------------------------------------------------
+/**
+ * Checks if an object is of 'number' type and has no decimal part (is integer)
+ * @param {Object} num                - number
+ * @param {String} expected_type_name - a string with the expected type or constructor name  for that object
+ */
+ 
+function CheckInt( num )
+{
+    CheckType( num, 'number' )
+    if ( Math.floor(num) == num )
+        return
+
+   let msg = `number ${num} is not an integer value`
+   throw new RangeError( msg )
+}
+
+// ------------------------------------------------------------------------
+/**
+ * Checks if an object is of 'number' type, has no decimal part, and is not negative
+ * @param {Object} num                - number
+ * @param {String} expected_type_name - a string with the expected type or constructor name  for that object
+ */
+ 
+function CheckNat( num )
+{
+    CheckInt( num )
+    if ( 0 <= num )
+        return
+
+    let msg = `number ${num} is not a cero or positive integer value`
+    throw new RangeError( msg )
+}
+
+
 
 // -------------------------------------------------------------------------------------------------
 /**

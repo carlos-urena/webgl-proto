@@ -6,18 +6,25 @@
 class VertexSeq
 {
     /**
+     * @param {number}       num_attrs     -- num of attributes arrays this seq. will hold, 
+     *                                        (without including vertex coordinates, which are allways attribute 0)
+     *                                        can be any non-negative integer
      * @param {number}       vec_len       -- length of each vector with a vertex' coordinates, must be 2,3, or 4
-     * @param {Float32Array} coords_array  -- vertex positions, length is multiple of num.floats per vertex
+     * @param {Float32Array} coords_array  -- vertex coordinates, length is multiple of num.floats per vertex
      */
-    constructor( vec_len, coords_array )
+    constructor( num_attrs, vec_len, coords_array )
     {
         this.debug = false
-        const fname         = 'VertexSeq constructor:'
+        const fname  = 'VertexSeq.constructor: ()'
+        CheckNat( num_attrs )
+
         let coords_buffer   = new AttrBuffer( vec_len, coords_array )
         
         this.num_vertexes   = coords_buffer.num_vecs
-        this.attr_buffers   = [ coords_buffer, null ]   // array with vertexes attributes buffers (index 0 allways refers to the vertexes coordinates buffer)
-        this.indexes_buffer = null 
+        this.indexes_buffer = null               // by default, this is a non-indexed sequence
+        this.attr_buffers   = [ coords_buffer ]  // array with vertexes attributes buffers (index 0 allways refers to the vertexes coordinates buffer)
+        for( let i = 0 ; i < num_attrs ; i++ )   // add uninitialized attribute arrays
+            this.attr_buffers.push( null )
     }
     // -------------------------------------------------------------------------------------------
     
@@ -113,7 +120,7 @@ class SimpleVertexSeq extends VertexSeq
                 1.0,  1.0, 0.0
             ]
 
-        super( 3, new Float32Array( vertex_coords ) )
+        super( 1, 3, new Float32Array( vertex_coords ) )
         this.setAttrArray( 1, 3, new Float32Array( vertex_colors ) )       
     }
 }
@@ -147,7 +154,7 @@ class SimpleVertexSeqIndexed extends VertexSeq
                 0,3,2 
             ]
 
-        super( 3, new Float32Array( vertex_coords ) )
+        super( 1, 3, new Float32Array( vertex_coords ) )
         this.setAttrArray( 1, 3, new Float32Array( vertex_colors ))
         this.setIndexes( new Uint16Array( indexes ))
        

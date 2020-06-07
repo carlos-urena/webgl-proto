@@ -1,10 +1,6 @@
 
 var redraws_count = 0
 
-function Test( event )
-{
-    console.log("Test....")
-}
 
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
@@ -17,15 +13,17 @@ class WebGLCanvas
      */
     constructor( parent_id )
     {
-        this.debug = true
+        this.debug = false
+        const fname = `WebGLCanvas.constructor():`
+
         if ( this.debug )
-            Log(`WebGLCanvas constructor: begin`)
+            Log(`${fname} WebGLCanvas constructor: begin`)
 
         // check that a valid string has been given
         CheckType( parent_id, 'string' )
         if ( parent_id == '' )
         {
-            const msg = "An empty parent id string has been given to 'WebGLCanvas' constructor"
+            const msg = `${fname} An empty parent id string has been given to 'WebGLCanvas' constructor`
             Log( msg )
             throw RangeError( msg )
         }
@@ -40,7 +38,7 @@ class WebGLCanvas
         this.canvas_id     = parent_id+"_canvas_id" 
         this.canvas_elem   = document.getElementById( this.canvas_id )
         if ( this.canvas_elem != null )
-        {   let msg = "Error: the page tried to create a canvas with an identifier already in use" 
+        {   const msg = `${fname} error: the page tried to create a canvas with an identifier already in use`
             Log( msg )
             throw RangeError( msg )
         }
@@ -55,28 +53,36 @@ class WebGLCanvas
         // Create the WebGL context for this canvas, if it is not possible, return.
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
 
-        // check if we can use 'unsigned int' for the indexes in a mesh ....
+        // check if we can use 'unsigned int' for the indexes in an indexed vertex sequence
         if ( this.debug )
-            console.log( 'Extensions:'+this.context.getSupportedExtensions() )
+            console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
         
         if ( this.context.getExtension('OES_element_index_uint') == null )
         {
-            const msg = "WARNING: recommended extension 'OES_element_index_uint' is not supported in this device"
-            Log( msg )
+            if ( this.debug )
+            {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
+                Log( msg )
+            }
             //throw Error( msg )
+            this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
         }
+        else 
+            this.context.has_32bits_indexes = true 
+
         this.showGLVersionInfo()
         if ( this.webgl_version == 0 )
         {
-            Log('Unable to create a webgl canvas, neither ver 1 nor ver 2')
-            return 
+            const msg = `${fname} Unable to create a webgl canvas, neither ver 1 nor ver 2`
+            Log( msg )
+            throw Error( msg )
         }
         // creates the GPU Program (= vertex shader + fragment shader)
         this.program = new SimpleGPUProgram( this.context )
 
-        // creates a sample vertex sequence to test drawing 
+        // creates a sample vertex sequence or mesh to test drawing 
         this.test_vertex_seq     = new SimpleVertexSeq()
         this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
+        this.test_2d_mesh        = new Simple2DMesh()
 
         // sets events handlers (mostly mouse events)
         this.canvas_elem.addEventListener( "mousedown", e => this.handleEvent(e), true )
@@ -84,7 +90,7 @@ class WebGLCanvas
         this.canvas_elem.addEventListener( "mousemove", e => this.handleEvent(e), true )
 
         if ( this.debug )
-            Log(`WebGLCanvas constructor: end`)
+            Log(`${fname} WebGLCanvas constructor: end`)
     }
     // -------------------------------------------------------------------------------------------------
 
@@ -234,7 +240,8 @@ class WebGLCanvas
 
 
         // actually draw something.....(test)
-        this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
+        //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
+        this.test_2d_mesh.draw( gl )
 
         // done
         CheckGLError( gl )

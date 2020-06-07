@@ -10,7 +10,8 @@
 class AttrBuffer
 {
     /**
-     * Builds an 'AttrBuffer', given its data. It just records the data, does not allocs GPU memory
+     * Builds an 'AttrBuffer', given its data. It just records the data, does not allocs a buffer
+     * (the buffer is created on the first call to 'enable')
      * 
      * @param {number}       vec_len  -- number of float values in each vector ( >1, <5 ) 
      * @param {Float32Array} data     -- typed array with float values (is interpreted a set of equal-length vectors)
@@ -34,6 +35,7 @@ class AttrBuffer
     // -------------------------------------------------------------------------------------------
     /**
      * Enables this data table for a vertex attribute index in a rendering context 
+     * (if it is the first time this is enabled, the buffer is created)
      * @param {WebGLRenderingContext} gl  -- rendering context
      * @param {GLuint} attr_index         -- vertex attribute index (only used when 'is_index_table' == false)
      */

@@ -88,7 +88,7 @@ class Simple2DMesh extends Mesh
                 0,3,2 
             ]
 
-        super( new Float32Array( vertex_coords ), new Uint16Array( triangles ) )
+        super( new Float32Array( vertex_coords ), new Uint32Array( triangles ) )
         this.setColorsArray( new Float32Array( vertex_colors ))
     }
 }

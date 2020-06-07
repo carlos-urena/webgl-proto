@@ -89,6 +89,9 @@ class WebGLCanvas
         this.canvas_elem.addEventListener( "mouseup",   e => this.handleEvent(e), true )
         this.canvas_elem.addEventListener( "mousemove", e => this.handleEvent(e), true )
 
+        /// tests vec3
+        /// TestVec3()
+
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
     }

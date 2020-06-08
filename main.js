@@ -35,6 +35,10 @@ function OnDocumentLoad()
 {
     if ( debug )
         Log("OnDocumentLoad: begins")
+
+    TestMat4()
+    return 
+    
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   

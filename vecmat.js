@@ -67,21 +67,62 @@ class Vec3
 
 function TestVec3()
 {
-    let a = new Vec3([4,6,8]),
+    const fname = `TestVec3() :`
+    Log(`${fname} begins`)
+
+    let a = new Vec3([ 4,6,8 ]),
         b = new Vec3( new Float32Array([4,6,8]) ),
         c = new Vec3({ x:4, y:6, z:8 })
         d = new Vec3({ r:4, g:6, b:8 })
         e = new Vec3({ 0:4, 1:6, 2:8 })
         f = new Vec3( a )
 
-    let err 
-
-    console.log(`TestVec3: a==${a}, b==${b}, c==${c}, d=${d}, e=${e}, f=${f}`)
-    console.log(`a+b == ${a.plus(b)}`)
-    console.log(`a-b == ${a.minus(b)}`)
-    console.log(`a*3 == ${a.scale(3)}`)
+    Log(`${fname} TestVec3: a==${a}, b==${b}, c==${c}, d=${d}, e=${e}, f=${f}`)
+    Log(`${fname} a+b == ${a.plus(b)}`)
+    Log(`${fname} a-b == ${a.minus(b)}`)
+    Log(`${fname} a*3 == ${a.scale(3)}`)
+    Log(`${fname} ends`)
+    
 }
 
+// ------------------------------------------------------------------------------------------------
+
+class Mat4 extends Float32Array 
+{
+    toString()
+    {
+        let str = '\n'
+        for( let i = 0 ; i<4 ; i++ )
+        {   const b = i*4
+            str = str + `   | ${this[b+0]}, ${this[b+1]}, ${this[b+2]}, ${this[b+3]} |\n`
+        }    
+        return str    
+    }
+}
+// ------------------------------------------------------------------------------------------------
+
+class Mat4_Identity extends Mat4
+{
+    constructor()
+    {
+        super([  1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1 
+        ])
+    }
+}
+// ------------------------------------------------------------------------------------------------
+
+function TestMat4()
+{
+    const fname = `TestMat4():`
+    Log(`${fname} begins`)
+    const m1 = new Mat4_Identity()
+    Log(`${fname}  identity mat == ${m1}`)
+
+    Log(`${fname} ends`)
+}
 // ------------------------------------------------------------------------------------------------
 
 function Mat4f_Identity()
@@ -95,18 +136,29 @@ function Mat4f_Identity()
 }
 
 // ------------------------------------------------------------------------------------------------
-// A projection for 2D drawings such that in one axis we cover from -1 to +1, 
-// and -r to +r in the other axis, where r = 
+// A projection for simple undistorted 2D drawings 
+// Maps [-1..+1]x[-1..+1], to the center of the viewport, undistorted, with maximun size
 
-function Mat4f_Projection2D( sx, sy )
+function Mat4f_UndProj2D( sx, sy )
 {
-    const m = Math.min( sx, sy )
+    const min = Math.min(sx,sy),
+          fx  = min/sx,
+          fy  = min/sy
+
     return new Float32Array
-        ([  sx/2, 0,    0,  sx/2,
-            0,    sy/2, 0,  sy/2,
-            0,    0,    1,  0,
-            0,    0,    0,  1 
+        ([  fx, 0,  0, 0,
+            0,  fy, 0, 0,
+            0,  0,  1, 0,
+            0,  0,  0, 1 
         ])
+}
+
+
+function Mat4f_Multiply( ma, mb )
+{
+
+    CheckType( ma, 'Float32Array')
+    CheckType( mb, 'Float32Array')
 }
 
 

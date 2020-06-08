@@ -311,7 +311,7 @@ class WebGLCanvas
         // set projection and modelview matrixes 
         CheckGLError( gl )
         this.program.setModelview( Mat4f_Identity() )
-        this.program.setProjection( Mat4f_Identity() )
+        this.program.setProjection( Mat4f_UndProj2D( sx,sy ) )
         CheckGLError( gl )
 
 

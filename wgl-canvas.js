@@ -13,7 +13,7 @@ class WebGLCanvas
      */
     constructor( parent_id )
     {
-        this.debug = false
+        this.debug = true  // tuen to 'true' to see log messages
         const fname = `WebGLCanvas.constructor():`
 
         if ( this.debug )
@@ -84,10 +84,21 @@ class WebGLCanvas
         this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
         this.test_2d_mesh        = new Simple2DMesh()
 
+        // set mouse events state info
+        this.is_mouse_left_down  = false
+        this.is_mouse_right_down = false
+        this.drag_start_pos_x    = -1
+        this.drag_start_pos_y    = -1
+
         // sets events handlers (mostly mouse events)
-        this.canvas_elem.addEventListener( "mousedown", e => this.handleEvent(e), true )
-        this.canvas_elem.addEventListener( "mouseup",   e => this.handleEvent(e), true )
-        this.canvas_elem.addEventListener( "mousemove", e => this.handleEvent(e), true )
+        this.canvas_elem.addEventListener( "mousedown", e => this.mouseDown(e), true )
+        this.canvas_elem.addEventListener( "mouseup",   e => this.mouseUp(e), true )
+        this.canvas_elem.addEventListener( "mousemove", e => this.mouseMove(e), true )
+
+        // prevent the context menu from appearing, typically after a right click
+        this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
+
+        
 
         /// tests vec3
         /// TestVec3()
@@ -97,6 +108,68 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
+    /**
+     * Called right after a mouse button has been pressed down
+     * @param {MouseEvent} mevent -- mouse event created by the browser
+     */
+    mouseDown( mevent )
+    {
+        const fname = 'WebGLCanvas.mouseDown:'
+        CheckType( mevent, 'MouseEvent' )
+        if ( this.debug )
+            Log(`${fname} begins, button == ${mevent.button}`)
+
+        if ( mevent.button === 0 )
+            this.is_mouse_left_down = true
+        else if ( mevent.button === 2 )
+            this.is_mouse_right_down = true
+
+        if ( mevent.button === 2 )
+        {
+            this.drag_start_pos_x  = mevent.clientX
+            this.drag_start_pos_y  = mevent.clientY
+            if ( this.debug )
+                Log(`${fname} drag start at: (${this.drag_start_pos_x}, ${this.drag_start_pos_y})`)
+        }
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a mouse button has been released
+     * @param {MouseEvent} mevent -- mouse event created by the browser
+     */
+    mouseUp( mevent )
+    {
+        const fname = 'WebGLCanvas.mouseUp'
+        CheckType( mevent, 'MouseEvent' )
+        if ( this.debug )
+            Log(`${fname} begins, button == ${mevent.button}`)
+
+        if ( mevent.button === 0 )
+            this.is_mouse_left_down = false
+        else if ( mevent.button === 2 )
+            this.is_mouse_right_down = false
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after the mouse has moved through the canvas
+     * @param {MouseEvent} mevent -- mouse event created by the browser
+     */
+    mouseMove( mevent )
+    {
+        if ( ! this.is_mouse_right_down )
+            return 
+
+        const fname = 'WebGLCanvas.mouseMove (right drag):'
+        CheckType( mevent, 'MouseEvent' )
+
+        const dx = mevent.clientX - this.drag_start_pos_x,
+              dy = mevent.clientY - this.drag_start_pos_y
+
+        if ( this.debug )
+            Log(`${fname} begins, dx,dy == (${dx},${dy})`)
+        
+    }
+    // -------------------------------------------------------------------------------------------------
     getWebGLContext()
     {
         if ( this.debug)
@@ -184,23 +257,23 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
-    /** handles an event
-     * 
-     */
-    handleEvent( event )
-    {
-        if ( event.constructor.name != 'MouseEvent' )
-            return 
+    // /** handles an event
+    //  * 
+    //  */
+    // handleEvent( event )
+    // {
+    //     if ( event.constructor.name != 'MouseEvent' )
+    //         return 
 
-        if ( event.type != 'mousedown')
-            return
+    //     if ( event.type != 'mousedown')
+    //         return
 
-        const fname = `WebGLCanvas.handleEvent():`
-        Log(`${fname} begins`)
-        Log(`${fname} event type  == ${event.type}`)
-        Log(`${fname} button      == ${event.button}`)
-        Log(`${fname} ends`)
-    }
+    //     const fname = `WebGLCanvas.handleEvent():`
+    //     Log(`${fname} begins`)
+    //     Log(`${fname} event type  == ${event.type}`)
+    //     Log(`${fname} button      == ${event.button}`)
+    //     Log(`${fname} ends`)
+    // }
     // -------------------------------------------------------------------------------------------------
 
     sampleDraw()

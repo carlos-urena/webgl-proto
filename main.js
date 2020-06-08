@@ -1,5 +1,5 @@
 
-var debug = false
+var debug = true
 
 // -------------------------------------------------------------------------------------------------
 // variable which holds the single WebGLCanvas class instance 
@@ -36,9 +36,12 @@ function OnDocumentLoad()
     if ( debug )
         Log("OnDocumentLoad: begins")
 
-    TestMat4()
-    return 
-    
+    if ( debug )
+    {
+        TestVec3()
+        TestMat4()
+    }
+
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   

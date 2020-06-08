@@ -158,14 +158,14 @@ class SimpleGPUProgram
     
     setModelview( new_modelview_mat  )
     {
-        CheckType( new_modelview_mat, 'Float32Array' )
+        CheckType( new_modelview_mat, 'Mat4' )
         this.context.uniformMatrix4fv( this.modelview_mat_loc, false, new_modelview_mat )        
     }
     // ------------------------------------------------------------------------------------------------
     
     setProjection( new_projection_mat  )
     {
-        CheckType( new_projection_mat, 'Float32Array' )
+        CheckType( new_projection_mat, 'Mat4' )
         this.context.uniformMatrix4fv( this.projection_mat_loc, false, new_projection_mat )        
     }
     // ------------------------------------------------------------------------------------------------

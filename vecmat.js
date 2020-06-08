@@ -106,9 +106,9 @@ class Mat4_Identity extends Mat4
     constructor()
     {
         super([  1, 0, 0, 0,
-                   0, 1, 0, 0,
-                   0, 0, 1, 0,
-                   0, 0, 0, 1 
+                 0, 1, 0, 0,
+                 0, 0, 1, 0,
+                 0, 0, 0, 1 
         ])
     }
 }

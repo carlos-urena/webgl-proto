@@ -338,27 +338,57 @@ class WebGLCanvas
             if ( this.debug )
                Log(`${fname} creating lines`)
             
-            const h = -0.005
+            const h = -0.1
             x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
             z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
         } 
         const l0 = -2.0, 
               l1 = +2.0, 
-              n  = 10 
+              n  = 5
 
         gl.vertexAttrib3f( 1, 0.4, 0.4, 0.4 )
 
-        p.pushModelview()
-            p.composeModelview( Mat4_Translate([l0, 0, l0] ) )
+        // let mt = Mat4_Translate([l0, 0, l0])
+        // let msx = Mat4_Scale([l1-l0, 1, 1 ])
+        // console.log(`mt == ${mt}`)
+        // console.log(`msx == ${msx}`)
+        // console.log(`mt*msx == ${mt.compose( msx )}`)
+
+        gl.vertexAttrib3f( 1, 1.0, 1.0, 1.0 )
+
+        
+        // p.pushModelview()
+        //     p.composeModelview( Mat4_Translate([l0, 0, l0] ) )
+        //     p.pushModelview()
+        //         p.composeModelview( Mat4_Scale([ l1-l0, 1, 1]) )
+        //         gl.vertexAttrib3f( 1, 1.0, 0.0, 0.0 )
+        //         x_line.draw( gl, gl.LINES )
+        //     p.popModelview()
+        //     p.pushModelview()
+        //         p.composeModelview( Mat4_Scale([ 1, 1, l1-l0]) )
+        //         gl.vertexAttrib3f( 1, 0.0, 0.0, 1.0 )
+        //         z_line.draw( gl, gl.LINES )
+        //     p.popModelview()
+        // p.popModelview()
+
+        
+        var punto = null 
+        if ( punto == null )
+            punto = new VertexSeq( 0, 3, new Float32Array([0,0,0]))
+        
+        console.log(`pre=${p.modelview_mat}`)
+        for( let i = 0 ; i < n ; i++ )
+        for( let j = 0 ; j < n ; j++ )
+        {
             p.pushModelview()
-                p.composeModelview( Mat4_Scale([ l1-l0, 1, 1]) )
-                x_line.draw( gl, gl.LINES )
+                let t =  Mat4_Translate([i/(n-1),0,j/(n-1)])
+                console.log(`t=${t}`)
+                p.composeModelview(t)
+                punto.draw( gl, gl.POINTS )
             p.popModelview()
-            p.pushModelview()
-                p.composeModelview( Mat4_Scale([ 1, 1, l1-l0]) )
-                z_line.draw( gl, gl.LINES )
-            p.popModelview()
-        p.popModelview()
+        }
+        console.log(`post=${p.modelview_mat}\n\n`)
+        
 
     }
 

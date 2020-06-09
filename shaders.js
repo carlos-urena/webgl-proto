@@ -102,7 +102,7 @@ class SimpleGPUProgram
             console.log("SimpleGPUProgram.constructor : begins")
         
         let gl       = wgl_ctx
-        this.context = gl
+        this.context = wgl_ctx
         this.program = null
 
         this.vertex_source  =
@@ -137,12 +137,29 @@ class SimpleGPUProgram
         this.fragment_shader = CreateAndCompileShader( gl, this.fragment_source, gl.FRAGMENT_SHADER )
         this.program         = CreateAndLinkProgram  ( gl, this.vertex_shader,   this.vertex_source, 
                                                            this.fragment_shader, this.fragment_source )
+
+        // save previously used shader program, then activate (use) this program
+        let prev_program = gl.getParameter( gl.CURRENT_PROGRAM ) 
+        this.use() 
         
+        // get all locations for uniform parameters
         this.modelview_mat_loc  = gl.getUniformLocation( this.program, 'modelview_mat' )
         this.projection_mat_loc = gl.getUniformLocation( this.program, 'projection_mat' )
 
         Check( this.modelview_mat_loc  != null, 'unable to get location of modelview matrix' )
         Check( this.projection_mat_loc != null, 'unable to get location of projection matrix' )
+
+        // initialize modelview stack (empty)
+        this.modelview_stack = []
+
+        // initialize modelview and projection matrices in the instance and in the shader program (must be in use)
+        this.setModelview( Mat4_Identity() )   // assigns to 'this.modelview_mat'
+        this.setProjection( Mat4_Identity() )  // assigns to 'this.projection_mat'
+        
+        // restore previously used shader program 
+        gl.useProgram( prev_program )          
+
+          
     }
     // ------------------------------------------------------------------------------------------------
 
@@ -159,16 +176,40 @@ class SimpleGPUProgram
     setModelview( new_modelview_mat  )
     {
         CheckType( new_modelview_mat, 'Mat4' )
-        this.context.uniformMatrix4fv( this.modelview_mat_loc, false, new_modelview_mat )        
+        this.modelview_mat = new Mat4( new_modelview_mat )
+        this.context.uniformMatrix4fv( this.modelview_mat_loc, false, this.modelview_mat )        
+    }
+    // ------------------------------------------------------------------------------------------------
+    
+    composeModelview( comp_modelview_mat  )
+    {
+        this.setModelview( this.modelview_mat.compose( comp_modelview_mat ) )           
     }
     // ------------------------------------------------------------------------------------------------
     
     setProjection( new_projection_mat  )
     {
         CheckType( new_projection_mat, 'Mat4' )
-        this.context.uniformMatrix4fv( this.projection_mat_loc, false, new_projection_mat )        
+        this.projection_mat = new Mat4( new_projection_mat )
+        this.context.uniformMatrix4fv( this.projection_mat_loc, false, this.projection_mat )        
     }
     // ------------------------------------------------------------------------------------------------
+
+    pushModelview()
+    {
+        this.modelview_stack.push( new Mat4( this.modelview_mat ) )
+    }
+    // ------------------------------------------------------------------------------------------------
+    
+    popModelview()
+    {
+        const l = this.modelview_stack.length 
+        Check( l > 0 , `SimpleGPUProgram.popModelview(): modelview stack is empty`)
+
+        this.setModelview( new Mat4( this.modelview_stack[l-1] ))
+        this.modelview_stack.pop()
+
+    }
 }
 
 

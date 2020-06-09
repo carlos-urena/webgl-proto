@@ -13,7 +13,7 @@ class WebGLCanvas
      */
     constructor( parent_id )
     {
-        this.debug = true  // tuen to 'true' to see log messages
+        this.debug = main_debug  // tuen to 'true' to see log messages
         const fname = `WebGLCanvas.constructor():`
 
         if ( this.debug )
@@ -87,8 +87,8 @@ class WebGLCanvas
         // set mouse events state info
         this.is_mouse_left_down  = false
         this.is_mouse_right_down = false
-        this.drag_start_pos_x    = -1
-        this.drag_start_pos_y    = -1
+        this.drag_prev_pos_x    = -1
+        this.drag_prev_pos_y    = -1
 
         // sets events handlers (mostly mouse events)
         this.canvas_elem.addEventListener( "mousedown", e => this.mouseDown(e), true )
@@ -98,7 +98,10 @@ class WebGLCanvas
         // prevent the context menu from appearing, typically after a right click
         this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
 
-        
+        // initialize (alpha,beta) angles for interactive camera control
+        // (all this will be moved out to a proper 'Camera' class)
+        this.cam_alpha_deg = 45.0
+        this.cam_beta_deg  = -45.0
 
         /// tests vec3
         /// TestVec3()
@@ -126,10 +129,10 @@ class WebGLCanvas
 
         if ( mevent.button === 2 )
         {
-            this.drag_start_pos_x  = mevent.clientX
-            this.drag_start_pos_y  = mevent.clientY
+            this.drag_prev_pos_x  = mevent.clientX
+            this.drag_prev_pos_y  = mevent.clientY
             if ( this.debug )
-                Log(`${fname} drag start at: (${this.drag_start_pos_x}, ${this.drag_start_pos_y})`)
+                Log(`${fname} drag start at: (${this.drag_prev_pos_x}, ${this.drag_prev_pos_y})`)
         }
     }
     // -------------------------------------------------------------------------------------------------
@@ -162,11 +165,31 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.mouseMove (right drag):'
         CheckType( mevent, 'MouseEvent' )
 
-        const dx = mevent.clientX - this.drag_start_pos_x,
-              dy = mevent.clientY - this.drag_start_pos_y
+        // compute displacement from the original position ( where mouse button was pressed down)
+
+        const drag_cur_pos_x = mevent.clientX ,
+              drag_cur_pos_y = mevent.clientY ,
+              dx             = drag_cur_pos_x - this.drag_prev_pos_x,
+              dy             = drag_cur_pos_y - this.drag_prev_pos_y
+
+        this.drag_prev_pos_x = drag_cur_pos_x
+        this.drag_prev_pos_y = drag_cur_pos_y
 
         if ( this.debug )
-            Log(`${fname} begins, dx,dy == (${dx},${dy})`)
+            Log(`${fname} dx,dy == (${dx},${dy})`)
+
+        // update camera parameters
+        const fac = 1.0
+        this.cam_alpha_deg +=  dx*fac
+        this.cam_beta_deg  +=  dy*fac
+
+        if ( this.debug )
+            Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
+
+        // redraw:
+        this.sampleDraw()
+        
+       
         
     }
     // -------------------------------------------------------------------------------------------------
@@ -276,6 +299,104 @@ class WebGLCanvas
     // }
     // -------------------------------------------------------------------------------------------------
 
+    drawAxes()
+    {
+        const fname = 'WebGLCanvas.drawAxes():'
+        let gl = this.context
+        var x_axe = null,
+            y_axe = null, 
+            z_axe = null 
+        
+       if ( x_axe == null )
+       {
+           if ( this.debug )
+            Log(`${fname} creating axes`)
+            x_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 1,0,0 ]))
+            y_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
+            z_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
+       } 
+
+       gl.vertexAttrib3f( 1, 1.0, 0.2, 0.2 ) ; x_axe.draw( gl, gl.LINES )
+       gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; y_axe.draw( gl, gl.LINES )
+       gl.vertexAttrib3f( 1, 0.2, 0.2, 1.0 ) ; z_axe.draw( gl, gl.LINES )
+
+
+    }
+    // -------------------------------------------------------------------------------------------------
+
+    drawGrid()
+    {
+        this.debug  = false
+        const fname = 'WebGLCanvas.drawGrid():'
+        let gl      = this.context
+        let p       = this.program
+        var x_line  = null,
+            z_line  = null
+        
+        if ( x_line == null )
+        {
+            if ( this.debug )
+               Log(`${fname} creating lines`)
+            
+            const h = -0.005
+            x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
+            z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
+        } 
+        const l0 = -2.0, 
+              l1 = +2.0, 
+              n  = 10 
+
+        gl.vertexAttrib3f( 1, 0.4, 0.4, 0.4 )
+
+        p.pushModelview()
+            p.composeModelview( Mat4_Translate([l0, 0, l0] ) )
+            p.pushModelview()
+                p.composeModelview( Mat4_Scale([ l1-l0, 1, 1]) )
+                x_line.draw( gl, gl.LINES )
+            p.popModelview()
+            p.pushModelview()
+                p.composeModelview( Mat4_Scale([ 1, 1, l1-l0]) )
+                z_line.draw( gl, gl.LINES )
+            p.popModelview()
+        p.popModelview()
+
+    }
+
+    // -------------------------------------------------------------------------------------------------
+    
+    setModelviewProjection( gl, sx, sy )
+    {
+        CheckGLError( gl )
+        
+        const fname = 'setModelviewProjection():'
+
+        if ( this.debug )
+        {
+            Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
+        }
+        const 
+            d              = 2.0,
+            fovy_deg       = 60.0,
+            ratio_vp       = sy/sx,
+            near           = 0.05,
+            far            = near+1000.0,
+            transl_mat     = Mat4_Translate([0,0,-d]),
+            rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
+            roty_mat       = Mat4_RotationYdeg( this.cam_alpha_deg ),
+            rotation_mat   = roty_mat.compose( rotx_mat ),
+            modelview_mat  = transl_mat.compose( rotation_mat ),
+            projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
+
+        // this.program.setModelview ( modelview_mat  )
+        // this.program.setProjection( projection_mat )
+
+        this.program.setModelview( rotation_mat )
+        this.program.setProjection( Mat4_UndProj2D( sx, sy ))  
+
+        CheckGLError( gl )
+    }
+    // -------------------------------------------------------------------------------------------------
+
     sampleDraw()
     {
         redraws_count = redraws_count +1 
@@ -295,7 +416,6 @@ class WebGLCanvas
         if ( this.debug )
             console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
        
-
         // clear screen, set viewport
         gl.clearColor(0.0, 0.1, 0.13, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
@@ -309,15 +429,15 @@ class WebGLCanvas
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
 
         // set projection and modelview matrixes 
-        CheckGLError( gl )
-        this.program.setModelview( new Mat4_Identity() )
-        this.program.setProjection( new Mat4_UndProj2D( sx,sy ) )
-        CheckGLError( gl )
+        this.setModelviewProjection( gl, sx, sy )
 
+        // draw axes and grid
+        this.drawAxes()
+        this.drawGrid()
 
         // actually draw something.....(test)
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
-        this.test_2d_mesh.draw( gl )
+        //this.test_2d_mesh.draw( gl )
 
         // done
         CheckGLError( gl )

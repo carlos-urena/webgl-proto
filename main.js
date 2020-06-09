@@ -1,5 +1,5 @@
 
-var debug = true
+var main_debug = false
 
 // -------------------------------------------------------------------------------------------------
 // variable which holds the single WebGLCanvas class instance 
@@ -22,7 +22,7 @@ function ResizeCanvasContainer()
 
     canvas_container_elem.style.width   = nx.toString() + "px"
     canvas_container_elem.style.height  = ny.toString() + "px"
-    if ( debug )
+    if ( main_debug )
         Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
     canvas.resize()  // resizes the canvas according to div dimensions
 }
@@ -33,10 +33,10 @@ function ResizeCanvasContainer()
 
 function OnDocumentLoad()
 {
-    if ( debug )
+    if ( main_debug )
         Log("OnDocumentLoad: begins")
 
-    if ( debug )
+    if ( main_debug )
     {
         TestVec3()
         TestMat4()
@@ -63,7 +63,7 @@ function OnDocumentLoad()
     if ( uri_elem != null )
         uri_elem.innerHTML = document.documentURI
 
-    if ( debug )
+    if ( main_debug )
         Log("OnDocumentLoad: ends")
 }
 // -------------------------------------------------------------------------------------------------

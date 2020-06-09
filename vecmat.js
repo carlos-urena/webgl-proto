@@ -27,6 +27,10 @@ class Vec3 extends Float32Array
     minus( v ) { return new Vec3([ this[0]-v[0], this[1]-v[1], this[2]-v[2] ]) }
     scale( a ) { return new Vec3([ a*this[0],    a*this[1],     a*this[2]   ]) }
     dot  ( v ) { return this[0]*v[0] + this[1]*v[1] + this[2]*v[2] }
+
+    cross( v ) { return new Vec3([  this[1]*v[2]-this[2]*v[1], 
+                                    this[2]*v[0]-this[0]*v[2], 
+                                    this[0]*v[1]-this[1]*v[0] ]) }
      
     x() { return this[0] }
     y() { return this[1] }
@@ -122,6 +126,65 @@ function Mat4_Scale( v )
         0,    0,    0,    1 
     ])
 }
+
+// ------------------------------------------------------------------------------------------------
+/**
+ * Returns a rotation matrix, whose axis is X axis, and angle is 'theta_deg'
+ * @param {number} theta_deg -- rotation angle, in degrees 
+ */
+function Mat4_RotationXdeg( theta_deg )
+{
+    const theta_rad = (theta_deg*Math.PI)/180.0 , 
+          c = Math.cos( theta_rad ),
+          s = Math.sin( theta_rad )
+
+    return new Mat4
+    ([  1,  0,  0,  0,
+        0,  c, -s,  0,
+        0,  s,  c,  0,
+        0,  0,  0,  1 
+    ])
+}
+
+// ------------------------------------------------------------------------------------------------
+/**
+ * Returns a rotation matrix, whose axis is Y axis, and angle is 'theta_deg'
+ * @param {number} theta_deg -- rotation angle, in degrees 
+ */
+function Mat4_RotationYdeg( theta_deg )
+{
+    const theta_rad = (theta_deg*Math.PI)/180.0 , 
+          c = Math.cos( theta_rad ),
+          s = Math.sin( theta_rad )
+
+    return new Mat4
+    ([   c,  0,  s,  0,
+         0,  1,  0,  0,
+        -s,  0,  c,  0,
+         0,  0,  0,  1 
+    ])
+}
+
+// ------------------------------------------------------------------------------------------------
+/**
+ * Returns a rotation matrix, whose axis is Z axis, and angle is 'theta_deg'
+ * @param {number} theta_deg -- rotation angle, in degrees 
+ */
+function Mat4_RotationZdeg( theta_deg )
+{
+    const theta_rad = (theta_deg*Math.PI)/180.0 , 
+          c = Math.cos( theta_rad ),
+          s = Math.sin( theta_rad )
+
+    return new Mat4
+    ([  c, -s,  0,  0,
+        s,  c,  0,  0,
+        0,  0,  1,  0,
+        0,  0,  0,  1 
+    ])
+}
+
+
 
 
 // ------------------------------------------------------------------------------------------------
@@ -289,17 +352,28 @@ function Mat4_Perspective( fovy_deg, asp_rat, n, f )
 
 function TestVec3()
 {
-    const fname = `TestVec3() :`
+    const fname = `TestVec3():`
     Log(`${fname} begins`)
 
     let a = new Vec3([ 4,6,8 ]),
         b = new Vec3( new Float32Array([4,6,8]) ),
         c = new Vec3( a )
 
-    Log(`${fname} TestVec3: a==${a}, b==${b}, c==${c}`)
+    Log(`${fname} a==${a}, b==${b}, c==${c}`)
     Log(`${fname} a+b == ${a.plus(b)}`)
     Log(`${fname} a-b == ${a.minus(b)}`)
     Log(`${fname} a*3 == ${a.scale(3)}`)
+
+    let k = a.cross(b)
+    Log(`${fname} k == a cross b == ${k} (must be null)`)
+
+    a = new Vec3([ 4,6,8])
+    b = new Vec3([-4,6,8])
+
+    k = a.cross(b)
+    Log(`${fname} k == a cross b == ${k}`)
+    Log(`${fname} a dot k == ${a.dot(k)}`)
+    Log(`${fname} b dot k == ${b.dot(k)}`)
 
     Log(`${fname} ends`)
 }

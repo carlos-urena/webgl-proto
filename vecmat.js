@@ -74,21 +74,34 @@ class Mat4 extends Float32Array
         }    
         return str    
     }
+    // compose( m )
+    // {
+    //     let res = new Mat4(null) // 4x4 matrix, filled with zeros
+        
+    //     let a = 0
+    //     for( let i = 0 ; i<4 ; i++ )
+    //     {   for( let j = 0 ; j < 4 ; j++ )
+    //         {   let b = j
+    //             for( let k = 0 ; k < 4 ; k++ )
+    //             {   res[a+j] += this[a+k]*m[b]
+    //                 b += 4 
+    //             }
+    //         }
+    //         a += 4
+    //     }
+    //     return res
+    // }
+
     compose( m )
     {
         let res = new Mat4(null) // 4x4 matrix, filled with zeros
         
-        let a = 0
+        //console.log(`compose: this == ${this}`)
+
         for( let i = 0 ; i<4 ; i++ )
-        {   for( let j = 0 ; j < 4 ; j++ )
-            {   let b = j
-                for( let k = 0 ; k < 4 ; k++ )
-                {   res[a+j] += this[a+k]*m[b]
-                    b += 4 
-                }
-            }
-            a += 4
-        }
+            for( let j = 0 ; j<4 ; j++ )
+                for( let k = 0 ; k<4 ; k++ )
+                    res[4*i+j] += this[4*i+k]*m[4*k+j]   // equiv to: res(i,j) += res(i,k)*m(k,j)
         return res
     }
 }
@@ -205,40 +218,6 @@ function Mat4_UndProj2D( sx, sy )
     ])
     
 }
-
-/**
- // ---------------------------------------------------------------------
-
-Matriz4f MAT_Frustum( const float l, const float r, const float b, const float t, const float n, const float f )
-{
-   const float eps = 1e-6 ;
-   assert( fabs(r-l) > eps && fabs(t-b) > eps  && fabs(n-f) > eps );
-
-   const float
-      irl = 1.0f/(r-l) ,
-      itb = 1.0f/(t-b) ,
-      inf = 1.0f/(n-f) ;
-   const float
-      a0 = 2.0f*n*irl ,
-      a2 = (r+l)*irl,
-      b1 = 2.0f*n*itb ,
-      b2 = (t+b)*itb ,
-      c2 = (n+f)*inf ,
-      c3 = 2.0f*f*n*inf ;
-
-   Matriz4f
-      res ;
-
-   res(0,0) = a0  ; res(0,1) = 0.0; res(0,2) = a2  ; res(0,3) = 0.0 ;
-   res(1,0) = 0.0 ; res(1,1) = b1 ; res(1,2) = b2  ; res(1,3) = 0.0 ;
-   res(2,0) = 0.0 ; res(2,1) = 0.0; res(2,2) = c2  ; res(2,3) = c3  ;
-   res(3,0) = 0.0 ; res(3,1) = 0.0; res(3,2) = -1.0; res(3,3) = 0.0 ;
-
-   return res ;
-}
-
-**/
-
 // ---------------------------------------------------------------------
 
 /**
@@ -272,58 +251,7 @@ function Mat4_Frustum( l, r, b, t, n, f )
     ])
 }
 
-/** 
-
-// ---------------------------------------------------------------------
-
-Matriz4f MAT_Ortografica( const float l, const float r, const float b, const float t, const float n, const float f )
-{
-   const float eps = 1e-6 ;
-   assert( fabs(r-l) > eps && fabs(t-b) > eps  && fabs(n-f) > eps );
-
-   const float
-      irl = 1.0f/(l-r) ,
-      itb = 1.0f/(b-t) ,
-      inf = 1.0f/(n-f) ;
-   const float
-      a0 = -2.0f*irl ,
-      a3 = (r+l)*irl,
-      b1 = -2.0f*itb ,
-      b3 = (t+b)*itb ,
-      c2 = 2.0f*inf ,
-      c3 = (f+n)*inf ;
-
-   Matriz4f
-      res ;
-
-   res(0,0) = a0  ; res(0,1) = 0.0 ; res(0,2) = 0.0 ; res(0,3) = a3  ;
-   res(1,0) = 0.0 ; res(1,1) = b1  ; res(1,2) = 0.0 ; res(1,3) = b3  ;
-   res(2,0) = 0.0 ; res(2,1) = 0.0 ; res(2,2) = c2  ; res(2,3) = c3  ;
-   res(3,0) = 0.0 ; res(3,1) = 0.0 ; res(3,2) = 0.0 ; res(3,3) = 1.0 ;
-
-   return res ;
-}
-
-// ---------------------------------------------------------------------
-
-Matriz4f MAT_Perspectiva( const float fovy_grad, const float raz_asp, const float n, const float f )
-{
-   const float eps = 1e-6 ;
-   assert( raz_asp > eps && fovy_grad > eps  && fabs(n-f) > eps );
-
-   const float
-      fovy_rad = fovy_grad*2.0f*M_PI/360.0f,
-      t = n*tan(0.5*fovy_rad),
-      r = t/raz_asp,
-      b = -t ,
-      l = -r ;
-
-   return MAT_Frustum( l,r,b,t,n,f );
-}
- */
-
 // ------------------------------------------------------------------------------------------------
-
 /**
  * Returns a frustum perspective matrix, by using an alternative parameter set
  * (see: https://stackoverflow.com/questions/16571981/gluperspective-parameters-what-do-they-mean)
@@ -422,41 +350,5 @@ function TestMat4()
     Log(`${fname} ends`)
 
 }
-// ------------------------------------------------------------------------------------------------
-
-// function Mat4f_Identity()
-// {
-//     return new Float32Array
-//         ([  1, 0, 0, 0,
-//             0, 1, 0, 0,
-//             0, 0, 1, 0,
-//             0, 0, 0, 1 
-//         ])
-// }
-
-// // ------------------------------------------------------------------------------------------------
-
-
-// function Mat4f_UndProj2D( sx, sy )
-// {
-//     const min = Math.min(sx,sy),
-//           fx  = min/sx,
-//           fy  = min/sy
-
-//     return new Float32Array
-//         ([  fx, 0,  0, 0,
-//             0,  fy, 0, 0,
-//             0,  0,  1, 0,
-//             0,  0,  0, 1 
-//         ])
-// }
-
-
-// function Mat4f_Multiply( ma, mb )
-// {
-
-//     CheckType( ma, 'Float32Array')
-//     CheckType( mb, 'Float32Array')
-// }
 
 

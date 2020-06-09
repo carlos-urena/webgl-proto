@@ -179,7 +179,7 @@ class WebGLCanvas
             Log(`${fname} dx,dy == (${dx},${dy})`)
 
         // update camera parameters
-        const fac = 1.0
+        const fac = 0.1
         this.cam_alpha_deg +=  dx*fac
         this.cam_beta_deg  +=  dy*fac
 
@@ -324,7 +324,7 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
-    drawGrid()
+    drawGridXZ()
     {
         this.debug  = false
         const fname = 'WebGLCanvas.drawGrid():'
@@ -342,21 +342,29 @@ class WebGLCanvas
             x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
             z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
         } 
-        const l0 = -2.0, 
-              l1 = +2.0, 
-              n  = 5
+        const from = -2.0, // grid extension in X and Z: lower limit
+              to   = +2.0, // grid extension in X and Z: upper limit
+              n    = 10
 
-        gl.vertexAttrib3f( 1, 0.4, 0.4, 0.4 )
+        // set default color (attribute location 1)
+        //gl.vertexAttrib3f( 1,  1,1,0 )
+        //x_line.draw(gl,gl.LINES)
 
-        // let mt = Mat4_Translate([l0, 0, l0])
-        // let msx = Mat4_Scale([l1-l0, 1, 1 ])
-        // console.log(`mt == ${mt}`)
-        // console.log(`msx == ${msx}`)
-        // console.log(`mt*msx == ${mt.compose( msx )}`)
+        const cmm = Mat4_Translate([ 0, 0, 1/n ])
 
-        gl.vertexAttrib3f( 1, 1.0, 1.0, 1.0 )
+        gl.vertexAttrib3f( 1,   1.0,1.0,0.5 )
+        p.pushMM()
+            p.compMM( Mat4_Translate([ from,    0, from    ]) )
+            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            for( let i = 0 ; i <= n ; i++)
+            {   x_line.draw( gl, gl.LINES )
+                p.compMM( cmm )
+            }
+        p.popMM()
 
-        
+        gl.vertexAttrib3f( 1,  0,1,1 )    
+        z_line.draw( gl, gl.LINES )
+
         // p.pushModelview()
         //     p.composeModelview( Mat4_Translate([l0, 0, l0] ) )
         //     p.pushModelview()
@@ -370,26 +378,6 @@ class WebGLCanvas
         //         z_line.draw( gl, gl.LINES )
         //     p.popModelview()
         // p.popModelview()
-
-        
-        var punto = null 
-        if ( punto == null )
-            punto = new VertexSeq( 0, 3, new Float32Array([0,0,0]))
-        
-        console.log(`pre=${p.modelview_mat}`)
-        for( let i = 0 ; i < n ; i++ )
-        for( let j = 0 ; j < n ; j++ )
-        {
-            p.pushModelview()
-                let t =  Mat4_Translate([i/(n-1),0,j/(n-1)])
-                console.log(`t=${t}`)
-                p.composeModelview(t)
-                punto.draw( gl, gl.POINTS )
-            p.popModelview()
-        }
-        console.log(`post=${p.modelview_mat}\n\n`)
-        
-
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -420,8 +408,8 @@ class WebGLCanvas
         // this.program.setModelview ( modelview_mat  )
         // this.program.setProjection( projection_mat )
 
-        this.program.setModelview( rotation_mat )
-        this.program.setProjection( Mat4_UndProj2D( sx, sy ))  
+        this.program.setViewMat( rotation_mat )  // resets model matrix
+        this.program.setProjMat( Mat4_UndProj2D( sx, sy ))  
 
         CheckGLError( gl )
     }
@@ -463,7 +451,7 @@ class WebGLCanvas
 
         // draw axes and grid
         this.drawAxes()
-        this.drawGrid()
+        this.drawGridXZ()
 
         // actually draw something.....(test)
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )

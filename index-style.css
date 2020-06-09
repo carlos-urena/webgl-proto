@@ -9,7 +9,14 @@ body
    background-color : rgb(20%,20%,20%) ;
    color            : rgb(95%,95%,95%) ;
 }
-
+a
+{
+   text-decoration     : none ;
+   border-bottom-width : 2pt ;
+   border-bottom-style : solid ;
+   border-bottom-color : rgb( 75%, 45%, 0% );    
+   color               : rgb( 95%, 95%, 95%) ;
+}
 #outer_div_id
 {
    width           : 100% ;

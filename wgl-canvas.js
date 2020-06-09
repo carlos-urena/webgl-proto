@@ -354,8 +354,8 @@ class WebGLCanvas
 
         gl.vertexAttrib3f( 1,   1.0,1.0,0.5 )
         p.pushMM()
-            p.compMM( Mat4_Translate([ from,    0, from    ]) )
-            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            //p.compMM( Mat4_Translate([ from,    0, from    ]) )
+            //p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
             for( let i = 0 ; i <= n ; i++)
             {   x_line.draw( gl, gl.LINES )
                 p.compMM( cmm )

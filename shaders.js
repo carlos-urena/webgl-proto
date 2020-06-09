@@ -203,8 +203,9 @@ class SimpleGPUProgram
     compMM( comp_model_mat  )
     {
         CheckType( comp_model_mat, 'Mat4' )
-        console.log(`cmm == ${comp_model_mat}`)
-        this.setMM( (this.model_mat).compose( comp_model_mat ) )           
+        console.log(`antes comp: a componer == ${comp_model_mat}`)
+        this.setMM( (this.model_mat).compose( comp_model_mat ) ) 
+        console.log(`después de comp, model mat == ${this.model_mat}\n\n`)          
     }
    
     // ------------------------------------------------------------------------------------------------

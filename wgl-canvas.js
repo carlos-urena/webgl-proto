@@ -96,8 +96,8 @@ class WebGLCanvas
         // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
         this.cam_alpha_deg = 45.0
-        this.cam_beta_deg  = 45.0
-        this.cam_dist      = 3.0
+        this.cam_beta_deg  = 20.0
+        this.cam_dist      = 2.0
 
         /// tests vec3, Mat4
         /// TestVec3()

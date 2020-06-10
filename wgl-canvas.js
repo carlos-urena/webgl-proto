@@ -326,6 +326,8 @@ class WebGLCanvas
 
     drawGridXZ()
     {
+        
+
         this.debug  = false
         const fname = 'WebGLCanvas.drawGrid():'
         let gl      = this.context
@@ -333,51 +335,41 @@ class WebGLCanvas
         var x_line  = null,
             z_line  = null
         
-        if ( x_line == null )
+        if ( x_line == null || z_line == null )
         {
             if ( this.debug )
                Log(`${fname} creating lines`)
             
-            const h = -0.1
+            const h = -0.003
             x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
             z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
         } 
         const from = -2.0, // grid extension in X and Z: lower limit
               to   = +2.0, // grid extension in X and Z: upper limit
-              n    = 10
+              n    = 30
 
-        // set default color (attribute location 1)
-        //gl.vertexAttrib3f( 1,  1,1,0 )
-        //x_line.draw(gl,gl.LINES)
+        const tz = Mat4_Translate([ 0,   0, 1/n ])
+        const tx = Mat4_Translate([ 1/n, 0, 0   ])
 
-        const cmm = Mat4_Translate([ 0, 0, 1/n ])
+        gl.vertexAttrib3f( 1,   0.5,0.5,0.5 )
 
-        gl.vertexAttrib3f( 1,   1.0,1.0,0.5 )
         p.pushMM()
-            //p.compMM( Mat4_Translate([ from,    0, from    ]) )
-            //p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            p.compMM( Mat4_Translate([ from,    0, from    ]) )
+            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
             for( let i = 0 ; i <= n ; i++)
             {   x_line.draw( gl, gl.LINES )
-                p.compMM( cmm )
+                p.compMM( tz )
             }
         p.popMM()
-
-        gl.vertexAttrib3f( 1,  0,1,1 )    
-        z_line.draw( gl, gl.LINES )
-
-        // p.pushModelview()
-        //     p.composeModelview( Mat4_Translate([l0, 0, l0] ) )
-        //     p.pushModelview()
-        //         p.composeModelview( Mat4_Scale([ l1-l0, 1, 1]) )
-        //         gl.vertexAttrib3f( 1, 1.0, 0.0, 0.0 )
-        //         x_line.draw( gl, gl.LINES )
-        //     p.popModelview()
-        //     p.pushModelview()
-        //         p.composeModelview( Mat4_Scale([ 1, 1, l1-l0]) )
-        //         gl.vertexAttrib3f( 1, 0.0, 0.0, 1.0 )
-        //         z_line.draw( gl, gl.LINES )
-        //     p.popModelview()
-        // p.popModelview()
+        
+        p.pushMM()
+            p.compMM( Mat4_Translate([ from,    0, from    ]) )
+            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            for( let i = 0 ; i <= n ; i++)
+            {   z_line.draw( gl, gl.LINES )
+                p.compMM( tx )
+            }
+        p.popMM()        
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -405,11 +397,8 @@ class WebGLCanvas
             modelview_mat  = transl_mat.compose( rotation_mat ),
             projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
 
-        // this.program.setModelview ( modelview_mat  )
-        // this.program.setProjection( projection_mat )
-
-        this.program.setViewMat( rotation_mat )  // resets model matrix
-        this.program.setProjMat( Mat4_UndProj2D( sx, sy ))  
+        this.program.setViewMat( modelview_mat  )
+        this.program.setProjMat( projection_mat )
 
         CheckGLError( gl )
     }
@@ -425,6 +414,8 @@ class WebGLCanvas
             Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
         }
         CheckGLError( this.context )
+
+        //Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
 
         // retrive context and size
         let gl   = this.context
@@ -456,6 +447,9 @@ class WebGLCanvas
         // actually draw something.....(test)
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
         //this.test_2d_mesh.draw( gl )
+
+        // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
+        gl.flush()
 
         // done
         CheckGLError( gl )

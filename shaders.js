@@ -118,7 +118,14 @@ class SimpleGPUProgram
 
                 void main(  ) 
                 {   
-                    gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
+                    //gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
+                    
+                    // post-multiply the matrixes......
+                    // (the matrixes are stored transposed in the GPU memory, as WebGL *only* interprets
+                    // them in column-major order but I'm sending them in row-major order, thus I correct 
+                    // for this by pre-multiplying the vector here.
+                    gl_Position  =  (( vec4( in_vertex_pos_mcc, 1) * model_mat) * view_mat) * proj_mat ; 
+                    
                     vertex_color = in_vertex_color ;
                 }
             `
@@ -203,16 +210,14 @@ class SimpleGPUProgram
     compMM( comp_model_mat  )
     {
         CheckType( comp_model_mat, 'Mat4' )
-        console.log(`antes comp: a componer == ${comp_model_mat}`)
         this.setMM( (this.model_mat).compose( comp_model_mat ) ) 
-        console.log(`después de comp, model mat == ${this.model_mat}\n\n`)          
     }
    
     // ------------------------------------------------------------------------------------------------
     // saves (in the model matrix stack) a copy of the current model matrix
     pushMM()
     {
-        this.model_mat_stack.push( new Mat4( this.modelview_mat ) )
+        this.model_mat_stack.push( new Mat4( this.model_mat ) )
     }
     // ------------------------------------------------------------------------------------------------
     // pop model matrix
@@ -220,10 +225,14 @@ class SimpleGPUProgram
     {
         const l = this.model_mat_stack.length 
         Check( l > 0 , `SimpleGPUProgram.popMM(): modelview stack is empty`)
-
         this.setMM( new Mat4( this.model_mat_stack[l-1] ))
         this.model_mat_stack.pop()
 
+    }
+    logMM( msg )
+    {
+        Log( msg+' :' )
+        Log(`  shader current model matrix == ${this.model_mat}\n\n`)
     }
 }
 

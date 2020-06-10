@@ -40,6 +40,25 @@ class Vec3 extends Float32Array
     g() { return this[1] }
     b() { return this[2] }
 }
+// ------------------------------------------------------------------------------------------------
+
+function Is4ArrOf4Arr( obj )
+{
+    if ( obj.constructor.name != 'Array' )
+        return false
+    if ( obj.length != 4 )
+        return false 
+
+    for( let i = 0 ; i < 4 ; i++ )
+    {
+        if ( obj[i].constructor.name != 'Array' )
+            return false
+        if ( obj[i].length != 4)
+            return false 
+    }
+    
+    return true
+}
 
 // ------------------------------------------------------------------------------------------------
 
@@ -56,12 +75,20 @@ class Mat4 extends Float32Array
             super( 16 )
             this.fill( obj )   // fills with a number
         }
+        // else if ( Is4RowsArray( obj ))
+        // {
+        //     super new Float32Array( [ obj[0][0], obj[1][0], obj[2][0], obj[3][0],
+        //                               obj[0][1], obj[1][0], obj[2][0], obj[3][0],
+        //         obj[0][0], obj[1][0], obj[2][0], obj[3][0],
+        //         obj[0][0], obj[1][0], obj[2][0], obj[3][0]
+        //                             ])
+        // }
         else
-            super( obj ) // uses 'obj' whatever it is
+            super( obj ) // uses 'obj' whatever it is (I assume this will try to access obj[i] )
        
 
         if ( this.length != 16 )
-            throw Error(`Mat4.constructor: the length is not 16 but ${this.length}`)
+            throw Error(`Mat4.constructor: invalid 'obj' type or length. The resulting matrix length is not 16 but ${this.length}`)
     }
     toString()
     {
@@ -346,6 +373,15 @@ function TestMat4()
 
     const mpersp = Mat4_Perspective( 90, 1.2, 0.1, 5.0 )
     Log(`${fname} perspective: mpersp == ${mpersp}`)
+
+    Log('----------- test for the COPY constructor:')
+
+    const m10 = Mat4_Translate([1, 2, 3])
+    const m11 = new Mat4( m10 )
+
+    Log(`${fname} original (translate) == ${m10}`)
+    Log(`${fname} copy     (equal?) == ${m11}`)
+    
 
     Log(`${fname} ends`)
 

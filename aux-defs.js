@@ -1,4 +1,15 @@
 
+
+function Trunc( x, min, max )
+{
+    if ( max < x )
+        return max 
+    else if ( x < min )
+        return min
+    else
+        return x
+}
+
 // -------------------------------------------------------------------------------------------------
 
 function BuscarElemId( id )

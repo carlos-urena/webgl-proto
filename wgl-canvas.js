@@ -90,18 +90,14 @@ class WebGLCanvas
         this.drag_prev_pos_x    = -1
         this.drag_prev_pos_y    = -1
 
-        // sets events handlers (mostly mouse events)
-        this.canvas_elem.addEventListener( "mousedown", e => this.mouseDown(e), true )
-        this.canvas_elem.addEventListener( "mouseup",   e => this.mouseUp(e), true )
-        this.canvas_elem.addEventListener( "mousemove", e => this.mouseMove(e), true )
-
         // prevent the context menu from appearing, typically after a right click
         this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
 
-        // initialize (alpha,beta) angles for interactive camera control
+        // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
         this.cam_alpha_deg = 45.0
         this.cam_beta_deg  = 45.0
+        this.cam_dist      = 3.0
 
         /// tests vec3, Mat4
         /// TestVec3()
@@ -109,6 +105,12 @@ class WebGLCanvas
 
         //let gl = this.context
         //console.log(`line width == ${gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)}`);
+
+        // sets events handlers (mostly mouse events)
+        this.canvas_elem.addEventListener( "mousedown", e => this.mouseDown(e), true )
+        this.canvas_elem.addEventListener( "mouseup",   e => this.mouseUp(e), true )
+        this.canvas_elem.addEventListener( "mousemove", e => this.mouseMove(e), true )
+        this.canvas_elem.addEventListener( "wheel",     e => this.mouseWheel(e), true )
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
@@ -126,6 +128,9 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
+        if ( mevent.button != 0 && mevent.button != 2 )
+            return true 
+
         if ( mevent.button === 0 )
             this.is_mouse_left_down = true
         else if ( mevent.button === 2 )
@@ -138,6 +143,7 @@ class WebGLCanvas
             if ( this.debug )
                 Log(`${fname} drag start at: (${this.drag_prev_pos_x}, ${this.drag_prev_pos_y})`)
         }
+        return false
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -152,9 +158,15 @@ class WebGLCanvas
             Log(`${fname} begins, button == ${mevent.button}`)
 
         if ( mevent.button === 0 )
-            this.is_mouse_left_down = false
+        {   this.is_mouse_left_down = false
+            return false
+        }
         else if ( mevent.button === 2 )
+        {
             this.is_mouse_right_down = false
+            return false
+        }
+        return true
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -164,7 +176,7 @@ class WebGLCanvas
     mouseMove( mevent )
     {
         if ( ! this.is_mouse_right_down )
-            return 
+            return true
 
         const fname = 'WebGLCanvas.mouseMove (right drag):'
         CheckType( mevent, 'MouseEvent' )
@@ -183,18 +195,35 @@ class WebGLCanvas
             Log(`${fname} dx,dy == (${dx},${dy})`)
 
         // update camera parameters
-        const fac = 0.1
-        this.cam_alpha_deg +=  -dx*fac
-        this.cam_beta_deg  +=  dy*fac
+        
+        this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
+        this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
 
         if ( this.debug )
             Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
 
         // redraw:
         this.sampleDraw()
+        mevent.stopPropagation() // needed ?? is better for efficiency ???
+        return false
+    }
+        // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after the mouse wheel has been moved over the canvas
+     * @param {WheelEvent} wevent -- mouse event created by the browser
+     */
+    mouseWheel( wevent )
+    {
+        const fname = 'WebGLCanvas.mouseWheel():'
+        CheckType( wevent, 'WheelEvent' )
+
+        const fac = 0.002
+        this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
         
-       
-        
+        // redraw:
+        this.sampleDraw()
+        wevent.stopPropagation()
+        return false 
     }
     // -------------------------------------------------------------------------------------------------
     getWebGLContext()
@@ -306,10 +335,10 @@ class WebGLCanvas
     drawAxes()
     {
         const fname = 'WebGLCanvas.drawAxes():'
-        let gl = this.context
-        var x_axe = null,
-            y_axe = null, 
-            z_axe = null 
+        let gl      = this.context
+        var x_axe   = null,
+            y_axe   = null, 
+            z_axe   = null 
         
        if ( x_axe == null )
        {
@@ -319,19 +348,14 @@ class WebGLCanvas
             y_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
             z_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
        } 
-
-       gl.vertexAttrib3f( 1, 1.0, 0.2, 0.2 ) ; x_axe.draw( gl, gl.LINES )
+       gl.vertexAttrib3f( 1, 1.0, 0.1, 0.1 ) ; x_axe.draw( gl, gl.LINES )
        gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; y_axe.draw( gl, gl.LINES )
-       gl.vertexAttrib3f( 1, 0.2, 0.2, 1.0 ) ; z_axe.draw( gl, gl.LINES )
-
-
+       gl.vertexAttrib3f( 1, 0.1, 0.8, 1.0 ) ; z_axe.draw( gl, gl.LINES )
     }
     // -------------------------------------------------------------------------------------------------
 
     drawGridXZ()
     {
-        
-
         this.debug  = false
         const fname = 'WebGLCanvas.drawGrid():'
         let gl      = this.context
@@ -339,6 +363,7 @@ class WebGLCanvas
         var x_line  = null,
             z_line  = null
         
+        // create the X parallel line and the Z parallel lines
         if ( x_line == null || z_line == null )
         {
             if ( this.debug )
@@ -348,18 +373,21 @@ class WebGLCanvas
             x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
             z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
         } 
+
+        // draw the lines
         const from = -2.0, // grid extension in X and Z: lower limit
               to   = +2.0, // grid extension in X and Z: upper limit
-              n    = 30
+              n    = 40,
+              t    = Mat4_Translate([ from, 0, from ]),
+              s    = Mat4_Scale    ([ to-from, 1, to-from ]),
+              tz   = Mat4_Translate([ 0,   0, 1/n ]),
+              tx   = Mat4_Translate([ 1/n, 0, 0   ])
 
-        const tz = Mat4_Translate([ 0,   0, 1/n ])
-        const tx = Mat4_Translate([ 1/n, 0, 0   ])
-
-        gl.vertexAttrib3f( 1,   0.5,0.5,0.5 )
+        gl.vertexAttrib3f( 1,  0.5,0.5,0.5 )
 
         p.pushMM()
-            p.compMM( Mat4_Translate([ from,    0, from    ]) )
-            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            p.compMM( t )
+            p.compMM( s )  
             for( let i = 0 ; i <= n ; i++)
             {   x_line.draw( gl, gl.LINES )
                 p.compMM( tz )
@@ -367,8 +395,8 @@ class WebGLCanvas
         p.popMM()
         
         p.pushMM()
-            p.compMM( Mat4_Translate([ from,    0, from    ]) )
-            p.compMM( Mat4_Scale    ([ to-from, 1, to-from ]) )  
+            p.compMM( t )
+            p.compMM( s )  
             for( let i = 0 ; i <= n ; i++)
             {   z_line.draw( gl, gl.LINES )
                 p.compMM( tx )
@@ -389,12 +417,11 @@ class WebGLCanvas
             Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
         }
         const 
-            d              = 2.0,
             fovy_deg       = 60.0,
             ratio_vp       = sy/sx,
             near           = 0.05,
             far            = near+1000.0,
-            transl_mat     = Mat4_Translate([0,0,-d]),
+            transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
             rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
             roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
             rotation_mat   = rotx_mat.compose( roty_mat ),

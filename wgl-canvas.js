@@ -100,11 +100,15 @@ class WebGLCanvas
 
         // initialize (alpha,beta) angles for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
-        this.cam_alpha_deg = -45.0
+        this.cam_alpha_deg = 45.0
         this.cam_beta_deg  = 45.0
 
-        /// tests vec3
+        /// tests vec3, Mat4
         /// TestVec3()
+        /// TestMat4()
+
+        //let gl = this.context
+        //console.log(`line width == ${gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)}`);
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
@@ -180,7 +184,7 @@ class WebGLCanvas
 
         // update camera parameters
         const fac = 0.1
-        this.cam_alpha_deg +=  dx*fac
+        this.cam_alpha_deg +=  -dx*fac
         this.cam_beta_deg  +=  dy*fac
 
         if ( this.debug )
@@ -392,7 +396,7 @@ class WebGLCanvas
             far            = near+1000.0,
             transl_mat     = Mat4_Translate([0,0,-d]),
             rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
-            roty_mat       = Mat4_RotationYdeg( this.cam_alpha_deg ),
+            roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
             rotation_mat   = rotx_mat.compose( roty_mat ),
             modelview_mat  = transl_mat.compose( rotation_mat ),
             projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )

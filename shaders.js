@@ -119,13 +119,7 @@ class SimpleGPUProgram
                 void main(  ) 
                 {   
                     gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-                    
-                    // post-multiply the matrixes......
-                    // (the matrixes are stored transposed in the GPU memory, as WebGL *only* interprets
-                    // them in column-major order but I'm sending them in row-major order, thus I correct 
-                    // for this by pre-multiplying the vector here.
-                    // gl_Position  =  (( vec4( in_vertex_pos_mcc, 1) * model_mat) * view_mat) * proj_mat ; 
-                    
+
                     vertex_color = in_vertex_color ;
                 }
             `

@@ -42,8 +42,16 @@ class Vec3 extends Float32Array
 }
 // ------------------------------------------------------------------------------------------------
 
-function Is4ArrOf4Arr( obj )
+function Is4x4Array( obj )
 {
+    // simple, fast check 
+    // if ( obj.constructor.name == 'Array' )
+    // if ( obj.length == 4 )
+    // if ( obj[0].constructor.name == 'Array')
+    //     return true 
+    // return false 
+
+    // 'detailed' check 
     if ( obj.constructor.name != 'Array' )
         return false
     if ( obj.length != 4 )
@@ -62,73 +70,84 @@ function Is4ArrOf4Arr( obj )
 
 // ------------------------------------------------------------------------------------------------
 
+/**
+ * Class 'Mat4'
+ * A 'Mat4' object is a 'Float32Array' object with 16 numbers, stored by using column-major order,
+ * suited for WebGL apps.
+ */
 class Mat4 extends Float32Array 
 {
+    /**
+     * Builds a 'Mat4' (that is, a 'Float32Array') by using object 'obj'
+     * 'obj' can be 'null', can be a 'number', an array of arrays of numbers (row-major),
+     * or anything which is valid as a parameter for 'Float32Array' class constructor.
+     * @param {*} obj 
+     */
     constructor( obj ) 
     {
-        if ( obj == null )
+        if ( obj == null ) // if 'null' is received, then the identity matrix is built
         {    
-            super( 16 )   // fills with zeros
+            super( 16 )   // creates a 'Float32Array' with 16 zeros
+
+            // set to 1 the values in the diagonal
+            this[0]  = 1.0
+            this[5]  = 1.0
+            this[10] = 1.0
+            this[15] = 1.0
         }
         else if ( (typeof obj) == 'number' )
         {   
             super( 16 )
             this.fill( obj )   // fills with a number
         }
-        // else if ( Is4RowsArray( obj ))
-        // {
-        //     super new Float32Array( [ obj[0][0], obj[1][0], obj[2][0], obj[3][0],
-        //                               obj[0][1], obj[1][0], obj[2][0], obj[3][0],
-        //         obj[0][0], obj[1][0], obj[2][0], obj[3][0],
-        //         obj[0][0], obj[1][0], obj[2][0], obj[3][0]
-        //                             ])
-        // }
+        else if ( Is4x4Array( obj ) )
+        {
+            // we assume 'obj' is an array with four rows, where each row is an array with 4 numbers
+            // we initialize this Float32Array by using  column-major order (as webGL expects)
+            super(16)
+            for( let row = 0 ; row < 4 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
+                this[row + col*4] = (obj[row])[col]
+        }
         else
-            super( obj ) // uses 'obj' whatever it is (I assume this will try to access obj[i] )
+            super( obj ) // uses 'obj' whatever it is (in particular, it can be another 'Mat4', but also a 'Float32Array'
        
-
+        // check the object was correctly build (we don't chek the contents are numbers, only check the length)
         if ( this.length != 16 )
             throw Error(`Mat4.constructor: invalid 'obj' type or length. The resulting matrix length is not 16 but ${this.length}`)
     }
-    toString()
+    // -----------------------------------------
+    toString() 
     {
         let str = '\n'
         const n = 3
 
-        for( let i = 0 ; i<4 ; i++ )
-        {   const b = i*4
-            str = str + `   | ${N2S(this[b+0])}, ${N2S(this[b+1])}, ${N2S(this[b+2])}, ${N2S(this[b+3])} |\n`
+        for( let row = 0 ; row<4 ; row++ )
+        {   const b = 
+            str = str + `   | ${N2S(this[row+0])}, ${N2S(this[row+4])}, ${N2S(this[row+8])}, ${N2S(this[row+12])} |\n`
         }    
         return str    
     }
-    // compose( m )
-    // {
-    //     let res = new Mat4(null) // 4x4 matrix, filled with zeros
-        
-    //     let a = 0
-    //     for( let i = 0 ; i<4 ; i++ )
-    //     {   for( let j = 0 ; j < 4 ; j++ )
-    //         {   let b = j
-    //             for( let k = 0 ; k < 4 ; k++ )
-    //             {   res[a+j] += this[a+k]*m[b]
-    //                 b += 4 
-    //             }
-    //         }
-    //         a += 4
-    //     }
-    //     return res
-    // }
-
+    // -----------------------------------------
     compose( m )
     {
-        let res = new Mat4(null) // 4x4 matrix, filled with zeros
+        let res = new Mat4(0) // 4x4 matrix, filled with zeros
         
-        //console.log(`compose: this == ${this}`)
-
-        for( let i = 0 ; i<4 ; i++ )
-            for( let j = 0 ; j<4 ; j++ )
+        for( let row = 0 ; row<4 ; row++ )
+            for( let col = 0 ; col<4 ; col++ )
                 for( let k = 0 ; k<4 ; k++ )
-                    res[4*i+j] += this[4*i+k]*m[4*k+j]   // equiv to: res(i,j) += res(i,k)*m(k,j)
+                    res[row + col*4] += this[row + k*4] * m[k + col*4]
+        
+        // optimized version (does it works?)
+        // for( let row = 0 ; row<4 ; row++ )
+        //     for( let col4 = 0 ; col4<16 ; col4 += 4 )
+        //     {
+        //         let k4 = 0
+        //         for( let k = 0 ; k<4 ; k++ )
+        //             res[row+col4] += this[row+k4] * m[k+col4]
+        //         k4 += 4 
+        //     }
+
         return res
     }
 }
@@ -136,22 +155,23 @@ class Mat4 extends Float32Array
 
 function Mat4_Identity()
 {   
-    return new Mat4
-    ([  1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1 
-    ])
+    // return new Mat4
+    // ([  [ 1, 0, 0, 0 ],
+    //     [ 0, 1, 0, 0 ],
+    //     [ 0, 0, 1, 0 ],
+    //     [ 0, 0, 0, 1 ]
+    // ])
+    return new Mat4( null )
 }
 // ------------------------------------------------------------------------------------------------
 
 function Mat4_Translate( v )
 {
     return new Mat4
-    ([  1, 0, 0, v[0],
-        0, 1, 0, v[1],
-        0, 0, 1, v[2],
-        0, 0, 0, 1 
+    ([  [ 1, 0, 0, v[0] ],
+        [ 0, 1, 0, v[1] ],
+        [ 0, 0, 1, v[2] ],
+        [ 0, 0, 0, 1    ]
     ])
 }
 
@@ -160,10 +180,10 @@ function Mat4_Translate( v )
 function Mat4_Scale( v )
 {
     return new Mat4
-    ([  v[0], 0,    0,    0,
-        0,    v[1], 0,    0,
-        0,    0,    v[2], 0,
-        0,    0,    0,    1 
+    ([  [ v[0], 0,    0,    0 ],
+        [ 0,    v[1], 0,    0 ],
+        [ 0,    0,    v[2], 0 ],
+        [ 0,    0,    0,    1 ]
     ])
 }
 
@@ -179,10 +199,10 @@ function Mat4_RotationXdeg( theta_deg )
           s = Math.sin( theta_rad )
 
     return new Mat4
-    ([  1,  0,  0,  0,
-        0,  c, -s,  0,
-        0,  s,  c,  0,
-        0,  0,  0,  1 
+    ([  [ 1,  0,  0,  0 ],
+        [ 0,  c, -s,  0 ],
+        [ 0,  s,  c,  0 ],
+        [ 0,  0,  0,  1 ]
     ])
 }
 
@@ -198,10 +218,10 @@ function Mat4_RotationYdeg( theta_deg )
           s = Math.sin( theta_rad )
 
     return new Mat4
-    ([   c,  0,  s,  0,
-         0,  1,  0,  0,
-        -s,  0,  c,  0,
-         0,  0,  0,  1 
+    ([   [  c,  0,  s,  0 ],
+         [  0,  1,  0,  0 ],
+         [ -s,  0,  c,  0 ],
+         [  0,  0,  0,  1 ]
     ])
 }
 
@@ -217,10 +237,10 @@ function Mat4_RotationZdeg( theta_deg )
           s = Math.sin( theta_rad )
 
     return new Mat4
-    ([  c, -s,  0,  0,
-        s,  c,  0,  0,
-        0,  0,  1,  0,
-        0,  0,  0,  1 
+    ([  [ c, -s,  0,  0 ],
+        [ s,  c,  0,  0 ],
+        [ 0,  0,  1,  0 ],
+        [ 0,  0,  0,  1 ]
     ])
 }
 
@@ -238,10 +258,10 @@ function Mat4_UndProj2D( sx, sy )
           fy  = min/sy
 
     return new Mat4
-    ([  fx, 0,  0,  0,
-        0,  fy, 0,  0,
-        0,  0,  1,  0,
-        0,  0,  0,  1 
+    ([  [ fx, 0,  0,  0 ],
+        [ 0,  fy, 0,  0 ],
+        [ 0,  0,  1,  0 ],
+        [ 0,  0,  0,  1 ]
     ])
     
 }
@@ -249,12 +269,12 @@ function Mat4_UndProj2D( sx, sy )
 
 /**
  * Returns the OpenGL frustum matrix (http://docs.gl/gl2/glFrustum)
- * @param {number} l 
- * @param {number} r 
- * @param {number} b 
- * @param {number} t 
- * @param {number} n 
- * @param {number} f 
+ * @param {number} l -- left (X lower limit  at z=n) 
+ * @param {number} r -- right (X upper limit at z=n)
+ * @param {number} b -- bottom (Y lower limit at z=n)
+ * @param {number} t -- top (Y upper limit at z=n)
+ * @param {number} n -- near (distance to Z limit, nearest to viewer)
+ * @param {number} f -- far  (distance to Z limit, farthest to viewer)
  * @returns {number} a Mat4 object with the entries corresponding to glFrustum call.
  */
 function Mat4_Frustum( l, r, b, t, n, f )
@@ -271,10 +291,10 @@ function Mat4_Frustum( l, r, b, t, n, f )
         c2  = (n+f)*inf,  c3 = 2.0*f*n*inf 
 
     return new Mat4
-    ([  a0,    0.0,    a2,    0.0,
-        0.0,   b1,     b2,    0.0,
-        0.0,   0.0,    c2,    c3,
-        0.0,   0.0,   -1.0,   0.0 
+    ([  [ a0,    0.0,    a2,    0.0 ],
+        [ 0.0,   b1,     b2,    0.0 ],
+        [ 0.0,   0.0,    c2,    c3  ],
+        [ 0.0,   0.0,   -1.0,   0.0 ]
     ])
 }
 
@@ -379,8 +399,8 @@ function TestMat4()
     const m10 = Mat4_Translate([1, 2, 3])
     const m11 = new Mat4( m10 )
 
-    Log(`${fname} original (translate) == ${m10}`)
-    Log(`${fname} copy     (equal?) == ${m11}`)
+    Log(`${fname} m10, original (translate) == ${m10}`)
+    Log(`${fname} m11, copy     (equal?) == ${m11}`)
     
 
     Log(`${fname} ends`)

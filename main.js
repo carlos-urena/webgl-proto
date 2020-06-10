@@ -41,7 +41,8 @@ function OnDocumentLoad()
         TestVec3()
         TestMat4()
     }
-    
+    TestMat4()
+    return 
 
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )

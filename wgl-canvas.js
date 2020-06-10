@@ -100,8 +100,8 @@ class WebGLCanvas
 
         // initialize (alpha,beta) angles for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
-        this.cam_alpha_deg = 45.0
-        this.cam_beta_deg  = -45.0
+        this.cam_alpha_deg = -45.0
+        this.cam_beta_deg  = 45.0
 
         /// tests vec3
         /// TestVec3()
@@ -393,7 +393,7 @@ class WebGLCanvas
             transl_mat     = Mat4_Translate([0,0,-d]),
             rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
             roty_mat       = Mat4_RotationYdeg( this.cam_alpha_deg ),
-            rotation_mat   = roty_mat.compose( rotx_mat ),
+            rotation_mat   = rotx_mat.compose( roty_mat ),
             modelview_mat  = transl_mat.compose( rotation_mat ),
             projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
 

@@ -17,12 +17,12 @@ function ResizeCanvasContainer()
 
     let canvas_container_elem = BuscarElemId('canvas_container_id')
 
-    const nx = Math.min( 2048, Math.max( 512, Math.floor(window.innerWidth*0.8  ) ) ),
-          ny = Math.min( 2048, Math.max( 512, Math.floor(window.innerHeight*0.8 ) ) )
+    const nx = Math.min( 2048, Math.max( 256, Math.floor(window.innerWidth*0.8  ) ) ),
+          ny = Math.min( 2048, Math.max( 256, Math.floor(window.innerHeight*0.8 ) ) )
 
     canvas_container_elem.style.width   = nx.toString() + "px"
     canvas_container_elem.style.height  = ny.toString() + "px"
-    if ( main_debug )
+    if ( true || main_debug )
         Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
     canvas.resize()  // resizes the canvas according to div dimensions
 }
@@ -33,17 +33,16 @@ function ResizeCanvasContainer()
 
 function OnDocumentLoad()
 {
+    let fname = 'OnDocumentLoad() :'
     if ( main_debug )
-        Log("OnDocumentLoad: begins")
+        Log(`${fname} begins.`)
 
     if ( main_debug )
     {
         TestVec3()
         TestMat4()
     }
-    TestMat4()
-    return 
-
+   
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   

@@ -210,7 +210,7 @@ class SimpleGPUProgram
     compMM( comp_model_mat  )
     {
         CheckType( comp_model_mat, 'Mat4' )
-        this.setMM( (this.model_mat).compose( comp_model_mat ) ) 
+        this.setMM( (this.model_mat).compose( comp_model_mat ) )   
     }
    
     // ------------------------------------------------------------------------------------------------

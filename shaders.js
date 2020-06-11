@@ -33,13 +33,13 @@ function CreateAndCompileShader( gl, source, type )
     if ( ! gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) 
     {
         LogLines(`${type_str} shader:`, source )
-        console.log(`Compilation of ${type_str} shader was not succesfull:`)
-        console.log('------------------------------------------------')
-        console.log(`${msg}------------------------------------------------`)
+        Log(`Compilation of ${type_str} shader was not succesfull:`)
+        Log('------------------------------------------------')
+        Log(`${msg}------------------------------------------------`)
         throw new Error(`Unable to compile the ${type_str} shader, see console`)
     }
     else if ( debug_shaders )
-        console.log(`CreateAndCompileShader: ${type_str} shader compiled ok.`)   
+        Log(`CreateAndCompileShader: ${type_str} shader compiled ok.`)   
 
     return shader
 }
@@ -79,11 +79,13 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
         const msg = gl.getProgramInfoLog( program )
         LogLines("Vertex shader source",   vertex_source )
         LogLines("Fragment shader source", fragment_source )
-        console.log(`Errors from program linking:`)
-        console.log('------------------------------------------------')
-        console.log(`${msg}------------------------------------------------`)
-        throw new Error(`Unable to link program, see console`)
-    }       
+        Log(`Errors from program linking:`)
+        Log('------------------------------------------------')
+        Log(`${msg}------------------------------------------------`)
+        throw new Error(`Unable to link program.`)
+    }
+    else if ( debug_shaders )
+        Log(`CreateAndLinkProgram: program linked ok.`)   
     return program
 }
 
@@ -119,7 +121,7 @@ class SimpleGPUProgram
                 void main(  ) 
                 {   
                     gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-
+error
                     vertex_color = in_vertex_color ;
                 }
             `

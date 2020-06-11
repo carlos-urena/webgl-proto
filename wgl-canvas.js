@@ -116,13 +116,32 @@ class WebGLCanvas
         //console.log(`line width == ${gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)}`);
 
         // sets events handlers (mostly mouse events)
-        this.canvas_elem.addEventListener( "mousedown", e => this.mouseDown(e), true )
-        this.canvas_elem.addEventListener( "mouseup",   e => this.mouseUp(e), true )
-        this.canvas_elem.addEventListener( "mousemove", e => this.mouseMove(e), true )
-        this.canvas_elem.addEventListener( "wheel",     e => this.mouseWheel(e), true )
+        this.canvas_elem.addEventListener( 'mousedown', e => this.mouseDown(e), true )
+        this.canvas_elem.addEventListener( 'mouseup',   e => this.mouseUp(e), true )
+        this.canvas_elem.addEventListener( 'mousemove', e => this.mouseMove(e), true )
+        this.canvas_elem.addEventListener( 'wheel',     e => this.mouseWheel(e), true )
+
+        // for clog...
+        this.clog_span = null
+
+        // testing touch events ....TODO: touchstart, touchmove and touchend
+        this.canvas_elem.addEventListener( 'touchstart', e => this.touchStart(e), true )
+        this.canvas_elem.addEventListener( 'touchmove', e => this.touchMove(e), true )
+        this.canvas_elem.addEventListener( 'touchend', e => this.touchEnd(e), true )
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
+    }
+    // -------------------------------------------------------------------------------------------------
+    // log to a fixed element.....
+    cLog( msg )
+    {
+        //Log(``)
+        if ( this.clog_span == null )
+            this.clog_span = document.getElementById('clog_span_id')
+        if ( this.clog_span == null )
+            return
+        this.clog_span.innerHTML = msg
     }
     // -------------------------------------------------------------------------------------------------
 
@@ -206,6 +225,8 @@ class WebGLCanvas
               dx             = drag_cur_pos_x - this.drag_prev_pos_x,
               dy             = drag_cur_pos_y - this.drag_prev_pos_y
 
+        this.cLog(`mouse move: dx: ${dx}, dy: ${dy}`)
+
         this.drag_prev_pos_x = drag_cur_pos_x
         this.drag_prev_pos_y = drag_cur_pos_y
 
@@ -247,6 +268,81 @@ class WebGLCanvas
         this.sampleDraw()
         
         return false 
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a touch start event 
+     * @param {TouchEvent} mevent -- mouse event created by the browser
+     */
+    touchStart( tevent )
+    {
+        tevent.stopImmediatePropagation() // neccesary? improves performance?
+        tevent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.touchStart'
+        CheckType( tevent, 'TouchEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+       
+        
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a touch start event 
+     * @param {TouchEvent} tevent -- touch event created by the browser
+     */
+    touchStart( tevent )
+    {
+        tevent.stopImmediatePropagation() // neccesary? improves performance?
+        tevent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.touchStart():'
+        this.cLog(fname)
+        CheckType( tevent, 'TouchEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+       
+        
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a touch move event 
+     * @param {TouchEvent} tevent -- touch event created by the browser
+     */
+    touchMove( tevent )
+    {
+        tevent.stopImmediatePropagation() // neccesary? improves performance?
+        tevent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.touchMove():'
+        this.cLog(fname)
+        CheckType( tevent, 'TouchEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+       
+        
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a touch end event
+     * @param {TouchEvent} tevent -- touch event created by the browser
+     */
+    touchEnd( tevent )
+    {
+        tevent.stopImmediatePropagation() // neccesary? improves performance?
+        tevent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.touchEnd():'
+        //his.cLog(fname)
+        CheckType( tevent, 'TouchEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+       
+        
     }
     // -------------------------------------------------------------------------------------------------
     getWebGLContext()

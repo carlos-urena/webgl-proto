@@ -59,7 +59,7 @@ a
    height           : 1024px ;  
 }
 
-#log_div_id
+#log_div_id, #clog_span_id
 {
    font-family : "Lucida Console", Monaco, monospace	;
    font-size   : 11pt ; 

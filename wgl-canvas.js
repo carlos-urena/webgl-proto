@@ -1,7 +1,16 @@
 
 var redraws_count = 0
 
+// vertex sequences for the grid lines
 
+var x_line  = null,
+    z_line  = null
+
+// vertex sequences for the axes
+
+var x_axe   = null,
+    y_axe   = null, 
+    z_axe   = null 
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
 
@@ -348,9 +357,7 @@ class WebGLCanvas
     {
         const fname = 'WebGLCanvas.drawAxes():'
         let gl      = this.context
-        var x_axe   = null,
-            y_axe   = null, 
-            z_axe   = null 
+        
         
        if ( x_axe == null )
        {
@@ -372,8 +379,7 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.drawGrid():'
         let gl      = this.context
         let p       = this.program
-        var x_line  = null,
-            z_line  = null
+        
         
         // create the X parallel line and the Z parallel lines
         if ( x_line == null || z_line == null )

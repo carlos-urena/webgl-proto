@@ -35,7 +35,8 @@ function CreateAndCompileShader( gl, source, type )
         LogLines(`${type_str} shader:`, source )
         Log(`Compilation of ${type_str} shader was not succesfull:`)
         Log('------------------------------------------------')
-        Log(`${msg}------------------------------------------------`)
+        Log(msg)
+        Log('------------------------------------------------')
         throw new Error(`Unable to compile the ${type_str} shader, see console`)
     }
     else if ( debug_shaders )
@@ -81,7 +82,8 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
         LogLines("Fragment shader source", fragment_source )
         Log(`Errors from program linking:`)
         Log('------------------------------------------------')
-        Log(`${msg}------------------------------------------------`)
+        Log(msg)
+        Log('------------------------------------------------')
         throw new Error(`Unable to link program.`)
     }
     else if ( debug_shaders )
@@ -121,7 +123,6 @@ class SimpleGPUProgram
                 void main(  ) 
                 {   
                     gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-error
                     vertex_color = in_vertex_color ;
                 }
             `

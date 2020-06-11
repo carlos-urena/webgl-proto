@@ -37,6 +37,16 @@ function OnDocumentLoad()
     if ( main_debug )
         Log(`${fname} begins.`)
 
+    // set last modified text on the page
+    let last_modified_elem = document.getElementById('last_modified_span_id')
+    if ( last_modified_elem != null )
+        last_modified_elem.innerHTML = document.lastModified
+
+    // set document URL text on the page
+    let uri_elem = document.getElementById('uri_span_id')
+    if ( uri_elem != null )
+        uri_elem.innerHTML = document.documentURI
+
     // create the canvas (the single instance of WebGLCanvas)
     if ( canvas != null )
         throw RangeError(`'canvas' is not null on document load`)   
@@ -47,16 +57,6 @@ function OnDocumentLoad()
 
     // do a sample draw, just to check everything is fine
     canvas.sampleDraw() 
-
-    // set last modified text on the page
-    let last_modified_elem = document.getElementById('last_modified_span_id')
-    if ( last_modified_elem != null )
-        last_modified_elem.innerHTML = document.lastModified
-
-    // set document URL text on the page
-    let uri_elem = document.getElementById('uri_span_id')
-    if ( uri_elem != null )
-        uri_elem.innerHTML = document.documentURI
 
     if ( main_debug )
         Log("OnDocumentLoad: ends")

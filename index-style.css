@@ -59,6 +59,12 @@ a
    height           : 1024px ;  
 }
 
+#log_div_id
+{
+   font-family : "Lucida Console", Monaco, monospace	;
+   font-size   : 11pt ; 
+}
+
 
 h1, h2, h3
 {  font-family : 'Marcellus SC', sans-serif ;

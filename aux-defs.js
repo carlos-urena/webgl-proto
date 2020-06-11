@@ -84,8 +84,6 @@ function CheckNat( num )
     throw new RangeError( msg )
 }
 
-
-
 // -------------------------------------------------------------------------------------------------
 /**
  * Shows a (source) string with line numbers and a title
@@ -110,13 +108,17 @@ function LogLines( title, source )
  * Logs a message both in the console and in the web page (when a div with id 'log_div_id' exists)
  * @param {string} msg -- message to log. 
  */
+
+ var log_count = 0
+
 function Log( msg )
-{
+{    
+    log_count++ 
     console.log( msg )
     let log_elem = document.getElementById('log_div_id')
     if ( log_elem == null )
         return
-    const str = msg+'<br/>'
+    const str = `${log_count}: ${msg}<br/>`
     log_elem.innerHTML = log_elem.innerHTML + str
 }
 

@@ -95,15 +95,15 @@ function CheckNat( num )
 function LogLines( title, source )
 {
     let line_num = 1
-    console.log('-----------------------------------------------------------')
-    console.log(title)
-    console.log('-----------------------------------------------------------')
+    Log('-----------------------------------------------------------')
+    Log(title)
+    Log('-----------------------------------------------------------')
 
     for( let line of source.split('\n') )
-    {  console.log(`${line_num} : ${line}`)
+    {  Log(`${line_num} : ${line}`)
        line_num ++
     }
-    console.log('-----------------------------------------------------------')
+    Log('-----------------------------------------------------------')
 }
 // -------------------------------------------------------------------------------------------------
 /**
@@ -113,11 +113,11 @@ function LogLines( title, source )
 function Log( msg )
 {
     console.log( msg )
-    // let log_elem = document.getElementById('log_div_id')
-    // if ( log_elem == null )
-    //     return
-    // const str = msg+'<br/>'
-    // log_elem.innerHTML = log_elem.innerHTML + str
+    let log_elem = document.getElementById('log_div_id')
+    if ( log_elem == null )
+        return
+    const str = msg+'<br/>'
+    log_elem.innerHTML = log_elem.innerHTML + str
 }
 
 

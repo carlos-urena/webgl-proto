@@ -87,15 +87,15 @@ class WebGLCanvas
         // set mouse events state info
         this.is_mouse_left_down  = false
         this.is_mouse_right_down = false
-        this.drag_prev_pos_x    = -1
-        this.drag_prev_pos_y    = -1
+        this.drag_prev_pos_x     = -1
+        this.drag_prev_pos_y     = -1
 
         // prevent the context menu from appearing, typically after a right click
         this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
 
         // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
-        this.cam_alpha_deg = 45.0
+        this.cam_alpha_deg = 35.0
         this.cam_beta_deg  = 20.0
         this.cam_dist      = 2.0
 
@@ -175,6 +175,7 @@ class WebGLCanvas
      */
     mouseMove( mevent )
     {
+        mevent.stopImmediatePropagation() 
         if ( ! this.is_mouse_right_down )
             return true
 
@@ -204,7 +205,7 @@ class WebGLCanvas
 
         // redraw:
         this.sampleDraw()
-        mevent.stopPropagation() // needed ?? is better for efficiency ???
+        
         return false
     }
         // -------------------------------------------------------------------------------------------------
@@ -214,53 +215,64 @@ class WebGLCanvas
      */
     mouseWheel( wevent )
     {
+        wevent.stopImmediatePropagation()
         const fname = 'WebGLCanvas.mouseWheel():'
         CheckType( wevent, 'WheelEvent' )
-
+        
         const fac = 0.002
         this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
         
         // redraw:
         this.sampleDraw()
-        wevent.stopPropagation()
+        
         return false 
     }
     // -------------------------------------------------------------------------------------------------
     getWebGLContext()
     {
-        if ( this.debug)
-            Log(`WebGLCanvas getWebGLcontext: begins`)
+        const fname = 'WebGLCanvas.getWebGLContext():'
+        if ( this.debug )
+            Log(`${fname} begins.`)
 
         let first = false 
-        if ( typeof(this.webgl_context) == 'undefined' ) 
+        if ( typeof(this.context) === 'undefined' ) 
             first = true 
-        else if ( this.webgl_context == null )
-            first = true 
-
-        this.webgl_version = 2 
-        this.context       = this.canvas_elem.getContext('webgl2')
         
-        if ( this.context === null )
+        if ( first )
         {   
-            Log("cannot have a webgl 2 canvas, trying web gl 1")
-            this.webgl_version = 1 
-            this.context       = this.canvas_elem.getContext('webgl')
+            
+            Log(`${fname} FIRST CALL`)
+        }
+
+        this.try_webgl2 = true
+        this.context = null
+
+        if ( this.try_webgl2 )
+        {
+            this.context = this.canvas_elem.getContext('webgl2')
+            if ( this.context === null )
+                Log(`cannot have a webgl 2 canvas, will try web gl 1`)
+            else 
+                this.webgl_version = 2
         }
         if ( this.context === null )
-        {   
-            const str = 'Unable to properly create a WebGL canvas on this device'
-            this.webgl_version = 0
-            Log(str) 
-            throw RangeError(str)
+        {
+            this.context = this.canvas_elem.getContext('webgl')
+            if ( this.context === null )
+            {   
+                const str = `${fname} unable to properly create a WebGL canvas on this device`
+                this.webgl_version = 0
+                Log(str) 
+                throw RangeError(str)
+            }
+            else
+                this.webgl_version = 1
         }
         
         if ( this.debug )
-        {   if ( this.debug_mode && first && this.webgl_version == 1 )
-            {   
-                const str = `WebGL 2 is not available, using WebGL 1 instead`
-                Log(str)
-            }
-            Log(`WebGLCanvas getWebGLcontext: end`)
+        {   
+            Log(`${fname} using WebGL version ${this.webgl_version}.`)
+            Log(`${fname} ends.`)
         }
     }
     // ------------------------------------------------------------------------------------------------
@@ -455,10 +467,13 @@ class WebGLCanvas
 
         if ( this.debug )
             console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
+
+        // config the context
+        gl.enable( gl.DEPTH_TEST )
        
         // clear screen, set viewport
         gl.clearColor(0.0, 0.1, 0.13, 1.0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.clear(gl.COLOR_BUFFER_BIT  | gl.DEPTH_BUFFER_BIT )
         gl.viewport(0, 0, sx, sy )
         CheckGLError( gl )
 
@@ -471,10 +486,10 @@ class WebGLCanvas
         // set projection and modelview matrixes 
         this.setModelviewProjection( gl, sx, sy )
 
-        // draw axes and grid
-        this.drawAxes()
+        // draw axes and grid (axes allways hide grid ....)
         this.drawGridXZ()
-
+        this.drawAxes()
+        
         // actually draw something.....(test)
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
         //this.test_2d_mesh.draw( gl )

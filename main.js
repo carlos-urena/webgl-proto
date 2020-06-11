@@ -1,5 +1,5 @@
 
-var main_debug = false
+var main_debug = true
 
 // -------------------------------------------------------------------------------------------------
 // variable which holds the single WebGLCanvas class instance 

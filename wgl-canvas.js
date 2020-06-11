@@ -259,13 +259,12 @@ class WebGLCanvas
         if ( typeof(this.context) === 'undefined' ) 
             first = true 
         
-        if ( first )
+        if ( this.debug && first )
         {   
             Log(`${fname} first call`)
         }
 
-        //this.try_webgl2 = true
-        this.try_webgl2 = false    // just for debugging WebGL 1 shaders on a WebGL2 capable device
+        this.try_webgl2 = true
         this.context    = null
 
         if ( this.try_webgl2 )

@@ -1,4 +1,4 @@
-var debug_shaders = true
+var debug_shaders = false
 
 // -------------------------------------------------------------------------------------
 // GLSL ES sources for WebGL 1 and 2
@@ -153,12 +153,12 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     gl.attachShader( program, fragment_shader )
 
     // Tell to the linker which attributes locations we want for each attributes
-    Log(`${fname} about to bind attrs....`)
+    //Log(`${fname} about to bind attrs....`)
     CheckGLError( gl )
     gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
     gl.bindAttribLocation( program, 1, "in_vertex_color"   )
     CheckGLError( gl )
-    Log(`${fname} attrs. binded ...`)
+    //Log(`${fname} attrs. binded ...`)
     /// done....
 
     // link and then (if neccesary) show link errors

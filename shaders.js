@@ -52,9 +52,9 @@ var wgl1_vertex_source =
         uniform  mat4 view_mat ;
         uniform  mat4 proj_mat ;  
 
-        varying vec3   in_vertex_pos_mcc ; // attribute 0 (positions)
-        varying vec3   in_vertex_color ;   // attribute 1 (colors)
-        varying vec3   vertex_color ;
+        attribute vec3   in_vertex_pos_mcc ; // attribute 0 (positions)
+        attribute vec3   in_vertex_color ;   // attribute 1 (colors)
+        varying   vec3   vertex_color ;
 
         void main(  ) 
         {   

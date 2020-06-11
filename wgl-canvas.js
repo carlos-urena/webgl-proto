@@ -132,6 +132,9 @@ class WebGLCanvas
      */
     mouseDown( mevent )
     {
+        mevent.stopImmediatePropagation() // neccesary? improves performance?
+        mevent.preventDefault() // prevent default treatment of mouse down event
+
         const fname = 'WebGLCanvas.mouseDown:'
         CheckType( mevent, 'MouseEvent' )
         if ( this.debug )
@@ -161,6 +164,9 @@ class WebGLCanvas
      */
     mouseUp( mevent )
     {
+        mevent.stopImmediatePropagation() // neccesary? improves performance?
+        mevent.preventDefault() // prevent default treatment of mouse up event
+
         const fname = 'WebGLCanvas.mouseUp'
         CheckType( mevent, 'MouseEvent' )
         if ( this.debug )
@@ -184,7 +190,9 @@ class WebGLCanvas
      */
     mouseMove( mevent )
     {
-        mevent.stopImmediatePropagation() 
+        mevent.stopImmediatePropagation() // neccesary? improves performance?
+        mevent.preventDefault() // prevent default treatment of mouse moves 
+
         if ( ! this.is_mouse_right_down )
             return true
 
@@ -224,7 +232,11 @@ class WebGLCanvas
      */
     mouseWheel( wevent )
     {
-        wevent.stopImmediatePropagation()
+        
+        wevent.stopImmediatePropagation() // neccesary? improves performance?
+        wevent.preventDefault() // avoids document body scroll while zooming
+        //**** */
+
         const fname = 'WebGLCanvas.mouseWheel():'
         CheckType( wevent, 'WheelEvent' )
         
@@ -249,12 +261,12 @@ class WebGLCanvas
         
         if ( first )
         {   
-            
-            Log(`${fname} FIRST CALL`)
+            Log(`${fname} first call`)
         }
 
         this.try_webgl2 = true
-        this.context = null
+        //this.try_webgl2 = false    // just for debugging WebGL 1 shaders on a WebGL2 capable device
+        this.context    = null
 
         if ( this.try_webgl2 )
         {

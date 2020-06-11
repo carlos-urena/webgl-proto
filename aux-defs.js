@@ -153,7 +153,11 @@ function Check( is_ok, msg )
 
 function CheckGLError( gl )
 {
-    return ; // deactivate 'getError' for production, see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
+    // NOTE: it is convenient to deactivate 'getError' for production,  
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
+    // (gl.getError introduces long delays...)
+    return 
+    
     const err = gl.getError()
     if ( err === gl.NO_ERROR )
         return 

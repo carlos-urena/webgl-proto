@@ -291,7 +291,7 @@ class WebGLCanvas
 
         if ( nt != 1 )
         {   this.cLog(msg)
-            return 
+            return false
         }
         let tch = tevent.touches.item(0)
         this.prev_touch_pos_x = tch.screenX
@@ -299,7 +299,7 @@ class WebGLCanvas
 
         msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
         this.cLog(msg)
-
+        return false
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -332,14 +332,17 @@ class WebGLCanvas
         this.prev_touch_pos_x = tch.screenX
         this.prev_touch_pos_y = tch.screenY
 
-        msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
+        msg = msg+`, DX = ${dx}, DY = ${dy} --> redraw`
         this.cLog(msg)
 
+        // update camera params
         this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
         this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
 
         // redraw:
         this.sampleDraw()
+
+        return false
         
     }
     // -------------------------------------------------------------------------------------------------

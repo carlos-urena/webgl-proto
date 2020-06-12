@@ -317,19 +317,29 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins`)
 
-            let nt = tevent.touches.length 
-            let msg = `${fname} nt = ${nt}`
-    
-            if ( nt != 1 )
-            {   this.cLog(msg)
-                return 
-            }
-            let tch = tevent.touches.item(0)
-            this.prev_touch_pos_x = tch.screenX
-            this.prev_touch_pos_y = tch.screenY
-    
-            msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
-            this.cLog(msg)
+        let nt = tevent.touches.length 
+        let msg = `${fname} nt = ${nt}`
+
+        if ( nt != 1 )
+        {   this.cLog(msg)
+            return 
+        }
+        let tch = tevent.touches.item(0)
+
+        let dx = tch.screenX - this.prev_touch_pos_x,
+            dy = tch.screenY - this.prev_touch_pos_y 
+        
+        this.prev_touch_pos_x = tch.screenX
+        this.prev_touch_pos_y = tch.screenY
+
+        msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
+        this.cLog(msg)
+
+        this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
+        this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
+
+        // redraw:
+        this.sampleDraw()
         
     }
     // -------------------------------------------------------------------------------------------------

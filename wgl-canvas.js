@@ -290,7 +290,7 @@ class WebGLCanvas
         let msg = `${fname} nt = ${nt}`
 
         if ( nt != 1 )
-        {   this.cLog(msg)
+        {   //this.cLog(msg)
             return false
         }
         let tch = tevent.touches.item(0)
@@ -298,7 +298,7 @@ class WebGLCanvas
         this.prev_touch_pos_y = tch.screenY
 
         msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
-        this.cLog(msg)
+        //this.cLog(msg)
         return false
     }
     // -------------------------------------------------------------------------------------------------
@@ -312,7 +312,7 @@ class WebGLCanvas
         tevent.preventDefault() // prevent default treatment of mouse up event
 
         const fname = 'WebGLCanvas.touchMove():'
-        this.cLog(fname)
+        //this.cLog(fname)
         CheckType( tevent, 'TouchEvent' )
         if ( this.debug )
             Log(`${fname} begins`)
@@ -333,7 +333,7 @@ class WebGLCanvas
         this.prev_touch_pos_y = tch.screenY
 
         msg = msg+`, DX = ${dx}, DY = ${dy} --> redraw`
-        this.cLog(msg)
+        //this.cLog(msg)
 
         // update camera params
         this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
@@ -356,7 +356,7 @@ class WebGLCanvas
         tevent.preventDefault() // prevent default treatment of mouse up event
 
         const fname = 'WebGLCanvas.touchEnd():'
-        this.cLog(fname)
+        //this.cLog(fname)
         CheckType( tevent, 'TouchEvent' )
         if ( this.debug )
             Log(`${fname} begins`)

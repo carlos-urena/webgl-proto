@@ -106,36 +106,36 @@ class ParamSurfaceMesh extends Mesh
         // create the coordinates (and colors) array
         const nver = (ns+1)*(nt+1) 
 
-        coords = new Float32Array( nver )
-        colors = new Float32Array( nver )
+        let coords = new Float32Array( 3*nver ),
+            colors = new Float32Array( 3*nver )
 
         for( let i = 0 ; i <= ns ; i++ )
         for( let j = 0 ; j <= nt ; j++ )
         {
             const vpos = param_func( i/ns, j/nt ),
-                  b    = i*(nt+1) + j
+                  b    = 3* (i + j*(ns+1))
 
             for( let k = 0 ; k < 3 ; k++ )
                 coords[b+k] = vpos[k] 
             
-            colors[b+0] = ( i%2 == 0 ) ? 1.0 : 0.6
-            colors[b+1] = ( j%2 == 0 ) ? 1.0 : 0.6
-            colors[b+2] = 1.0
+            colors[b+0] = ( i%2 == 0 ) ? 0.6 : 0.3
+            colors[b+1] = ( j%2 == 0 ) ? 0.6 : 0.3
+            colors[b+2] = ( (i+j)%2 == 0 ) ? 0.6 : 0.3
         }
 
         // create the indexes (triangles) array  (2 triangles for each vertex except for last vertexes row/col)
         const ntri = 2*ns*nt
-        triangles = new Uint32Array( 3*ntri )
+        let triangles = new Uint32Array( 3*ntri )
 
         for( let i = 0 ; i < ns ; i++ )
         for( let j = 0 ; j < nt ; j++ )
         {
             const 
-                i00 = i*(nt+1) + j,
-                i10 = i00 + 1,
-                i11 = i00 + (nt+1),
-                i01 = i10 + 1,
-                b   = 2*3*i00
+                i00 = i + j*(ns+1) ,   
+                i10 = i00 + 1,         
+                i01 = i00 + (ns+1),    
+                i11 = i01 + 1,         
+                b   = 6*(i+(j*ns))
 
             // first triangle
             triangles[b+0] = i00 
@@ -155,12 +155,13 @@ class ParamSurfaceMesh extends Mesh
 
 
 class SphereMesh extends ParamSurfaceMesh
-{
-    constructor( ns, nt )
-    {
-        super( ns, nt, (s,t) => 
-        {
-            return new Vec3([1.2*s,1.2*t,0.4] )   // just testing
-        } )
+{   constructor( ns, nt )
+    {   super
+        ( ns, nt, (s,t) => 
+            {
+                // .......
+                return new Vec3([1.2*s,0.2,1.8*t] )   // just testing
+            } 
+        )
     }
 }

@@ -85,6 +85,10 @@ class VertexSeq
             gl.drawArrays( mode, 0, this.num_vertexes )
         else
             this.indexes_buffer.drawElements( gl, mode )
+
+        // disable attr arrays
+        for( let i = 0 ; i < this.attr_buffers.length ; i++  )
+            gl.disableVertexAttribArray( i )
             
         CheckGLError( gl )
         if ( this.debug ) Log(`${fname} ends.`)

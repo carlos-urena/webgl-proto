@@ -128,7 +128,7 @@ const fragment_main_wgl2 =
         }
     `
 // --------------------------------------------------------
-// full shader srcs
+// full shader srcs (composed from strings)
 
 const wgl1_vertex_complete_str =
     wgl1_version_decl + 
@@ -162,73 +162,7 @@ const wgl2_fragment_complete_str =
     fragment_functions + 
     fragment_main_wgl2
 
-// // -------------------------------------------------------------
-// // GLSL ES ver 3.0  sources for WebGL version 2:
-
-// const wgl2_vertex_source =
-//     `   #version 300 es 
-//         uniform  mat4 model_mat ;
-//         uniform  mat4 view_mat ;
-//         uniform  mat4 proj_mat ;  
-
-//         layout(location = 0) in vec3 in_vertex_pos_mcc ;
-//         layout(location = 1) in vec3 in_vertex_color ;
-
-//         out vec3 vertex_color ;
-
-//         void main(  ) 
-//         {   
-//             gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-//             vertex_color = in_vertex_color ;
-//         }
-//     `
-
-// const wgl2_fragment_source =
-//     `   #version 300 es
-//         precision highp float;  
-
-//         in  vec3 vertex_color ;
-//         out vec4 frag_color ;
-
-//         void main() 
-//         {
-//             frag_color = vec4( vertex_color, 1.0 ) ;
-//         }
-//     `
-
-// // -------------------------------------------------------------------------------------
-// // GLSL ES ver. 1.0 (OpenGL ES version 2) sources for WebGL version 1
-
-
-// var wgl1_vertex_source =
-//     `   uniform  mat4 model_mat ;
-//         uniform  mat4 view_mat ;
-//         uniform  mat4 proj_mat ;  
-
-//         attribute vec3   in_vertex_pos_mcc ; // attribute 0 (positions)
-//         attribute vec3   in_vertex_color ;   // attribute 1 (colors)
-
-//         varying   vec3   vertex_color ;
-
-//         void main(  ) 
-//         {   
-//             gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-//             vertex_color = in_vertex_color ;
-//         }
-//     `
-
-// var wgl1_fragment_source =
-//     `   precision highp float;  
-
-//         varying vec3 vertex_color ;
-        
-//         void main() 
-//         {
-//             gl_FragColor = vec4( vertex_color, 1.0 ) ;
-//         }
-//     `
-
-// -------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------
 /**
  * Creates and compiles a vertex or fragment shader, if there are errors, shows the source and the errors,
  * and raises an exception, if it is correct, returns the shader.
@@ -402,13 +336,17 @@ class SimpleGPUProgram
         this.use() 
         
         // get all locations for uniform parameters
-        this.model_mat_loc = gl.getUniformLocation( this.program, 'model_mat' )
-        this.view_mat_loc  = gl.getUniformLocation( this.program, 'view_mat' )
-        this.proj_mat_loc  = gl.getUniformLocation( this.program, 'proj_mat' )
+        this.model_mat_loc   = gl.getUniformLocation( this.program, 'model_mat' )
+        this.view_mat_loc    = gl.getUniformLocation( this.program, 'view_mat' )
+        this.proj_mat_loc    = gl.getUniformLocation( this.program, 'proj_mat' )
+        this.norm_mat_loc    = gl.getUniformLocation( this.program, 'norm_mat' )
+        this.do_shading_loc  = gl.getUniformLocation( this.program, 'do_shading' )
 
-        Check( this.model_mat_loc != null, 'unable to get location of model matrix' )
-        Check( this.view_mat_loc  != null, 'unable to get location of view matrix' )
-        Check( this.proj_mat_loc  != null, 'unable to get location of projection matrix' )
+        Check( this.model_mat_loc  != null, 'unable to get location of model matrix' )
+        Check( this.view_mat_loc   != null, 'unable to get location of view matrix' )
+        Check( this.proj_mat_loc   != null, 'unable to get location of projection matrix' )
+        Check( this.do_shading_loc != null, 'unable to get location of `do_shading` uniform' )
+
 
         // initialize model matrix stack (empty)
         this.model_mat_stack = []
@@ -416,12 +354,34 @@ class SimpleGPUProgram
         // initialize modelview and projection matrices in the instance and in the shader program (must be in use)
         this.setProjMat( Mat4_Identity() )  // assigns to 'this.proj_mat'
         this.setViewMat( Mat4_Identity() )   // assigns to 'this.view_mat', resets 'this.model_mat' to identity, empties 'this.model_mat_stack'
-        
+      
+        // initialize other uniforms
+        this.doShading( false )
+
         // restore previously used shader program 
         gl.useProgram( prev_program )            
     }
     // ------------------------------------------------------------------------------------------------
+    /**
+     * returns the number of vertex attributes this program handles, including vertex coords at location 0
+     */
+    getNumVertexAttrs()
+    {
+        return 3 ; // vertex coordinates, vertex colors and vertex normals
+    }
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * sets whether this program does or does not shading (program must be in use)
+     * @param {bool} new_do_shading  -- 'true' --> compute shading, 'false --> do not shade, just use vertex color attr.
+     */
+    doShading( new_do_shading )
+    {
+        //CheckType( new_do_shading, 'bool' )
+        const v = new_do_shading ? 1 : 0 
+        this.context.uniform1i( this.do_shading_loc, v )
+    }
 
+    // ------------------------------------------------------------------------------------------------
     use()
     {
         if ( this.program == null )

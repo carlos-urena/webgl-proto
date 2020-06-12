@@ -27,7 +27,10 @@ class VertexSeq
             this.attr_buffers.push( null )
     }
     // -------------------------------------------------------------------------------------------
-    
+    /**
+     * sets the indexes array for this vertex seq (removes previous one, if any)
+     * @param {UInt32Array} indexes_array --  ( can also be a 'Unit16Array' )
+     */
     setIndexes( indexes_array )
     {
         this.indexes_buffer = new IndexesBuffer( indexes_array )

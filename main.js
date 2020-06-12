@@ -56,7 +56,7 @@ function OnDocumentLoad()
     ResizeCanvasContainer()
 
     // do a sample draw, just to check everything is fine
-    canvas.sampleDraw() 
+    canvas.drawFrame() 
 
     if ( main_debug )
         Log("OnDocumentLoad: ends")

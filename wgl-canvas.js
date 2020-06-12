@@ -242,7 +242,7 @@ class WebGLCanvas
             Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
 
         // redraw:
-        this.sampleDraw()
+        this.drawFrame()
         
         return false
     }
@@ -265,7 +265,7 @@ class WebGLCanvas
         this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
         
         // redraw:
-        this.sampleDraw()
+        this.drawFrame()
         
         return false 
     }
@@ -340,7 +340,7 @@ class WebGLCanvas
         this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
 
         // redraw:
-        this.sampleDraw()
+        this.drawFrame()
 
         return false
         
@@ -418,7 +418,7 @@ class WebGLCanvas
         this.canvas_elem.width  = this.parent_elem.clientWidth
         this.canvas_elem.height = this.parent_elem.clientHeight
         this.getWebGLContext()
-        this.sampleDraw()
+        this.drawFrame()
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -580,18 +580,21 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
-    sampleDraw()
+    /**
+     * Draws a frame into the context and issues a 'gl.flush()' call at the end
+     */
+    drawFrame()
     {
         redraws_count = redraws_count +1 
         if ( this.debug )
         {
             Log(`---------------------------------------------------------`)
-            Log(`WebGLCanvas.sampleDraw: begins`)
-            Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
+            Log(`WebGLCanvas.drawFrame: begins`)
+            Log(`WebGLCanvas.drawFrame: redraws_count == ${redraws_count}`)
         }
         CheckGLError( this.context )
 
-        //Log(`WebGLCanvas.sampleDraw: redraws_count == ${redraws_count}`)
+        //Log(`WebGLCanvas.drawFrame: redraws_count == ${redraws_count}`)
 
         // retrive context and size
         let gl   = this.context
@@ -599,7 +602,7 @@ class WebGLCanvas
               sy = gl.drawingBufferHeight 
 
         if ( this.debug )
-            console.log(`WebGLCanvas.sampleDraw: sx == ${sx}, sy == ${sy} `)
+            console.log(`WebGLCanvas.drawFrame: sx == ${sx}, sy == ${sy} `)
 
         // config the context
         gl.enable( gl.DEPTH_TEST )
@@ -612,6 +615,9 @@ class WebGLCanvas
 
         // activate fragment+vertex shader
         this.program.use()
+
+        // do not shade ....
+        this.program.doShading( false )
 
         // set default color (attribute location 1)
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
@@ -634,7 +640,7 @@ class WebGLCanvas
         CheckGLError( gl )
         if ( this.debug )
         {   
-            Log(`WebGLCanvas.sampleDraw: ends`)
+            Log(`WebGLCanvas.drawFrame: ends`)
             Log(`---------------------------------------------------------`)
         }
     }

@@ -380,7 +380,7 @@ class WebGLCanvas
             Log(`${fname} first call`)
         }
 
-        this.try_webgl2 = true
+        this.try_webgl2 = true // set this to 'false' to debug WebGL 1 code on a WebGL 1 & 2 capable desktop browser
         this.context    = null
 
         if ( this.try_webgl2 )

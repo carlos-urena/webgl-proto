@@ -10,47 +10,59 @@ var debug_shaders = false
 // Modularized srcs, see 'gman' answer to Fabrice Neyret question:
 // https://stackoverflow.com/questions/43666688/is-there-a-way-to-test-the-glsl-es-version-in-the-shader
 
-const wgl1_preamble  =
-    `   #version 100 es 
+const wgl1_version_decl  =
+    `   #version 100 
     `
 
-const wgl2_preamble  =
+const wgl2_version_decl  =
     `   #version 300 es 
-        precision lowp float;
+    `
+const precision  =
+    `   
+        precision highp float; // ---> 32 bits ???
+        precision highp  int ;  // ---> 32 bits ....
     `
 
 const uniforms_decls = 
     `   
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
-        uniform mat4 model_mat ;
-        uniform mat4 view_mat ;
-        uniform mat4 proj_mat ;
+        uniform int  do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
+        uniform mat4 model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
+        uniform mat4 view_mat ;   // view matrix (world coords. --> camera coords.)
+        uniform mat4 proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
+        uniform mat4 norm_mat ;   // normal matrix (master normal coords --> world normal coords)
     `
 
 const vertex_attrs_decls_wgl1 =
     `   
         // Vertex attributes declarations (GLSL ES 1.0)
-        attribute vec3  in_vertex_pos_mcc ; // attribute 0 (positions)
-        attribute vec3  in_vertex_color ;   // attribute 1 (colors)
+        attribute vec3  in_vertex_pos_mcc ;   // attribute 0 (positions in master coordinates)
+        attribute vec3  in_vertex_color ;     // attribute 1 (vertex color)
+        attribute vec3  in_vertex_normal_mcc; // attribute 2 (normals in master coordinates)
     `
 
 const vertex_attrs_decls_wgl2 =
     `   
         // Vertex attributes declarations (GLSL ES 3.0)
-        layout(location = 0) in vec3 in_vertex_pos_mcc ;
-        layout(location = 1) in vec3 in_vertex_color ;
+        layout(location = 0) in vec3 in_vertex_pos_mcc ;    // attribute 0 (positions in master coordinates)
+        layout(location = 1) in vec3 in_vertex_color ;      // attribute 1 (vertex color)
+        layout(location = 2) in vec3 in_vertex_normal_mcc ; // attribute 2 (normals in master coordinates)
     `
 
 const vertex_inout_decls_wgl1 =
     `
         // Output (varying) variables (GLSL ES 1.0)
-        varying vec3 vertex_color ;
+        varying vec3 vertex_color ;       // vertex color to be interpolated
+        varying vec3 vertex_pos_wcc ;     // vertex position in world coords, to be interpolated
+        varying vec3 vertex_norm_wcc ;    // vertex normal in world coords, to be interpolated
     `
 
 const vertex_inout_decls_wgl2 =
     `
-        // Input or output variables (GLSL ES 3.0)
-        out vec3 vertex_color ;
+        // Output variables (GLSL ES 3.0)
+        out vec3 vertex_color ;    // vertex color to be interpolated
+        out vec3 vertex_pos_wcc ;  // vertex position in world coords, to be interpolated
+        out vec3 vertex_norm_wcc ; // vertex normal in world coords, to be interpolated
     `
 
 const fragment_inout_decls_wgl1 =
@@ -58,57 +70,97 @@ const fragment_inout_decls_wgl1 =
 
 const fragment_inout_decls_wgl2 =
     `
-        // Input or output variables (GLSL ES 3.0)
-        in  vec3 vertex_color ;
-        out vec4 frag_color ;
+        // Input and output variables (GLSL ES 3.0)
+        in  vec3 vertex_color ;    // interpolated primitive color 
+        in  vec3 vertex_pos_wcc ;  // interpolated fragment center position in world coordinates
+        in  vec3 vertex_norm_wcc ; // interpolated fragment normal in world coordinates
+        out vec4 frag_color ;      // output: fragment color
     `
 
 const vertex_main =
     `   
-        // Main function (writes the output variables)
+        // Main function (writes the output variables) (GLSL ES 1.0 or 3.0)
         void main(  ) 
         {   
-            gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-            vertex_color = in_vertex_color ;
+            vec4 pos_wcc    = model_mat * vec4( in_vertex_pos_mcc, 1) ;
+            gl_Position     = proj_mat * (view_mat * pos_wcc); 
+            vertex_color    = in_vertex_color ;
+            vertex_pos_wcc  = pos_wcc.xyz ;
+            vertex_norm_wcc = (norm_mat * vec4( in_vertex_normal_mcc, 0 )).xyz ;
         }
     `
 
-const fragment_main =
+const fragment_functions = 
+    `   
+        // Shade: computes opaque RGB color from: 
+        //    pos  : shading point position
+        //    unor : shading point normal (not neccesarily normalized)
+        //    vcol : interpolated vertex color at the shading point position
+        vec3 Shade( vec3 pos, vec3 unor, vec3 vcol )
+        {
+            vec3 nor = normalize(unor);
+            return vec3( abs(nor.x), abs(nor.y), abs(nor.z) );
+        }
+    `
+
+const fragment_main_wgl1 =
     `   
         // Main function (writes the output variables)
         void main() 
         {
-            frag_color = vec4( vertex_color, 1.0 ) ;
+            if ( do_shading == 0 )
+                gl_FragColor = vec4( vertex_color, 1.0 ) ;
+            else
+                gl_FragColor = vec4( Shade( vertex_pos_wcc, vertex_norm_wcc, vertex_color ), 1.0 );
+        }
+    `
+
+
+const fragment_main_wgl2 =
+    `   
+        // Main function (writes the output variables)
+        void main() 
+        {
+            if ( do_shading == 0 )
+                frag_color = vec4( vertex_color, 1.0 ) ;
+            else
+                frag_color = vec4( Shade( vertex_pos_wcc, vertex_norm_wcc, vertex_color ), 1.0 );
         }
     `
 // --------------------------------------------------------
 // full shader srcs
 
 const wgl1_vertex_complete_str =
-    wgl1_preamble + 
+    wgl1_version_decl + 
+    precision + 
     uniforms_decls +
     vertex_attrs_decls_wgl1 +
     vertex_inout_decls_wgl1 +
     vertex_main
 
 const wgl2_vertex_complete_str =
-    wgl2_preamble + 
+    wgl2_version_decl +
+    precision +  
     uniforms_decls +
     vertex_attrs_decls_wgl2 +
     vertex_inout_decls_wgl2 +
     vertex_main
 
 const wgl1_fragment_complete_str =
-    wgl1_preamble + 
+    wgl1_version_decl + 
+    precision + 
     uniforms_decls + 
     fragment_inout_decls_wgl1 +
-    fragment_main
+    fragment_functions + 
+    fragment_main_wgl1
 
 const wgl2_fragment_complete_str =
-    wgl2_preamble + 
+    wgl2_version_decl + 
+    precision + 
     uniforms_decls + 
     fragment_inout_decls_wgl2 +
-    fragment_main
+    fragment_functions + 
+    fragment_main_wgl2
 
 // // -------------------------------------------------------------
 // // GLSL ES ver 3.0  sources for WebGL version 2:
@@ -255,12 +307,11 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     gl.attachShader( program, fragment_shader )
 
     // Tell to the linker which attributes locations we want for each attributes
-    //Log(`${fname} about to bind attrs....`)
     CheckGLError( gl )
     gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
     gl.bindAttribLocation( program, 1, "in_vertex_color"   )
+    gl.bindAttribLocation( program, 2, "in_vertex_normal"  )
     CheckGLError( gl )
-    //Log(`${fname} attrs. binded ...`)
     /// done....
 
     // link and then (if neccesary) show link errors
@@ -334,7 +385,7 @@ class SimpleGPUProgram
         else
         {
             Log(`${fname} using webgl 1 sources`)
-            this.vertex_source   = wg1_vertex_complete_str    //wgl1_vertex_source
+            this.vertex_source   = wgl1_vertex_complete_str    //wgl1_vertex_source
             this.fragment_source = wgl1_fragment_complete_str //wgl1_fragment_source
         }
 

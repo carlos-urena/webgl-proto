@@ -269,24 +269,7 @@ class WebGLCanvas
         
         return false 
     }
-    // -------------------------------------------------------------------------------------------------
-    /**
-     * Called right after a touch start event 
-     * @param {TouchEvent} mevent -- mouse event created by the browser
-     */
-    touchStart( tevent )
-    {
-        tevent.stopImmediatePropagation() // neccesary? improves performance?
-        tevent.preventDefault() // prevent default treatment of mouse up event
-
-        const fname = 'WebGLCanvas.touchStart'
-        CheckType( tevent, 'TouchEvent' )
-        if ( this.debug )
-            Log(`${fname} begins`)
-
-       
-        
-    }
+    
     // -------------------------------------------------------------------------------------------------
     /**
      * Called right after a touch start event 
@@ -298,13 +281,25 @@ class WebGLCanvas
         tevent.preventDefault() // prevent default treatment of mouse up event
 
         const fname = 'WebGLCanvas.touchStart():'
-        this.cLog(fname)
+        
         CheckType( tevent, 'TouchEvent' )
         if ( this.debug )
             Log(`${fname} begins`)
 
-       
-        
+        let nt = tevent.touches.length 
+        let msg = `${fname} nt = ${nt}`
+
+        if ( nt != 1 )
+        {   this.cLog(msg)
+            return 
+        }
+        let tch = tevent.touches.item(0)
+        this.prev_touch_pos_x = tch.screenX
+        this.prev_touch_pos_y = tch.screenY
+
+        msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
+        this.cLog(msg)
+
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -322,7 +317,19 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins`)
 
-       
+            let nt = tevent.touches.length 
+            let msg = `${fname} nt = ${nt}`
+    
+            if ( nt != 1 )
+            {   this.cLog(msg)
+                return 
+            }
+            let tch = tevent.touches.item(0)
+            this.prev_touch_pos_x = tch.screenX
+            this.prev_touch_pos_y = tch.screenY
+    
+            msg = msg+`, px = ${this.prev_touch_pos_x}, py = ${this.prev_touch_pos_y}`
+            this.cLog(msg)
         
     }
     // -------------------------------------------------------------------------------------------------
@@ -336,7 +343,7 @@ class WebGLCanvas
         tevent.preventDefault() // prevent default treatment of mouse up event
 
         const fname = 'WebGLCanvas.touchEnd():'
-        //his.cLog(fname)
+        this.cLog(fname)
         CheckType( tevent, 'TouchEvent' )
         if ( this.debug )
             Log(`${fname} begins`)

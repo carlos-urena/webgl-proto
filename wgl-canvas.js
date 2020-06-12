@@ -634,7 +634,7 @@ class WebGLCanvas
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
         //this.test_2d_mesh.draw( gl )
         if ( this.test_3d_mesh == null )
-            this.test_3d_mesh = new SphereMesh( 5, 5 )
+            this.test_3d_mesh = new SphereMesh( 50, 50 )
 
         this.test_3d_mesh.draw( gl )
 

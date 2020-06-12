@@ -6,23 +6,66 @@ var debug_shaders = false
 //  See GLSL ES and corresponding WebGL versions here: 
 //  https://en.wikipedia.org/wiki/OpenGL_Shading_Language#Versions)
 //
-// Modularize this, see 'gman' answer to Fabrice Neyret question:
+
+// Modularized srcs, see 'gman' answer to Fabrice Neyret question:
 // https://stackoverflow.com/questions/43666688/is-there-a-way-to-test-the-glsl-es-version-in-the-shader
 
-// -------------------------------------------------------------
-// GLSL ES ver 3.0  sources for WebGL version 2:
+const wgl1_preamble  =
+    `   #version 100 es 
+    `
 
-var wgl2_vertex_source =
+const wgl2_preamble  =
     `   #version 300 es 
-        uniform  mat4 model_mat ;
-        uniform  mat4 view_mat ;
-        uniform  mat4 proj_mat ;  
+        precision lowp float;
+    `
 
+const uniforms_decls = 
+    `   
+        // Uniforms declarations (GLSL ES 1.0 or 3.0)
+        uniform mat4 model_mat ;
+        uniform mat4 view_mat ;
+        uniform mat4 proj_mat ;
+    `
+
+const vertex_attrs_decls_wgl1 =
+    `   
+        // Vertex attributes declarations (GLSL ES 1.0)
+        attribute vec3  in_vertex_pos_mcc ; // attribute 0 (positions)
+        attribute vec3  in_vertex_color ;   // attribute 1 (colors)
+    `
+
+const vertex_attrs_decls_wgl2 =
+    `   
+        // Vertex attributes declarations (GLSL ES 3.0)
         layout(location = 0) in vec3 in_vertex_pos_mcc ;
         layout(location = 1) in vec3 in_vertex_color ;
+    `
 
+const vertex_inout_decls_wgl1 =
+    `
+        // Output (varying) variables (GLSL ES 1.0)
+        varying vec3 vertex_color ;
+    `
+
+const vertex_inout_decls_wgl2 =
+    `
+        // Input or output variables (GLSL ES 3.0)
         out vec3 vertex_color ;
+    `
 
+const fragment_inout_decls_wgl1 =
+    vertex_inout_decls_wgl1
+
+const fragment_inout_decls_wgl2 =
+    `
+        // Input or output variables (GLSL ES 3.0)
+        in  vec3 vertex_color ;
+        out vec4 frag_color ;
+    `
+
+const vertex_main =
+    `   
+        // Main function (writes the output variables)
         void main(  ) 
         {   
             gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
@@ -30,49 +73,108 @@ var wgl2_vertex_source =
         }
     `
 
-var wgl2_fragment_source =
-    `   #version 300 es
-        precision highp float;  
-
-        in  vec3 vertex_color ;
-        out vec4 frag_color ;
-
+const fragment_main =
+    `   
+        // Main function (writes the output variables)
         void main() 
         {
             frag_color = vec4( vertex_color, 1.0 ) ;
         }
     `
+// --------------------------------------------------------
+// full shader srcs
 
-// -------------------------------------------------------------------------------------
-// GLSL ES ver. 1.0 (OpenGL ES version 2) sources for WebGL version 1
+const wgl1_vertex_complete_str =
+    wgl1_preamble + 
+    uniforms_decls +
+    vertex_attrs_decls_wgl1 +
+    vertex_inout_decls_wgl1 +
+    vertex_main
+
+const wgl2_vertex_complete_str =
+    wgl2_preamble + 
+    uniforms_decls +
+    vertex_attrs_decls_wgl2 +
+    vertex_inout_decls_wgl2 +
+    vertex_main
+
+const wgl1_fragment_complete_str =
+    wgl1_preamble + 
+    uniforms_decls + 
+    fragment_inout_decls_wgl1 +
+    fragment_main
+
+const wgl2_fragment_complete_str =
+    wgl2_preamble + 
+    uniforms_decls + 
+    fragment_inout_decls_wgl2 +
+    fragment_main
+
+// // -------------------------------------------------------------
+// // GLSL ES ver 3.0  sources for WebGL version 2:
+
+// const wgl2_vertex_source =
+//     `   #version 300 es 
+//         uniform  mat4 model_mat ;
+//         uniform  mat4 view_mat ;
+//         uniform  mat4 proj_mat ;  
+
+//         layout(location = 0) in vec3 in_vertex_pos_mcc ;
+//         layout(location = 1) in vec3 in_vertex_color ;
+
+//         out vec3 vertex_color ;
+
+//         void main(  ) 
+//         {   
+//             gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
+//             vertex_color = in_vertex_color ;
+//         }
+//     `
+
+// const wgl2_fragment_source =
+//     `   #version 300 es
+//         precision highp float;  
+
+//         in  vec3 vertex_color ;
+//         out vec4 frag_color ;
+
+//         void main() 
+//         {
+//             frag_color = vec4( vertex_color, 1.0 ) ;
+//         }
+//     `
+
+// // -------------------------------------------------------------------------------------
+// // GLSL ES ver. 1.0 (OpenGL ES version 2) sources for WebGL version 1
 
 
-var wgl1_vertex_source =
-    `   uniform  mat4 model_mat ;
-        uniform  mat4 view_mat ;
-        uniform  mat4 proj_mat ;  
+// var wgl1_vertex_source =
+//     `   uniform  mat4 model_mat ;
+//         uniform  mat4 view_mat ;
+//         uniform  mat4 proj_mat ;  
 
-        attribute vec3   in_vertex_pos_mcc ; // attribute 0 (positions)
-        attribute vec3   in_vertex_color ;   // attribute 1 (colors)
-        varying   vec3   vertex_color ;
+//         attribute vec3   in_vertex_pos_mcc ; // attribute 0 (positions)
+//         attribute vec3   in_vertex_color ;   // attribute 1 (colors)
 
-        void main(  ) 
-        {   
-            gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
-            vertex_color = in_vertex_color ;
-        }
-    `
+//         varying   vec3   vertex_color ;
 
-var wgl1_fragment_source =
-    `   precision highp float;  
+//         void main(  ) 
+//         {   
+//             gl_Position  = proj_mat * (view_mat * (model_mat * vec4( in_vertex_pos_mcc, 1) )); 
+//             vertex_color = in_vertex_color ;
+//         }
+//     `
 
-        varying vec3 vertex_color ;
+// var wgl1_fragment_source =
+//     `   precision highp float;  
+
+//         varying vec3 vertex_color ;
         
-        void main() 
-        {
-            gl_FragColor = vec4( vertex_color, 1.0 ) ;
-        }
-    `
+//         void main() 
+//         {
+//             gl_FragColor = vec4( vertex_color, 1.0 ) ;
+//         }
+//     `
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -226,14 +328,14 @@ class SimpleGPUProgram
         if ( this.webgl_version == 2 )
         {
             Log(`${fname} using webgl 2 sources`)
-            this.vertex_source   = wgl2_vertex_source
-            this.fragment_source = wgl2_fragment_source
+            this.vertex_source   = wgl2_vertex_complete_str   //wgl2_vertex_source
+            this.fragment_source = wgl2_fragment_complete_str //wgl2_fragment_source
         }
         else
         {
             Log(`${fname} using webgl 1 sources`)
-            this.vertex_source   = wgl1_vertex_source
-            this.fragment_source = wgl1_fragment_source
+            this.vertex_source   = wg1_vertex_complete_str    //wgl1_vertex_source
+            this.fragment_source = wgl1_fragment_complete_str //wgl1_fragment_source
         }
 
         // compile shaders

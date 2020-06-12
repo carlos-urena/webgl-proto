@@ -103,33 +103,53 @@ class ParamSurfaceMesh extends Mesh
         CheckNat( nt )
         Check( 1 < ns && 1 < nt , "'nu' and 'nv' must be at least 2 each.")
 
-        // create the coordinates array
-        coords = []
+        // create the coordinates (and colors) array
+        const nver = (ns+1)*(nt+1) 
+
+        coords = new Float32Array( nver )
+        colors = new Float32Array( nver )
+
         for( let i = 0 ; i <= ns ; i++ )
         for( let j = 0 ; j <= nt ; j++ )
         {
-            const v = param_func( i/ns, j/nt )
+            const vpos = param_func( i/ns, j/nt ),
+                  b    = i*(nt+1) + j
 
-            coords.push( v[0] )
-            coords.push( v[1] )
-            coords.push( v[2] )
+            for( let k = 0 ; k < 3 ; k++ )
+                coords[b+k] = vpos[k] 
+            
+            colors[b+0] = ( i%2 == 0 ) ? 1.0 : 0.6
+            colors[b+1] = ( j%2 == 0 ) ? 1.0 : 0.6
+            colors[b+2] = 1.0
         }
 
-        // create the indexes (triangles) array  (2 triangles for each vertex excepto last row/col)
-        triangles = []
+        // create the indexes (triangles) array  (2 triangles for each vertex except for last vertexes row/col)
+        const ntri = 2*ns*nt
+        triangles = new Uint32Array( 3*ntri )
+
         for( let i = 0 ; i < ns ; i++ )
         for( let j = 0 ; j < nt ; j++ )
         {
-            const i00 = i*(ns+1) + j,
-                  i10 = i00 + 1,
-                  i11 = i00 + (ns+1),
-                  i01 = i10 + 1
+            const 
+                i00 = i*(nt+1) + j,
+                i10 = i00 + 1,
+                i11 = i00 + (nt+1),
+                i01 = i10 + 1,
+                b   = 2*3*i00
 
-            triangles.push( i00 ); triangles.push( i10 ); triangles.push( i11 )
-            triangles.push( i00 ); triangles.push( i11 ); triangles.push( i01 )
+            // first triangle
+            triangles[b+0] = i00 
+            triangles[b+1] = i10
+            triangles[b+2] = i11 
+            
+            // second triangle 
+            triangles[b+3] = i00
+            triangles[b+4] = i11
+            triangles[b+5] = i01
         }
         // initialize the base Mesh instance
         super( coords, triangles )
+        this.setColorsArray( colors )
     }
 }
 

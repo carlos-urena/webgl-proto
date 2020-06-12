@@ -92,6 +92,7 @@ class WebGLCanvas
         this.test_vertex_seq     = new SimpleVertexSeq()
         this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
         this.test_2d_mesh        = new Simple2DMesh()
+        this.test_3d_mesh        = null 
 
         // set mouse events state info
         this.is_mouse_left_down  = false
@@ -632,6 +633,10 @@ class WebGLCanvas
         // actually draw something.....(test)
         //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
         //this.test_2d_mesh.draw( gl )
+        if ( this.test_3d_mesh == null )
+            this.test_3d_mesh = new SphereMesh( 30, 30 )
+
+        this.test_3d_mesh.draw( gl )
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

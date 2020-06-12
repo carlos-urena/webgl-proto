@@ -125,10 +125,14 @@ class WebGLCanvas
         // for clog...
         this.clog_span = null
 
-        // testing touch events ....TODO: touchstart, touchmove and touchend
+        // touch events for mobile devices
         this.canvas_elem.addEventListener( 'touchstart', e => this.touchStart(e), true )
-        this.canvas_elem.addEventListener( 'touchmove', e => this.touchMove(e), true )
-        this.canvas_elem.addEventListener( 'touchend', e => this.touchEnd(e), true )
+        this.canvas_elem.addEventListener( 'touchmove',  e => this.touchMove(e), true )
+        this.canvas_elem.addEventListener( 'touchend',   e => this.touchEnd(e), true )
+
+        // drag and drop events for reading files
+        this.canvas_elem.addEventListener( 'dragover', e => this.dragOver(e), true )
+        this.canvas_elem.addEventListener( 'drop',     e => this.dragDrop(e), true )
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
@@ -365,6 +369,47 @@ class WebGLCanvas
        
         
     }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called for a 'dragover' element
+     * @param {DragEvent} devent -- touch event created by the browser
+     */
+    dragOver( devent )
+    {
+        devent.stopImmediatePropagation() // neccesary? improves performance?
+        devent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.dragOver():'
+        //this.cLog(fname)
+        CheckType( devent, 'DragEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+        const file_list = devent.dataTransfer.files.item(0).name
+        console.log(`${fname} file_list == '${file_list}'`);
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called for a 'dragdrop' element
+     * @param {DragEvent} devent -- touch event created by the browser
+     */
+    dragDrop( devent )
+    {
+        devent.stopImmediatePropagation() // neccesary? improves performance?
+        devent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.dragDrop():'
+        //this.cLog(fname)
+        CheckType( devent, 'DragEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+
+        const file_list = devent.dataTransfer.files.item(0).name
+        console.log(`${fname} file_list == '${file_list}'`);
+        
+    }
+
     // -------------------------------------------------------------------------------------------------
     getWebGLContext()
     {

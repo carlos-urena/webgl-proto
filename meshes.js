@@ -159,8 +159,16 @@ class SphereMesh extends ParamSurfaceMesh
     {   super
         ( ns, nt, (s,t) => 
             {
-                // .......
-                return new Vec3([1.2*s,0.2,1.8*t] )   // just testing
+                const
+                    a  = s*2.0*Math.PI,
+                    b  = (t-0.5)*Math.PI,
+                    ca = Math.cos(a),
+                    sa = Math.sin(a),
+                    cb = Math.cos(b),
+                    sb = Math.sin(b),
+                    r  = 0.5
+
+                return new Vec3([ 0.5*ca*cb, 0.5*sb, 0.5*sa*cb ])
             } 
         )
     }

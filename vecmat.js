@@ -31,6 +31,11 @@ class Vec3 extends Float32Array
     cross( v ) { return new Vec3([  this[1]*v[2]-this[2]*v[1], 
                                     this[2]*v[0]-this[0]*v[2], 
                                     this[0]*v[1]-this[1]*v[0] ]) }
+
+    normalized() 
+    {   const lsq = this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
+        return lsq != 0 ? this.scale(1/Math.sqrt(l)) : this ;
+    }
      
     x() { return this[0] }
     y() { return this[1] }
@@ -39,6 +44,31 @@ class Vec3 extends Float32Array
     r() { return this[0] }
     g() { return this[1] }
     b() { return this[2] }
+}
+// ------------------------------------------------------------------------------------------------
+
+class Vec2 extends Float32Array
+{
+    constructor( obj )
+    {
+        super( obj )
+        if ( this.length != 2 )
+            throw Error(`Vec2.constructor: the length is not 2 but ${this.length}`)
+    }
+    toString() { return `(${this[0]},${this[1]})` }
+
+    plus ( v ) { return new Vec3([ this[0]+v[0], this[1]+v[1] ]) }
+    minus( v ) { return new Vec3([ this[0]-v[0], this[1]-v[1] ]) }
+    scale( a ) { return new Vec3([ a*this[0],    a*this[1],   ]) }
+    dot  ( v ) { return this[0]*v[0] + this[1]*v[1]  }
+
+    normalized( ) 
+    {   const lsq = this[0]*this[0] + this[1]*this[1] 
+        return lsq != 0 ? this.scale(1/Math.sqrt(l)) : this ;
+    }
+ 
+    s() { return this[0] }
+    t() { return this[1] }
 }
 // ------------------------------------------------------------------------------------------------
 

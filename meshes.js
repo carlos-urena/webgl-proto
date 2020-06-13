@@ -31,7 +31,8 @@ class Mesh
         this.normals_array    = null
         this.text_coord_array = null
         this.triangles_array  = triangles_array
-        this.vertex_seq       = new VertexSeq ( 3, 3, coords_array )
+        this.vertex_seq       = new VertexSeq ( 3, 3, coords_array )  // Note: 3 attributes: positions, colors, normals
+
         this.vertex_seq.setIndexes( triangles_array )
     }
     // ----------------------------------------------------------------------------------
@@ -49,6 +50,14 @@ class Mesh
         this.checkAttrArray(`Mesh.setColorsArray():`, colors_array )
         this.colors_array = colors_array
         this.vertex_seq.setAttrArray( 1, 3, colors_array )
+    }
+    // ----------------------------------------------------------------------------------
+
+    setNormalsArray( normals_array )
+    {
+        this.checkAttrArray(`Mesh.setNormalsArray():`, normals_array )
+        this.normals_array = normals_array
+        this.vertex_seq.setAttrArray( 2, 3, normals_array )
     }
     // ----------------------------------------------------------------------------------
 
@@ -83,6 +92,14 @@ class Simple2DMesh extends Mesh
                 1.0,  1.0, 1.0
             ]
 
+        const vertex_normals = 
+            [
+                0.0,  1.0, 0.0, 
+                0.0,  1.0, 0.0, 
+                0.0,  1.0, 0.0, 
+                0.0,  1.0, 0.0
+            ]
+
         const triangles = 
             [   0,1,3, 
                 0,3,2 
@@ -90,11 +107,15 @@ class Simple2DMesh extends Mesh
 
         super( new Float32Array( vertex_coords ), new Uint32Array( triangles ) )
         this.setColorsArray( new Float32Array( vertex_colors ))
+        this.setNormalsArray( new Float32Array( vertex_normals ))
     }
 }
 
 
-
+// -------------------------------------------------------------------------------------------------
+/**
+ * A mesh built by sampling a parametric surface (a map from [0,1]^2 to R^3)
+ */
 class ParamSurfaceMesh extends Mesh
 {
     constructor( ns, nt, param_func )
@@ -106,18 +127,24 @@ class ParamSurfaceMesh extends Mesh
         // create the coordinates (and colors) array
         const nver = (ns+1)*(nt+1) 
 
-        let coords = new Float32Array( 3*nver ),
-            colors = new Float32Array( 3*nver )
+        let coords  = new Float32Array( 3*nver ),
+            colors  = new Float32Array( 3*nver ),
+            normals = new Float32Array( 3*nver )
 
         for( let i = 0 ; i <= ns ; i++ )
         for( let j = 0 ; j <= nt ; j++ )
         {
-            const vpos = param_func( i/ns, j/nt ),
+            const s    = i/ns,
+                  t    = j/ns,
+                  vert = param_func( s, t ),  // includes vert.pos, vert.nor, ver.cct
                   b    = 3* (i + j*(ns+1))
 
             for( let k = 0 ; k < 3 ; k++ )
-                coords[b+k] = vpos[k] 
+            {   coords[b+k]  = vert.pos[k]
+                normals[b+k] = vert.nor[k]
+            } 
             
+            // sample colors
             colors[b+0] = ( i%2 == 0 ) ? 0.6 : 0.3
             colors[b+1] = ( j%2 == 0 ) ? 0.6 : 0.3
             colors[b+2] = ( (i+j)%2 == 0 ) ? 0.6 : 0.3
@@ -150,6 +177,7 @@ class ParamSurfaceMesh extends Mesh
         // initialize the base Mesh instance
         super( coords, triangles )
         this.setColorsArray( colors )
+        this.setNormalsArray( normals )
     }
 }
 
@@ -160,15 +188,30 @@ class SphereMesh extends ParamSurfaceMesh
         ( ns, nt, (s,t) => 
             {
                 const
-                    a  = s*2.0*Math.PI,
-                    b  = (t-0.5)*Math.PI,
-                    ca = Math.cos(a),
-                    sa = Math.sin(a),
-                    cb = Math.cos(b),
-                    sb = Math.sin(b),
-                    r  = 0.5
+                    a  = s*2.0*Math.PI, b  = (t-0.5)*Math.PI,
+                    ca = Math.cos(a),   sa = Math.sin(a),
+                    cb = Math.cos(b),   sb = Math.sin(b)
+                const v = new Vec3([ ca*cb, sb, sa*cb ])
+                return { pos: v, nor: v }
+            } 
+        )
+    }
+}
 
-                return new Vec3([ 0.5*ca*cb, 0.5*sb, 0.5*sa*cb ])
+
+class ConeMesh extends ParamSurfaceMesh
+{   constructor( ns, nt )
+    {   super
+        ( ns, nt, (s,t) => 
+            {
+                const
+                    a  = s*2.0*Math.PI, 
+                    ca = Math.cos(a),   
+                    sa = Math.sin(a)
+
+                const p = new Vec3([ca,t,sa]),
+                      n = new Vec3([ca,1,sa])
+                return { pos: p, nor: n.normalized() }
             } 
         )
     }

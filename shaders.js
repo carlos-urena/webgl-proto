@@ -18,14 +18,15 @@ const wgl2_version_decl  =
     `   #version 300 es 
     `
 const precision  =
-    `   
+    `
         precision highp float; // ---> 32 bits ???
         precision highp  int ;  // ---> 32 bits ....
     `
 
 const uniforms_decls = 
-    `   
+    `
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
+
         uniform int  do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
         uniform mat4 model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
         uniform mat4 view_mat ;   // view matrix (world coords. --> camera coords.)
@@ -36,6 +37,7 @@ const uniforms_decls =
 const vertex_attrs_decls_wgl1 =
     `   
         // Vertex attributes declarations (GLSL ES 1.0)
+
         attribute vec3  in_vertex_pos_mcc ;   // attribute 0 (positions in master coordinates)
         attribute vec3  in_vertex_color ;     // attribute 1 (vertex color)
         attribute vec3  in_vertex_normal_mcc; // attribute 2 (normals in master coordinates)
@@ -44,6 +46,7 @@ const vertex_attrs_decls_wgl1 =
 const vertex_attrs_decls_wgl2 =
     `   
         // Vertex attributes declarations (GLSL ES 3.0)
+
         layout(location = 0) in vec3 in_vertex_pos_mcc ;    // attribute 0 (positions in master coordinates)
         layout(location = 1) in vec3 in_vertex_color ;      // attribute 1 (vertex color)
         layout(location = 2) in vec3 in_vertex_normal_mcc ; // attribute 2 (normals in master coordinates)
@@ -52,6 +55,7 @@ const vertex_attrs_decls_wgl2 =
 const vertex_inout_decls_wgl1 =
     `
         // Output (varying) variables (GLSL ES 1.0)
+
         varying vec3 vertex_color ;       // vertex color to be interpolated
         varying vec3 vertex_pos_wcc ;     // vertex position in world coords, to be interpolated
         varying vec3 vertex_norm_wcc ;    // vertex normal in world coords, to be interpolated
@@ -60,6 +64,7 @@ const vertex_inout_decls_wgl1 =
 const vertex_inout_decls_wgl2 =
     `
         // Output variables (GLSL ES 3.0)
+
         out vec3 vertex_color ;    // vertex color to be interpolated
         out vec3 vertex_pos_wcc ;  // vertex position in world coords, to be interpolated
         out vec3 vertex_norm_wcc ; // vertex normal in world coords, to be interpolated
@@ -71,6 +76,7 @@ const fragment_inout_decls_wgl1 =
 const fragment_inout_decls_wgl2 =
     `
         // Input and output variables (GLSL ES 3.0)
+
         in  vec3 vertex_color ;    // interpolated primitive color 
         in  vec3 vertex_pos_wcc ;  // interpolated fragment center position in world coordinates
         in  vec3 vertex_norm_wcc ; // interpolated fragment normal in world coordinates
@@ -80,6 +86,7 @@ const fragment_inout_decls_wgl2 =
 const vertex_main =
     `   
         // Main function (writes the output variables) (GLSL ES 1.0 or 3.0)
+
         void main(  ) 
         {   
             vec4 pos_wcc    = model_mat * vec4( in_vertex_pos_mcc, 1) ;
@@ -92,26 +99,37 @@ const vertex_main =
 
 const fragment_functions = 
     `   
-        // Shade: computes opaque RGB color from: 
+        // Shade: computes opaque RGB color from (currently a simple test...)
         //    pos  : shading point position
-        //    unor : shading point normal (not neccesarily normalized)
         //    vcol : interpolated vertex color at the shading point position
-        vec3 Shade( vec3 pos, vec3 unor, vec3 vcol )
+        //    unor : shading point normal (not neccesarily normalized)
+        
+        vec3 Shade( vec3 pos, vec3 vcol, vec3 unor )
         {
-            vec3 nor = normalize(unor);
-            return vec3( abs(nor.x), abs(nor.y), abs(nor.z) );
+            vec3 nor   = normalize(unor);
+            vec3 light = normalize( vec3( 1.0, 1.0, 1.0 ) );
+            vec3 diff  = max( 0.2, 1.2*dot( light, nor )) * vcol ;
+
+            vec3  view    = normalize( vec3( 0.0, 0.0, 1.0 ) );
+            vec3  halfw   = normalize( view+light );
+            float hv      = max( 0.0, dot( halfw,view ) );
+            float expon   = 10.0 ;
+            vec3  spec    = pow(hv,expon)*vec3( 1.0, 1.0, 1.0 ) ; 
+
+            return diff ;//+ spec ;
         }
     `
 
 const fragment_main_wgl1 =
     `   
         // Main function (writes the output variables)
+
         void main() 
         {
             if ( do_shading == 0 )
                 gl_FragColor = vec4( vertex_color, 1.0 ) ;
             else
-                gl_FragColor = vec4( Shade( vertex_pos_wcc, vertex_norm_wcc, vertex_color ), 1.0 );
+                gl_FragColor = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
         }
     `
 
@@ -119,12 +137,13 @@ const fragment_main_wgl1 =
 const fragment_main_wgl2 =
     `   
         // Main function (writes the output variables)
+
         void main() 
         {
             if ( do_shading == 0 )
                 frag_color = vec4( vertex_color, 1.0 ) ;
             else
-                frag_color = vec4( Shade( vertex_pos_wcc, vertex_norm_wcc, vertex_color ), 1.0 );
+                frag_color = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
         }
     `
 // --------------------------------------------------------
@@ -244,22 +263,27 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     CheckGLError( gl )
     gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
     gl.bindAttribLocation( program, 1, "in_vertex_color"   )
-    gl.bindAttribLocation( program, 2, "in_vertex_normal"  )
+    gl.bindAttribLocation( program, 2, "in_vertex_normal_mcc"  )
     CheckGLError( gl )
     /// done....
 
+    const show_source = false // set to 'true' to see the sources even with no errors
+
     // link and then (if neccesary) show link errors
     gl.linkProgram( program )
-    if ( ! gl.getProgramParameter( program, gl.LINK_STATUS) ) 
+
+    const link_ok = gl.getProgramParameter( program, gl.LINK_STATUS)
+    if ( !  link_ok || show_source ) 
     {
         const msg = gl.getProgramInfoLog( program )
         LogLines("Vertex shader source",   vertex_source )
         LogLines("Fragment shader source", fragment_source )
-        Log(`Errors from program linking:`)
+        Log(`Output from program linking:`)
         Log('------------------------------------------------')
         Log(msg)
         Log('------------------------------------------------')
-        throw new Error(`Unable to link program.`)
+        if ( ! link_ok )
+            throw new Error(`Unable to link program.`)
     }
     else if ( debug_shaders )
         Log(`${fname} program linked ok.`)   
@@ -415,6 +439,8 @@ class SimpleGPUProgram
         CheckType( new_model_mat, 'Mat4' )
         this.model_mat = new Mat4( new_model_mat )
         this.context.uniformMatrix4fv( this.model_mat_loc, false, this.model_mat )
+        // set also the normal matrix, this is just a buggy hack, TODO: work on this
+        this.context.uniformMatrix4fv( this.norm_mat_loc, false, this.model_mat )
     }
     // ------------------------------------------------------------------------------------------------
     // composes the current model matrix with the matrix given as parameter
@@ -425,13 +451,17 @@ class SimpleGPUProgram
     }
    
     // ------------------------------------------------------------------------------------------------
-    // saves (in the model matrix stack) a copy of the current model matrix
+    /**
+     * saves (in the model matrix stack) a copy of the current model matrix
+     */
     pushMM()
     {
         this.model_mat_stack.push( new Mat4( this.model_mat ) )
     }
     // ------------------------------------------------------------------------------------------------
-    // pop model matrix
+    /**
+     * pop model matrix
+     */
     popMM()
     {
         const l = this.model_mat_stack.length 
@@ -440,6 +470,11 @@ class SimpleGPUProgram
         this.model_mat_stack.pop()
 
     }
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * logs the current model matrix
+     * @param {string} msg -- message to show on the log output      
+     */
     logMM( msg )
     {
         Log( msg+' :' )

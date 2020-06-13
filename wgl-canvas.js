@@ -384,9 +384,6 @@ class WebGLCanvas
         CheckType( devent, 'DragEvent' )
         if ( this.debug )
             Log(`${fname} begins`)
-
-        const file_list = devent.dataTransfer.files.item(0).name
-        console.log(`${fname} file_list == '${file_list}'`);
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -404,10 +401,21 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins`)
 
+        let file_list = devent.dataTransfer.files
+        console.log(`${fname} file list length == ${file_list.length}`);
+        if ( file_list.length == 0 ) // should not happen ....
+            return
 
-        const file_list = devent.dataTransfer.files.item(0).name
-        console.log(`${fname} file_list == '${file_list}'`);
-        
+        const file_blob = file_list.item(0)  // https://developer.mozilla.org/en-US/docs/Web/API/File
+        if ( file_blob == null )  // should not happen ....
+        {   console.log(`${fname} first file is null`);
+            return
+        }
+
+        console.log(`${fname} first file name == '${file_blob.name}'`);
+        console.log(`${fname} first file type == '${file_blob.type}'`);
+        console.log(`${fname} first file path == ${file_blob.size.toLocaleString('EN')} bytes`);
+
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -643,7 +651,9 @@ class WebGLCanvas
         //Log(`WebGLCanvas.drawFrame: redraws_count == ${redraws_count}`)
 
         // retrive context and size
-        let gl   = this.context
+        let gl   = this.context,
+            pr   = this.program
+
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
 
@@ -660,10 +670,10 @@ class WebGLCanvas
         CheckGLError( gl )
 
         // activate fragment+vertex shader
-        this.program.use()
+        pr.use()
 
         // do not shade ....
-        this.program.doShading( false )
+        pr.doShading( false )
 
         // set default color (attribute location 1)
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
@@ -681,7 +691,11 @@ class WebGLCanvas
         if ( this.test_3d_mesh == null )
             this.test_3d_mesh = new SphereMesh( 50, 50 )
 
-        this.test_3d_mesh.draw( gl )
+        pr.doShading(true)
+        pr.pushMM()
+            pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+            this.test_3d_mesh.draw( gl )
+        pr.popMM()
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

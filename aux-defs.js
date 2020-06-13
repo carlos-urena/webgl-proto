@@ -98,7 +98,9 @@ function LogLines( title, source )
     Log('-----------------------------------------------------------')
 
     for( let line of source.split('\n') )
-    {  Log(`${line_num} : ${line}`)
+    {  
+       const line_num_str = line_num.toLocaleString( 'EN', { minimumIntegerDigits: 2 } ) 
+       Log(`${line_num_str} : ${line}`)
        line_num ++
     }
     Log('-----------------------------------------------------------')

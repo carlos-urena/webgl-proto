@@ -88,11 +88,8 @@ class WebGLCanvas
         // creates the GPU Program (= vertex shader + fragment shader)
         this.program = new SimpleGPUProgram( this.context )
 
-        // creates a sample vertex sequence or mesh to test drawing 
-        this.test_vertex_seq     = new SimpleVertexArray()
-        this.test_vertex_seq_ind = new SimpleIndexedVertexArray()
-        this.test_2d_mesh        = new Simple2DMesh()
-        this.test_3d_mesh        = null 
+        // 3d mesh used to test 'IndexedTriangleMesh' class  
+        this.test_3d_mesh  = null 
 
         // set mouse events state info
         this.is_mouse_left_down  = false
@@ -686,10 +683,9 @@ class WebGLCanvas
         this.drawAxes()
         
         // actually draw something.....(test)
-        //this.test_vertex_seq_ind.draw( gl, gl.TRIANGLES )
-        //this.test_2d_mesh.draw( gl )
+        
         if ( this.test_3d_mesh == null )
-            this.test_3d_mesh = new SphereMesh( 50, 50 )
+            this.test_3d_mesh = new SphereMesh( 300, 300 )
 
         pr.doShading(true)
         pr.pushMM()

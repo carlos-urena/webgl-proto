@@ -212,9 +212,29 @@ class SphereMesh extends ParamSurfaceMesh
                 const
                     a  = s*2.0*Math.PI, b  = (t-0.5)*Math.PI,
                     ca = Math.cos(a),   sa = Math.sin(a),
-                    cb = Math.cos(b),   sb = Math.sin(b)
-                const v = new Vec3([ ca*cb, sb, sa*cb ])
+                    cb = Math.cos(b),   sb = Math.sin(b),
+                    v  = new Vec3([ ca*cb, sb, sa*cb ])
+
                 return { pos: v, nor: v }
+            } 
+        )
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+class CylinderMesh extends ParamSurfaceMesh
+{   constructor( ns, nt )
+    {   super
+        ( ns, nt, (s,t) => 
+            {   const
+                    a  = s*2.0*Math.PI, 
+                    ca = Math.cos(a),   
+                    sa = Math.sin(a),
+                    p  = new Vec3([ ca, t, sa ] ),
+                    n  = new Vec3([ ca, 0, sa ])
+
+                return { pos: p, nor: n }
             } 
         )
     }
@@ -226,16 +246,16 @@ class ConeMesh extends ParamSurfaceMesh
 {   constructor( ns, nt )
     {   super
         ( ns, nt, (s,t) => 
-            {
-                const
+            {   const
                     a  = s*2.0*Math.PI, 
                     ca = Math.cos(a),   
                     sa = Math.sin(a)
+                    p  = new Vec3([ (1-t)*ca, t, (1-t)*sa ] ),
+                    n  = new Vec3([ ca, 1, sa ])
 
-                const p = new Vec3([ca,t,sa]),
-                      n = new Vec3([ca,1,sa])
                 return { pos: p, nor: n.normalized() }
             } 
         )
     }
 }
+

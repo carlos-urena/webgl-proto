@@ -17,14 +17,14 @@ class IndexedTrianglesMesh
     {
         const fname = `Mesh.constructor():`
         CheckType( coords_data, 'Float32Array' )
-        let ind_class = triangles_array.constructor.name 
+        let ind_class = triangles_data.constructor.name 
         
         if (! ['Uint16Array','Uint32Array'].includes( ind_class ))
         {   const msg = `${fname} 'indexes_array' is of class '${ind_class}', but must be either 'Uint32Array' or 'Uint16Array'`
             throw Error(msg)
         }
         const vl = coords_data.length,
-              tl = triangles_array.length
+              tl = triangles_data.length
 
         Check( 0 < vl && 0 < tl,          `${fname} either the vertex array or the indexes array is empty` )
         Check( Math.floor(vl/3) == vl/3 , `${fname} vertex array length must be multiple of 3 (but it is ${vl})` )
@@ -33,10 +33,11 @@ class IndexedTrianglesMesh
         this.n_verts         = vl/3
         this.n_tris          = tl/3
         this.coords_data     = coords_data
+        this.triangles_data  = triangles_data
         this.colors_data     = null
         this.normals_data    = null
         this.text_coord_data = null
-        this.triangles_data  = triangles_data
+        
 
         // create the vertex array with all the data
         this.vertex_array    = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals

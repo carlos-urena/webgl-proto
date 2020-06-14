@@ -90,7 +90,7 @@ class WebGLCanvas
 
         // creates a sample vertex sequence or mesh to test drawing 
         this.test_vertex_seq     = new SimpleVertexArray()
-        this.test_vertex_seq_ind = new SimpleVertexArrayIndexed()
+        this.test_vertex_seq_ind = new SimpleIndexedVertexArray()
         this.test_2d_mesh        = new Simple2DMesh()
         this.test_3d_mesh        = null 
 

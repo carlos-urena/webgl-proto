@@ -43,12 +43,13 @@ class VertexArray
      * Sets a new vertex attribute data (other than vertex coordinates)
      * @param {number}       attr_index   -- attribute index, must be >0 (we cannot set the coordinates), and less than 'attr_buffers' length.
      * @param {number}       vec_len      -- length of each vector in 'attr_array' 
-     * @param {Float32Array} attr_data    -- new attributes array, can be 'null', then the corresponding buffer is removed from this vertex seq.
+     * @param {Float32Array} attr_data    -- new attributes array (can be 'null', then the corresponding 
+     *                                       attribute buffer is also set to null
      */
     setAttrData( attr_index, vec_len, attr_data )
     {
         const fname = `VertexArray.setAttrData(): `
-        const nb    = this.attr_data.length // number of attributes buffers, including 0 == vertex coordinates
+        const nb    = this.attr_buffers.length // number of attributes buffers, including 0 == vertex coordinates
 
         CheckNat( attr_index )
         Check( 0 < attr_index && attr_index < nb , `${fname} 'attr_index' (==${attr_index}) must be between 1 and ${nb-1}, both included` )
@@ -60,7 +61,7 @@ class VertexArray
             Check( attr_data.length/vec_len === this.num_vertexes, `${fname} attr. array length not coherent with num of vertexes of this vertex seq.`)
             attr_buffer = new AttrBuffer( vec_len, attr_data )
         }
-        this.attr_buffers[attr_index] = attr_buffer
+        this.attr_buffers[attr_index] = attr_buffer  // when 'attr_data' is null, sets 'attr_buffer[i]' also to null
     }
     // ---------------------------------------------------------------------------------------------
     
@@ -130,7 +131,7 @@ class SimpleVertexArray extends VertexArray
             ]
 
         super( 1, 3, new Float32Array( vertex_coords ) )
-        this.setAttrArray( 1, 3, new Float32Array( vertex_colors ) )       
+        this.setAttrData( 1, 3, new Float32Array( vertex_colors ) )       
     }
 }
 
@@ -139,7 +140,7 @@ class SimpleVertexArray extends VertexArray
  * A simple indexed vertex sequence (with colors)
  */
 
-class SimpleVertexArrayIndexed extends VertexArray
+class SimpleIndexedVertexArray extends VertexArray
 {
     constructor()
     {
@@ -164,8 +165,8 @@ class SimpleVertexArrayIndexed extends VertexArray
             ]
 
         super( 1, 3, new Float32Array( vertex_coords ) )
-        this.setAttrArray( 1, 3, new Float32Array( vertex_colors ))
-        this.setIndexes( new Uint16Array( indexes ))
+        this.setAttrData( 1, 3, new Float32Array( vertex_colors ))
+        this.setIndexesData( new Uint16Array( indexes ))
        
     }
 }

@@ -249,7 +249,7 @@ class ConeMesh extends ParamSurfaceMesh
             {   const
                     a  = s*2.0*Math.PI, 
                     ca = Math.cos(a),   
-                    sa = Math.sin(a)
+                    sa = Math.sin(a),
                     p  = new Vec3([ (1-t)*ca, t, (1-t)*sa ] ),
                     n  = new Vec3([ ca, 1, sa ])
 

@@ -34,7 +34,7 @@ class Vec3 extends Float32Array
 
     normalized() 
     {   const lsq = this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
-        return lsq != 0 ? this.scale(1/Math.sqrt(l)) : this ;
+        return lsq != 0 ? this.scale(1/Math.sqrt(lsq)) : this ;
     }
      
     x() { return this[0] }

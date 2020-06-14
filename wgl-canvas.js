@@ -685,7 +685,9 @@ class WebGLCanvas
         // actually draw something.....(test)
         
         if ( this.test_3d_mesh == null )
-            this.test_3d_mesh = new SphereMesh( 300, 300 )
+            //this.test_3d_mesh = new SphereMesh( 300, 300 )
+            //this.test_3d_mesh = new CylinderMesh( 300, 300 )
+            this.test_3d_mesh = new ConeMesh( 300, 300 )
 
         pr.doShading(true)
         pr.pushMM()

@@ -89,8 +89,8 @@ class WebGLCanvas
         this.program = new SimpleGPUProgram( this.context )
 
         // creates a sample vertex sequence or mesh to test drawing 
-        this.test_vertex_seq     = new SimpleVertexSeq()
-        this.test_vertex_seq_ind = new SimpleVertexSeqIndexed()
+        this.test_vertex_seq     = new SimpleVertexArray()
+        this.test_vertex_seq_ind = new SimpleVertexArrayIndexed()
         this.test_2d_mesh        = new Simple2DMesh()
         this.test_3d_mesh        = null 
 
@@ -544,9 +544,9 @@ class WebGLCanvas
        {
            if ( this.debug )
             Log(`${fname} creating axes`)
-            x_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 1,0,0 ]))
-            y_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
-            z_axe = new VertexSeq( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
+            x_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 1,0,0 ]))
+            y_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
+            z_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
        } 
        gl.vertexAttrib3f( 1, 1.0, 0.1, 0.1 ) ; x_axe.draw( gl, gl.LINES )
        gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; y_axe.draw( gl, gl.LINES )
@@ -569,8 +569,8 @@ class WebGLCanvas
                Log(`${fname} creating lines`)
             
             const h = -0.003
-            x_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
-            z_line = new VertexSeq( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
+            x_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
+            z_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
         } 
 
         // draw the lines

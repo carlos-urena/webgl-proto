@@ -1,62 +1,64 @@
 // -------------------------------------------------------------------------------------------------
 /**
- * A class for a sequence of vertexes position (and optionaly their attributes and indexes)
+ * A class for a sequence of vertexes coordinates (and optionaly their attributes and indexes)
+ * each instance is built with the coordinates data. Optionally, attributes or indexes can be added later.
  */
 
-class VertexSeq
+class VertexArray
 {
     /**
-     * @param {number}       num_attrs     -- num of attributes arrays this seq. will hold, 
+     * @param {number}       num_attrs    -- num of attributes buffers this vertex array will hold, 
      *                                        (without including vertex coordinates, which are allways attribute 0)
-     *                                        can be any non-negative integer
-     * @param {number}       vec_len       -- length of each vector with a vertex' coordinates, must be 2,3, or 4
-     * @param {Float32Array} coords_array  -- vertex coordinates, length is multiple of num.floats per vertex
+     *                                        can be any non-negative integer, including 0
+     * @param {number}       vec_len      -- length of each vector with a vertex coordinates, must be 2,3, or 4
+     * @param {Float32Array} coords_data  -- vertex coordinates, its length must be multiple of 'vec_len'
      */
-    constructor( num_attrs, vec_len, coords_array )
+    constructor( num_attrs, vec_len, coords_data )
     {
         this.debug = false
-        const fname  = 'VertexSeq.constructor: ()'
+        const fname  = 'VertexArray.constructor: ()'
         CheckNat( num_attrs )
 
-        let coords_buffer   = new AttrBuffer( vec_len, coords_array )
+        let coords_buffer   = new AttrBuffer( vec_len, coords_data )
         
         this.num_vertexes   = coords_buffer.num_vecs
         this.indexes_buffer = null               // by default, this is a non-indexed sequence
         this.attr_buffers   = [ coords_buffer ]  // array with vertexes attributes buffers (index 0 allways refers to the vertexes coordinates buffer)
+        
         for( let i = 0 ; i < num_attrs ; i++ )   // add uninitialized attribute arrays
             this.attr_buffers.push( null )
     }
     // -------------------------------------------------------------------------------------------
     /**
-     * sets the indexes array for this vertex seq (removes previous one, if any)
-     * @param {UInt32Array} indexes_array --  ( can also be a 'Unit16Array' )
+     * sets the indexes for this vertex arry (removes previous one, if any)
+     * @param {UInt32Array} indexes_data --  ( can also be a 'Unit16Array' )
      */
-    setIndexes( indexes_array )
+    setIndexesData( indexes_data )
     {
-        this.indexes_buffer = new IndexesBuffer( indexes_array )
+        this.indexes_buffer = new IndexesBuffer( indexes_data )
     }
     // -------------------------------------------------------------------------------------------
     
     /**
-     * Sets a new vertex attribute buffer (other than vertex coordinates)
+     * Sets a new vertex attribute data (other than vertex coordinates)
      * @param {number}       attr_index   -- attribute index, must be >0 (we cannot set the coordinates), and less than 'attr_buffers' length.
      * @param {number}       vec_len      -- length of each vector in 'attr_array' 
-     * @param {Float32Array} attr_array   -- new attributes array, can be 'null', then the corresponding buffer is removed from this vertex seq.
+     * @param {Float32Array} attr_data    -- new attributes array, can be 'null', then the corresponding buffer is removed from this vertex seq.
      */
-    setAttrArray( attr_index, vec_len, attr_array )
+    setAttrData( attr_index, vec_len, attr_data )
     {
-        const fname = `VertexSeq.setArray(): `
-        const nb    = this.attr_buffers.length // number of attributes buffers, including 0 == vertex coordinates
+        const fname = `VertexArray.setAttrData(): `
+        const nb    = this.attr_data.length // number of attributes buffers, including 0 == vertex coordinates
 
         CheckNat( attr_index )
         Check( 0 < attr_index && attr_index < nb , `${fname} 'attr_index' (==${attr_index}) must be between 1 and ${nb-1}, both included` )
         
         let attr_buffer = null 
-        if ( attr_array != null )
+        if ( attr_data != null )
         {
-            CheckType( attr_array, 'Float32Array' )
-            Check( attr_array.length/vec_len === this.num_vertexes, `${fname} attr. array length not coherent with num of vertexes of this vertex seq.`)
-            attr_buffer = new AttrBuffer( vec_len, attr_array )
+            CheckType( attr_data, 'Float32Array' )
+            Check( attr_data.length/vec_len === this.num_vertexes, `${fname} attr. array length not coherent with num of vertexes of this vertex seq.`)
+            attr_buffer = new AttrBuffer( vec_len, attr_data )
         }
         this.attr_buffers[attr_index] = attr_buffer
     }
@@ -69,7 +71,7 @@ class VertexSeq
      */
     draw( gl, mode )
     {
-        const fname = 'VertexSeq.draw():'
+        const fname = 'VertexArray.draw():'
         if ( this.debug ) Log(`${fname} begins.`)
 
         CheckGLError( gl )
@@ -101,7 +103,7 @@ class VertexSeq
  * A simple indexed vertex sequence (with colors)
  */
 
-class SimpleVertexSeq extends VertexSeq
+class SimpleVertexArray extends VertexArray
 {
     constructor()
     {
@@ -137,7 +139,7 @@ class SimpleVertexSeq extends VertexSeq
  * A simple indexed vertex sequence (with colors)
  */
 
-class SimpleVertexSeqIndexed extends VertexSeq
+class SimpleVertexArrayIndexed extends VertexArray
 {
     constructor()
     {

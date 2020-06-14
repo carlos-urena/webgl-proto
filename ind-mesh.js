@@ -1,69 +1,89 @@
 
 // -------------------------------------------------------------------------------------------------
 /**
- * A class for an indexed triangle mesh
+ * A class for an indexed triangles mesh
  */
 
-class Mesh
+class IndexedTrianglesMesh
 {
     // ----------------------------------------------------------------------------------
-    constructor( coords_array, triangles_array )
+
+    /**
+     * initializes the mesh from coordinates and triangles data
+     * @param {Float32Array} coords_data    -- vertex coordinates (length must be multiple of 3) 
+     * @param {Uint32Data}   triangles_data -- vertex indexes for each triangle (length must be multiple of 3)
+     */
+    constructor( coords_data, triangles_data )
     {
         const fname = `Mesh.constructor():`
-        CheckType( coords_array, 'Float32Array' )
+        CheckType( coords_data, 'Float32Array' )
         let ind_class = triangles_array.constructor.name 
         
         if (! ['Uint16Array','Uint32Array'].includes( ind_class ))
         {   const msg = `${fname} 'indexes_array' is of class '${ind_class}', but must be either 'Uint32Array' or 'Uint16Array'`
             throw Error(msg)
         }
-        const vl = coords_array.length,
+        const vl = coords_data.length,
               tl = triangles_array.length
 
         Check( 0 < vl && 0 < tl,          `${fname} either the vertex array or the indexes array is empty` )
         Check( Math.floor(vl/3) == vl/3 , `${fname} vertex array length must be multiple of 3 (but it is ${vl})` )
         Check( Math.floor(tl/3) == tl/3 , `${fname} indexes array length must be multiple of 3 (but it is ${tl})` )
 
-        this.n_verts          = vl/3
-        this.n_tris           = tl/3
-        this.coords_array     = coords_array
-        this.colors_array     = null
-        this.normals_array    = null
-        this.text_coord_array = null
-        this.triangles_array  = triangles_array
-        this.vertex_seq       = new VertexSeq ( 3, 3, coords_array )  // Note: 3 attributes: positions, colors, normals
+        this.n_verts         = vl/3
+        this.n_tris          = tl/3
+        this.coords_data     = coords_data
+        this.colors_data     = null
+        this.normals_data    = null
+        this.text_coord_data = null
+        this.triangles_data  = triangles_data
 
-        this.vertex_seq.setIndexes( triangles_array )
+        // create the vertex array with all the data
+        this.vertex_array    = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals
+        this.vertex_array.setIndexesData( triangles_data )
     }
     // ----------------------------------------------------------------------------------
 
-    checkAttrArray( fname, attr_array )
+    /**
+     * returns true iif data array length is multiple of 3 and type is 'Float32Array'
+     * @param {string}       fname     -- function calling this
+     * @param {Float32Array} attr_data -- reference to the data
+     */
+    checkAttrData( fname, attr_data )
     {
-        CheckType( attr_array, 'Float32Array' )
-        const l = attr_array.length
+        CheckType( attr_data, 'Float32Array' )
+        const l = attr_data.length
         Check( l === 3*this.n_verts, `${fname} attribute array length (== ${l}) must be 3 times num.verts. (== ${3*this.n_verts})`)
     }
     // ----------------------------------------------------------------------------------
 
-    setColorsArray( colors_array )
+    /**
+     * specify a new vertexes colors for the Mesh
+     * @param {Float32Array} colors_data -- new vertexes colors (length must be 3*num.vertexes)
+     */
+    setColorsData( colors_data )
     {
-        this.checkAttrArray(`Mesh.setColorsArray():`, colors_array )
-        this.colors_array = colors_array
-        this.vertex_seq.setAttrArray( 1, 3, colors_array )
+        this.checkAttrData(`Mesh.setColorsData():`, colors_data )
+        this.colors_data = colors_data
+        this.vertex_array.setAttrData( 1, 3, colors_data )
     }
     // ----------------------------------------------------------------------------------
 
-    setNormalsArray( normals_array )
+    /**
+     * specify a new vertexes normals for the Mesh
+     * @param {Float32Array} normals_data -- new vertexes normals (length must be 3*num.vertexes)
+     */
+    setNormalsData( normals_data )
     {
-        this.checkAttrArray(`Mesh.setNormalsArray():`, normals_array )
-        this.normals_array = normals_array
-        this.vertex_seq.setAttrArray( 2, 3, normals_array )
+        this.checkAttrData(`Mesh.setNormalsData():`, normals_data )
+        this.normals_data = normals_data
+        this.vertex_array.setAttrData( 2, 3, normals_data )
     }
     // ----------------------------------------------------------------------------------
 
     draw( gl )
     {
-        this.vertex_seq.draw( gl, gl.TRIANGLES )
+        this.vertex_array.draw( gl, gl.TRIANGLES )
     }
     // ----------------------------------------------------------------------------------
 }
@@ -73,7 +93,7 @@ class Mesh
  * A simple planar (z=0) mesh used to test the 'Mesh' class
  */
 
-class Simple2DMesh extends Mesh 
+class Simple2DMesh extends IndexedTrianglesMesh 
 {
     constructor()
     {
@@ -106,8 +126,8 @@ class Simple2DMesh extends Mesh
             ]
 
         super( new Float32Array( vertex_coords ), new Uint32Array( triangles ) )
-        this.setColorsArray( new Float32Array( vertex_colors ))
-        this.setNormalsArray( new Float32Array( vertex_normals ))
+        this.setColorsData( new Float32Array( vertex_colors ))
+        this.setNormalsData( new Float32Array( vertex_normals ))
     }
 }
 
@@ -116,7 +136,7 @@ class Simple2DMesh extends Mesh
 /**
  * A mesh built by sampling a parametric surface (a map from [0,1]^2 to R^3)
  */
-class ParamSurfaceMesh extends Mesh
+class ParamSurfaceMesh extends IndexedTrianglesMesh
 {
     constructor( ns, nt, param_func )
     {
@@ -176,11 +196,12 @@ class ParamSurfaceMesh extends Mesh
         }
         // initialize the base Mesh instance
         super( coords, triangles )
-        this.setColorsArray( colors )
-        this.setNormalsArray( normals )
+        this.setColorsData( colors )
+        this.setNormalsData( normals )
     }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 class SphereMesh extends ParamSurfaceMesh
 {   constructor( ns, nt )
@@ -198,6 +219,7 @@ class SphereMesh extends ParamSurfaceMesh
     }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 class ConeMesh extends ParamSurfaceMesh
 {   constructor( ns, nt )

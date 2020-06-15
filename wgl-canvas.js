@@ -572,6 +572,7 @@ class WebGLCanvas
 
         console.log('parsing ended.')
         this.loading_object = false
+        this.drawFrame()
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -846,17 +847,28 @@ class WebGLCanvas
         this.drawAxes()
         
         // actually draw something.....(test)
-        
-        if ( this.test_3d_mesh == null )
-            //this.test_3d_mesh = new SphereMesh( 300, 300 )
-            //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-            this.test_3d_mesh = new ConeMesh( 300, 300 )
+        if ( this.loaded_object == null )
+        {
+            if ( this.test_3d_mesh == null )
+                //this.test_3d_mesh = new SphereMesh( 300, 300 )
+                //this.test_3d_mesh = new CylinderMesh( 300, 300 )
+                this.test_3d_mesh = new ConeMesh( 300, 300 )
 
-        pr.doShading(true)
-        pr.pushMM()
-            pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-            this.test_3d_mesh.draw( gl )
-        pr.popMM()
+            pr.doShading(false)
+            pr.pushMM()
+                pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+                this.test_3d_mesh.draw( gl )
+            pr.popMM()
+        }
+        else
+        {
+            //console.log('drawing loaded object')
+            pr.doShading(false)
+            pr.pushMM()
+                pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+                this.loaded_object.draw( gl )
+            pr.popMM()
+        }
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

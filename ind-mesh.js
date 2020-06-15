@@ -47,8 +47,32 @@ class IndexedTrianglesMesh
         
 
         // create the vertex array with all the data
-        this.vertex_array    = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals
+        this.vertex_array = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals
         this.vertex_array.setIndexesData( triangles_data )
+
+        this.computeBBox()
+    }
+    // ----------------------------------------------------------------------------------
+
+    computeBBox()
+    {
+        let v = this.coords_data
+       Check( this.n_verts == v.length/3 )
+
+       let minx = v[0], maxx = v[0],
+           miny = v[1], maxy = v[1],
+           minz = v[2], maxz = v[2]
+
+       for( let iv = 1 ; iv < this.n_verts ; iv++ )
+       {
+            let i = 3*iv 
+            minx = Math.min( minx, v[i+0] ) ; maxx = Math.max( maxx, v[i+0] ) 
+            miny = Math.min( miny, v[i+1] ) ; maxy = Math.max( maxy, v[i+1] ) 
+            minz = Math.min( minz, v[i+2] ) ; maxz = Math.max( maxz, v[i+2] ) 
+       }
+       console.log(`num verts == ${this.n_verts}`)
+       console.log(`bbox min == (${minx},${miny},${minz})`)
+       console.log(`bbox max == (${maxx},${maxy},${maxz})`)
     }
     // ----------------------------------------------------------------------------------
 
@@ -400,14 +424,14 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
         
         // we assume the header is ok. lets load 
 
-        console.log(`${fname} num_verts == ${this.n_verts}`)
-        console.log(`${fname} num_tris  == ${this.n_tris}`)
+        console.log(`${fname} num_verts == ${num_verts}`)
+        console.log(`${fname} num_tris  == ${num_tris}`)
 
         this.n_verts         = num_verts
         this.n_tris          = num_tris
-        this.coords_data     = new Float32Array( num_verts )
-        this.triangles_data  = new Uint32Array( num_tris )
-        this.colors_data     = new Float32Array( num_verts )
+        this.coords_data     = new Float32Array( 3*num_verts )
+        this.triangles_data  = new Uint32Array( 3*num_tris )
+        this.colors_data     = new Float32Array( 3*num_verts )
         this.normals_data    = null
         this.text_coord_data = null
 
@@ -480,7 +504,7 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
             const p = 3*it 
 
             this.triangles_data[p+0] = i0 
-            this.triangles_data[p+0] = i1 
+            this.triangles_data[p+0] = i1
             this.triangles_data[p+0] = i2 
             
             it++ 
@@ -489,8 +513,11 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
         this.parse_message = 'parsing has been ok so far'
 
         // create the vertex array with all the data
-        this.vertex_array    = new VertexArray ( 3, 3, this.coords_data )  // Note: 3 attributes: positions, colors, normals
+        this.vertex_array  = new VertexArray ( 3, 3, this.coords_data )  // Note: 3 attributes: positions, colors, normals
         this.vertex_array.setIndexesData( this.triangles_data )
+        this.setColorsData( this.colors_data )
+
+        this.computeBBox()
 
         this.parse_ok = true // done!
 

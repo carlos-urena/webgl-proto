@@ -501,6 +501,15 @@ class WebGLCanvas
         this.parent_elem.style.borderColor = def_border_color
     }
     // -------------------------------------------------------------------------------------------------
+    
+    setStatus( msg )
+    {
+        let st = document.getElementById('status_div_id')
+        if ( st != null )
+            st.innerHTML = msg
+    }
+
+    //---
     /**
      * Process a new ply file which has been just dropped onto the canvas
      * @param {*} ply_file_blob 
@@ -519,6 +528,8 @@ class WebGLCanvas
         console.log(`${fname} first file path == ${ply_file.size.toLocaleString('EN')} bytes`)
         console.log('## LOADING ###  .....')
 
+        this.setStatus(`Loading ${ply_file.name} (${ply_file.size.toLocaleString('EN')} bytes) .....`)
+
         var reader = new FileReader()
         this.loading_object = true
 
@@ -528,6 +539,7 @@ class WebGLCanvas
             console.log(`${fname} error while loading file`)
             alert('Cannot load file. An error ocurred')
             this.canvas_obj.loading_object = false 
+            this.setStatus('Unable to read ply file.')
         }
 
         reader.readAsText( ply_file )// , "UTF-8" )
@@ -565,14 +577,17 @@ class WebGLCanvas
         console.log('parsing ......')
 
         let loaded_object  = new TriMeshFromPLYLines( lines )
-        if ( loaded_object.parse_ok )
+        if ( loaded_object.n_verts > 0 )
+        {   
             this.loaded_object = loaded_object
-        else 
-            alert(`Sorry, there was an error while parsing this PLY file.\n The model cannot be loaded. Error message from parser:\n ${loaded_object.parse_message}`)
-
+            this.setStatus(`PLY file loaded ok.`)
+            this.drawFrame()
+        }
+        else
+            this.setStatus(`PLY file couldn't be loaded.`)
+        
         console.log('parsing ended.')
         this.loading_object = false
-        this.drawFrame()
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -852,7 +867,7 @@ class WebGLCanvas
             if ( this.test_3d_mesh == null )
                 //this.test_3d_mesh = new SphereMesh( 300, 300 )
                 //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-                this.test_3d_mesh = new ConeMesh( 300, 300 )
+                this.test_3d_mesh = new ConeMesh( 1300, 1000 )
 
             pr.doShading(false)
             pr.pushMM()

@@ -359,7 +359,7 @@ class WebGLCanvas
     // -------------------------------------------------------------------------------------------------
     /**
      * Called right after a touch end event
-     * @param {TouchEvent} tevent -- touch event created by the browser
+     * @param {TouchEvent} tevent -- drag event created by the browser
      */
     touchEnd( tevent )
     {
@@ -442,14 +442,14 @@ class WebGLCanvas
 
         if ( devent.target != this.canvas_elem )
         {
-            devent.stopImmediatePropagation() // neccesary? improves performance?
+            //devent.stopImmediatePropagation() // probably wrong when there are more than one webgl canvas on the page
             devent.preventDefault() // prevent default treatment of drag drop
         }
     }
     // -------------------------------------------------------------------------------------------------
     /**
      * Called for a 'drop' event specifically on this canvas element
-     * @param {DragEvent} devent -- touch event created by the browser
+     * @param {DragEvent} devent -- drag event created by the browser
      */
     dragDrop( devent )
     {
@@ -457,9 +457,8 @@ class WebGLCanvas
         devent.preventDefault() // prevent default treatment of drag drop event
 
         const fname = 'WebGLCanvas.dragDrop():'
-        //this.cLog(fname)
         CheckType( devent, 'DragEvent' )
-        //if ( this.debug )
+        if ( this.debug )
             Log(`${fname} begins`)
 
         let file_list = devent.dataTransfer.files

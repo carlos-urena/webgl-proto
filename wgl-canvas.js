@@ -11,6 +11,8 @@ var x_line  = null,
 var x_axe   = null,
     y_axe   = null, 
     z_axe   = null 
+
+
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
 
@@ -40,7 +42,7 @@ class WebGLCanvas
         // Check the parent element exists and retrieve it
         this.parent_elem   = BuscarElemId( parent_id )
         this.parent_id     = parent_id
-        
+
         // Create and configure the canvas element 
         // (its size is that of parent element, which is typically a 'div')
 
@@ -122,14 +124,21 @@ class WebGLCanvas
         // for clog...
         this.clog_span = null
 
-        // touch events for mobile devices
+        // touch events on the canvas for mobile devices
         this.canvas_elem.addEventListener( 'touchstart', e => this.touchStart(e), true )
         this.canvas_elem.addEventListener( 'touchmove',  e => this.touchMove(e), true )
         this.canvas_elem.addEventListener( 'touchend',   e => this.touchEnd(e), true )
 
-        // drag and drop events for reading files
-        this.canvas_elem.addEventListener( 'dragover', e => this.dragOver(e), true )
-        this.canvas_elem.addEventListener( 'drop',     e => this.dragDrop(e), true )
+        // handle drag & drop related events on the whole document 
+        // (prevents default browser actions and changes style of canvas when dragging over it)
+        document.addEventListener( 'dragenter',  e => this.documentDragEnter(e), true )
+        document.addEventListener( 'dragleave',  e => this.documentDragLeave(e), true )
+        document.addEventListener( 'drop',       e => this.documentDragDrop(e), true )
+        document.addEventListener( 'dragover',   e => this.documentDragOver(e), true )
+
+        // call 'this.dragDrop' when the user drops some files on this canvas element
+        this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
+        
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
@@ -248,7 +257,7 @@ class WebGLCanvas
         
         return false
     }
-        // -------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------
     /**
      * Called right after the mouse wheel has been moved over the canvas
      * @param {WheelEvent} wevent -- mouse event created by the browser
@@ -362,40 +371,95 @@ class WebGLCanvas
         CheckType( tevent, 'TouchEvent' )
         if ( this.debug )
             Log(`${fname} begins`)
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called for a 'dragenter' event anywhere in the document
+     * @param {DragEvent} devent -- drag event created by the browser
+     */
+    documentDragEnter( devent )
+    {
+        const fname = 'WebGLCanvas.documentDragEnter():'
+        CheckType( devent, 'DragEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
 
-       
+        if ( devent.target == this.canvas_elem )
+        {
+            this.parent_elem.style.borderColor = 'rgb(30%,90%,50%)'
+        }
+        devent.stopImmediatePropagation() // neccesary? improves performance?
+        devent.preventDefault() // prevent default treatment of drag end event
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called for a 'dragover' event anywhere in the document
+     * @param {DragEvent} devent -- drag event created by the browser
+     */
+    documentDragOver( devent )
+    {
+        const fname = 'WebGLCanvas.documentDragOver():'
+        CheckType( devent, 'DragEvent' )
+        if ( this.debug ) 
+            Log(`${fname} begins`)
+
+        devent.stopImmediatePropagation() // neccesary? improves performance?
+        devent.preventDefault() // prevent default treatment of drag over mouse
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called for a 'dragstart' event
+     * @param {DragEvent} devent -- drag event created by the browser
+     */
+    documentDragLeave( devent )
+    {
+        const fname = 'WebGLCanvas.documentDragLeave():'
+        CheckType( devent, 'DragEvent' )
+        if ( this.debug )
+            Log(`${fname} begins`)
+
+        if ( devent.target == this.canvas_elem )
+        {
+            this.parent_elem.style.borderColor = 'rgb(50%,50%,50%)'
+        }
+
+        devent.stopImmediatePropagation() // neccesary? improves performance?
+        devent.preventDefault() // prevent default treatment of drag end event
         
     }
     // -------------------------------------------------------------------------------------------------
     /**
-     * Called for a 'dragover' element
-     * @param {DragEvent} devent -- touch event created by the browser
+     * Called for a 'drop' event anywhere in the document,  prevents default drop behavoir on elements
+     * different from this canvas 
+     * @param {DragEvent} devent -- drag event created by the browser
      */
-    dragOver( devent )
+    documentDragDrop( devent )
     {
-        devent.stopImmediatePropagation() // neccesary? improves performance?
-        devent.preventDefault() // prevent default treatment of mouse up event
-
-        const fname = 'WebGLCanvas.dragOver():'
-        //this.cLog(fname)
+        const fname = 'WebGLCanvas.documentDragDrop():'
         CheckType( devent, 'DragEvent' )
         if ( this.debug )
             Log(`${fname} begins`)
+
+        if ( devent.target != this.canvas_elem )
+        {
+            devent.stopImmediatePropagation() // neccesary? improves performance?
+            devent.preventDefault() // prevent default treatment of drag drop
+        }
     }
     // -------------------------------------------------------------------------------------------------
     /**
-     * Called for a 'dragdrop' element
+     * Called for a 'drop' event specifically on this canvas element
      * @param {DragEvent} devent -- touch event created by the browser
      */
     dragDrop( devent )
     {
         devent.stopImmediatePropagation() // neccesary? improves performance?
-        devent.preventDefault() // prevent default treatment of mouse up event
+        devent.preventDefault() // prevent default treatment of drag drop event
 
         const fname = 'WebGLCanvas.dragDrop():'
         //this.cLog(fname)
         CheckType( devent, 'DragEvent' )
-        if ( this.debug )
+        //if ( this.debug )
             Log(`${fname} begins`)
 
         let file_list = devent.dataTransfer.files
@@ -409,13 +473,19 @@ class WebGLCanvas
             return
         }
 
-        console.log(`${fname} first file name == '${file_blob.name}'`);
-        console.log(`${fname} first file type == '${file_blob.type}'`);
-        console.log(`${fname} first file path == ${file_blob.size.toLocaleString('EN')} bytes`);
+        console.log(`${fname} first file name == '${file_blob.name}'`)
+        console.log(`${fname} first file type == '${file_blob.type}'`)
+        console.log(`${fname} first file path == ${file_blob.size.toLocaleString('EN')} bytes`)
 
+        this.parent_elem.style.borderColor = 'rgb(50%,50%,50%)'
     }
-
+    
     // -------------------------------------------------------------------------------------------------
+    /**
+     * gets an OpenGL context for the webgl canvas document element
+     *   - assigns 'this.context' and 'this.webgl_version'
+     *   - throws an error if no webgl context can be obtained
+     */
     getWebGLContext()
     {
         const fname = 'WebGLCanvas.getWebGLContext():'

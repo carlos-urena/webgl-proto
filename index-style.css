@@ -52,11 +52,12 @@ a
 
 #canvas_container_id
 {
-   /**
-   background-color : rgb(80%,0%,0%); 
-   **/
    width            : 1024px ; 
-   height           : 1024px ;  
+   height           : 1024px ; 
+   border-width     : 5px ;
+     border-style     : solid ;
+     border-color     : rgb(50%,50%,50%);
+     border-radius    : 4px ;
 }
 
 #log_div_id, #clog_span_id

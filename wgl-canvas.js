@@ -99,6 +99,10 @@ class WebGLCanvas
         this.drag_prev_pos_x     = -1
         this.drag_prev_pos_y     = -1
 
+        // we already have not started loading any 3d model
+        this.loaded_object  = null
+        this.loading_object = false 
+
         // prevent the context menu from appearing, typically after a right click
         this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
 
@@ -461,24 +465,114 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins`)
 
-        let file_list = devent.dataTransfer.files
-        console.log(`${fname} file list length == ${file_list.length}`);
-        if ( file_list.length == 0 ) // should not happen ....
-            return
+        const def_border_color = 'rgb(50%,50%,50%)',
+              err_border_color = 'rgb(100%,40%,10%)'
 
-        const file_blob = file_list.item(0)  // https://developer.mozilla.org/en-US/docs/Web/API/File
-        if ( file_blob == null )  // should not happen ....
-        {   console.log(`${fname} first file is null`);
+        let file_list = devent.dataTransfer.files
+        //console.log(`${fname} file list length == ${file_list.length}`);
+        
+        if ( file_list.length == 0 ) // should not happen ....
+            throw new Error(`${fname} 'file_list' length is 0`)
+
+        if ( file_list.length > 1 )
+        {   
+            this.parent_elem.style.borderColor = err_border_color
+            alert(`Sorry, you can only drop a single file, but you're trying to drop ${file_list.length}`)
+            this.parent_elem.style.borderColor = def_border_color
             return
         }
+        const file_blob = file_list.item(0)  // https://developer.mozilla.org/en-US/docs/Web/API/File
+        if ( file_blob == null )  // should not happen ....
+            throw new Error(`${fname} 'file_blob' is 'null'`)
 
-        console.log(`${fname} first file name == '${file_blob.name}'`)
-        console.log(`${fname} first file type == '${file_blob.type}'`)
-        console.log(`${fname} first file path == ${file_blob.size.toLocaleString('EN')} bytes`)
-
-        this.parent_elem.style.borderColor = 'rgb(50%,50%,50%)'
+        const extension = file_blob.name.split('.').pop().toLowerCase() 
+        
+        if ( extension != 'ply' )
+        {
+            this.parent_elem.style.borderColor = err_border_color
+            alert( "Sorry, in this development stage, you can only load files " +
+                   "with '.ply' extension, but you dropped a file with " + 
+                   `${extension} extension` )
+            this.parent_elem.style.borderColor = def_border_color
+            return 
+        }
+        this.parent_elem.style.borderColor = err_border_color
+        this.plyFileDropped( file_blob )
+        this.parent_elem.style.borderColor = def_border_color
     }
-    
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Process a new ply file which has been just dropped onto the canvas
+     * @param {*} ply_file_blob 
+     */
+    plyFileDropped( ply_file )
+    {
+        CheckType( ply_file, 'File' )
+        const fname = `WebGLCanvas.plyFileDropped():`
+
+        if ( this.loading_object )
+        {
+            alert('Sorry, cannot load 3D model file, alreading loading another file.')
+            return
+        }
+        console.log(`${fname} first file name == '${ply_file.name}'`)
+        console.log(`${fname} first file path == ${ply_file.size.toLocaleString('EN')} bytes`)
+        console.log('## LOADING ###  .....')
+
+        var reader = new FileReader()
+        this.loading_object = true
+
+        reader.onload = e => this.plyFileLoaded( e )
+        reader.onerror = function (evt) 
+        {
+            console.log(`${fname} error while loading file`)
+            alert('Cannot load file. An error ocurred')
+            this.canvas_obj.loading_object = false 
+        }
+
+        reader.readAsText( ply_file )// , "UTF-8" )
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called after the ply File (Blob) has been loaded, this adds the PLY object to the scene
+     * @param {*} evt 
+     */
+    plyFileLoaded( evt )
+    {
+        const fname = 'WebGLCanvas.plyFileLoaded():'
+        Check( this.loading_object , "'this.loading_object' is not 'true'")
+        CheckType( evt, 'ProgressEvent' )
+
+        console.log(`${fname} event class  == ${evt.constructor.name}`)
+        console.log(`${fname} result class == ${evt.target.result.constructor.name}`) 
+        console.log(`${fname} splitting lines ....` )
+
+        let lines = evt.target.result.split('\n')
+
+        console.log(`${fname} splitting ended`)
+        console.log(`${fname} num lines   == ${lines.length}`)
+        
+        let pre = document.getElementById("ply_file_contents_pre_id")
+
+        for( let i = 0 ; i < lines.length ; i++ )
+        {    
+            if ( pre != null && i < 30 )
+                pre.innerHTML += lines[i]+'<br/>'
+            if ( i < 30 )
+                console.log(lines[i])
+        }
+
+        console.log('parsing ......')
+
+        let loaded_object  = new TriMeshFromPLYLines( lines )
+        if ( loaded_object.parse_ok )
+            this.loaded_object = loaded_object
+        else 
+            alert(`Sorry, there was an error while parsing this PLY file.\n The model cannot be loaded. Error message from parser:\n ${loaded_object.parse_message}`)
+
+        console.log('parsing ended.')
+        this.loading_object = false
+    }
     // -------------------------------------------------------------------------------------------------
     /**
      * gets an OpenGL context for the webgl canvas document element

@@ -185,11 +185,15 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
             colors  = new Float32Array( 3*nver ),
             normals = new Float32Array( 3*nver )
 
+        const num_color_bands = 20,
+              mod_s           = Math.max( 2, Math.floor( ns/num_color_bands ) ),
+              mod_t           = Math.max( 2, Math.floor( nt/num_color_bands ) )
+
         for( let i = 0 ; i <= ns ; i++ )
         for( let j = 0 ; j <= nt ; j++ )
         {
             const s    = i/ns,
-                  t    = j/ns,
+                  t    = j/nt,
                   vert = param_func( s, t ),  // includes vert.pos, vert.nor, ver.cct
                   b    = 3* (i + j*(ns+1))
 
@@ -199,9 +203,10 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
             } 
             
             // sample colors
-            colors[b+0] = ( i%2 == 0 ) ? 0.6 : 0.3
-            colors[b+1] = ( j%2 == 0 ) ? 0.6 : 0.3
-            colors[b+2] = ( (i+j)%2 == 0 ) ? 0.6 : 0.3
+            
+            colors[b+0] = ( i%mod_s < 0.5*mod_s ) ? 0.6 : 0.3
+            colors[b+1] = ( j%mod_t < 0.5*mod_t ) ? 0.6 : 0.3
+            colors[b+2] = ( (i+j)%(mod_s+mod_t) < 0.5*(mod_s+mod_t) ) ? 0.6 : 0.3
         }
 
         // create the indexes (triangles) array  (2 triangles for each vertex except for last vertexes row/col)

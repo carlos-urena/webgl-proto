@@ -585,11 +585,11 @@ class WebGLCanvas
             Log(`${fname} ###### end`)
             Log(`${fname} PARSING....`)
         }
-        let loaded_object  = new TriMeshFromPLYLines( lines )
+        let loaded_object  = new TriMeshFromPLYLines_FTCC( lines )   //// use which version _VC ??
         if ( loaded_object.n_verts > 0 )
         {   
             this.loaded_object = loaded_object
-            this.setStatus(`PLY file '${this.ply_file_name}' loaded ok.`)
+            this.setStatus(`PLY file '${this.ply_file_name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`)
             this.drawFrame()
         }
         else

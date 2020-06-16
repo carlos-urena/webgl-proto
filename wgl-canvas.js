@@ -509,10 +509,10 @@ class WebGLCanvas
             st.innerHTML = msg
     }
 
-    //---
+    // -------------------------------------------------------------------------------------------------
     /**
      * Process a new ply file which has been just dropped onto the canvas
-     * @param {*} ply_file_blob 
+     * @param {File} ply_file 
      */
     plyFileDropped( ply_file )
     {
@@ -524,20 +524,27 @@ class WebGLCanvas
             alert('Sorry, cannot load 3D model file, alreading loading another file.')
             return
         }
-        console.log(`${fname} first file name == '${ply_file.name}'`)
-        console.log(`${fname} first file path == ${ply_file.size.toLocaleString('EN')} bytes`)
-        console.log('## LOADING ###  .....')
+        this.ply_file_name = ply_file.name
 
-        this.setStatus(`Loading ${ply_file.name} (${ply_file.size.toLocaleString('EN')} bytes) .....`)
+        if ( this.debug )
+        {
+            Log(`${fname} first file name == '${this.ply_file_name}'`)
+            Log(`${fname} first file path == ${ply_file.size.toLocaleString('EN')} bytes`)
+            Log(`${fname} ## LOADING ###  .....`)
+        }
+        
 
-        var reader = new FileReader()
+        const mb = Math.floor( 100.0*ply_file.size/1024.0 )/ 100.0
+        this.setStatus(`Loading ${this.ply_file_name} (${mb.toLocaleString('EN')} MB) .....`)
+
+        let  reader = new FileReader()
         this.loading_object = true
 
         reader.onload = e => this.plyFileLoaded( e )
         reader.onerror = function (evt) 
         {
-            console.log(`${fname} error while loading file`)
-            alert('Cannot load file. An error ocurred')
+            //console.log(`${fname} error while loading file`)
+            alert(`Cannot load file. An error ocurred while trying to read from the file system`)
             this.canvas_obj.loading_object = false 
             this.setStatus('Unable to read ply file.')
         }
@@ -555,38 +562,42 @@ class WebGLCanvas
         Check( this.loading_object , "'this.loading_object' is not 'true'")
         CheckType( evt, 'ProgressEvent' )
 
-        console.log(`${fname} event class  == ${evt.constructor.name}`)
-        console.log(`${fname} result class == ${evt.target.result.constructor.name}`) 
-        console.log(`${fname} splitting lines ....` )
-
+        if ( this.debug )
+        {
+            Log(`${fname} event class  == ${evt.constructor.name}`)
+            Log(`${fname} result class == ${evt.target.result.constructor.name}`) 
+            Log(`${fname} splitting lines ....` )
+        }
         let lines = evt.target.result.split('\n')
 
-        console.log(`${fname} splitting ended`)
-        console.log(`${fname} num lines   == ${lines.length}`)
-        
-        let pre = document.getElementById("ply_file_contents_pre_id")
-
-        for( let i = 0 ; i < lines.length ; i++ )
-        {    
-            if ( pre != null && i < 30 )
-                pre.innerHTML += lines[i]+'<br/>'
-            if ( i < 30 )
-                console.log(lines[i])
+        if ( this.debug )
+        {
+            Log(`${fname} splitting ended`)
+            Log(`${fname} num lines   == ${lines.length}`)
+            Log(`${fname} ###### first lines in PLY file == `)
+            let pre = document.getElementById("ply_file_contents_pre_id")
+            for( let i = 0 ; i < lines.length ; i++ )
+            {   if ( pre != null && i < 30 )
+                    pre.innerHTML += lines[i]+'<br/>'
+                if ( i < 30 )
+                    console.log(lines[i])
+            }
+            Log(`${fname} ###### end`)
+            Log(`${fname} PARSING....`)
         }
-
-        console.log('parsing ......')
-
         let loaded_object  = new TriMeshFromPLYLines( lines )
         if ( loaded_object.n_verts > 0 )
         {   
             this.loaded_object = loaded_object
-            this.setStatus(`PLY file loaded ok.`)
+            this.setStatus(`PLY file '${this.ply_file_name}' loaded ok.`)
             this.drawFrame()
         }
         else
-            this.setStatus(`PLY file couldn't be loaded.`)
+            this.setStatus(`PLY file '${this.ply_file_name}' couldn't be loaded.`)
         
-        console.log('parsing ended.')
+        if ( this.debug )
+            Log(`${fname} parsing ended.`)
+        
         this.loading_object = false
     }
     // -------------------------------------------------------------------------------------------------

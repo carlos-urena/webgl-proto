@@ -1,4 +1,51 @@
 
+var debug_mesh = false 
+
+// ----------------------------------------------------------------------------------
+
+/**
+ * Computes the AA bounding box from an array with cordinates
+ * @param   {Float32Array} -- coords_array
+ * @returns {object}       -- an object with 6 number properties, named 'xmin','xmax','ymin','ymax','zmin','zmax'
+ */
+function ComputeBBox( coords_array )
+{
+    const fname = 'ComputeBBox'
+    CheckType( coords_array, 'Float32Array' )
+    CheckNat( coords_array.length/3 )
+
+    let   v  = this.coords_data
+    const nv = coords_array.length/3 
+
+    let minx = v[0], maxx = v[0],
+        miny = v[1], maxy = v[1],
+        minz = v[2], maxz = v[2]
+
+    for( let iv = 1 ; iv < nv ; iv++ )
+    {
+        let i = 3*iv 
+        minx = Math.min( minx, v[i+0] ) ; maxx = Math.max( maxx, v[i+0] ) 
+        miny = Math.min( miny, v[i+1] ) ; maxy = Math.max( maxy, v[i+1] ) 
+        minz = Math.min( minz, v[i+2] ) ; maxz = Math.max( maxz, v[i+2] ) 
+    }
+    if ( debug_mesh )
+    {
+        Log(`${fname} num verts == ${this.n_verts}`)
+        Log(`${fname} bbox min  == (${minx},${miny},${minz})`)
+        Log(`${fname} bbox max  == (${maxx},${maxy},${maxz})`)
+    }
+
+    let bbox = 
+        { 
+            xmin: minx, xmax: maxx, 
+            ymin: miny, ymax: maxy,
+            zmin: minz, zmax: maxz 
+        }
+    
+    return bbox
+}
+
+
 // -------------------------------------------------------------------------------------------------
 /**
  * A class for an indexed triangles mesh
@@ -45,35 +92,13 @@ class IndexedTrianglesMesh
         this.normals_data    = null
         this.text_coord_data = null
         
+        //this.bbox = ComputeBBox( coords_data )
 
         // create the vertex array with all the data
         this.vertex_array = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals
         this.vertex_array.setIndexesData( triangles_data )
-
-        this.computeBBox()
     }
-    // ----------------------------------------------------------------------------------
-
-    computeBBox()
-    {
-        let v = this.coords_data
-       Check( this.n_verts == v.length/3 )
-
-       let minx = v[0], maxx = v[0],
-           miny = v[1], maxy = v[1],
-           minz = v[2], maxz = v[2]
-
-       for( let iv = 1 ; iv < this.n_verts ; iv++ )
-       {
-            let i = 3*iv 
-            minx = Math.min( minx, v[i+0] ) ; maxx = Math.max( maxx, v[i+0] ) 
-            miny = Math.min( miny, v[i+1] ) ; maxy = Math.max( maxy, v[i+1] ) 
-            minz = Math.min( minz, v[i+2] ) ; maxz = Math.max( maxz, v[i+2] ) 
-       }
-       console.log(`num verts == ${this.n_verts}`)
-       console.log(`bbox min == (${minx},${miny},${minz})`)
-       console.log(`bbox max == (${maxx},${maxy},${maxz})`)
-    }
+ 
     // ----------------------------------------------------------------------------------
 
     /**
@@ -201,11 +226,11 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
             {   coords[b+k]  = vert.pos[k]
                 normals[b+k] = vert.nor[k]
             } 
-            
+
             // sample colors
             
-            colors[b+0] = ( i%mod_s < 0.5*mod_s ) ? 0.6 : 0.3
-            colors[b+1] = ( j%mod_t < 0.5*mod_t ) ? 0.6 : 0.3
+            colors[b+0] = ( i%mod_s < 0.9*mod_s ) ? 0.6 : 0.3
+            colors[b+1] = ( j%mod_t < 0.9*mod_t ) ? 0.6 : 0.3
             colors[b+2] = ( (i+j)%(mod_s+mod_t) < 0.5*(mod_s+mod_t) ) ? 0.6 : 0.3
         }
 
@@ -336,12 +361,14 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
         this.setColorsData( colors_data )
     }
 }
+// -------------------------------------------------------------------------------------------------
 
 
 function ParsePLYLines( lines )
 {
     const fname = 'MeshFromPLYLines.parseLines():'
-    console.log(`${fname} begins.`)
+    if ( debug_mesh ) 
+        Log(`${fname} begins.`)
     let result = { parse_ok: false, parse_message: 'no errors found so far' }
     
     result.parse_ok      = false 
@@ -445,9 +472,11 @@ function ParsePLYLines( lines )
     
     // we assume the header is ok. lets load 
 
-    console.log(`${fname} num_verts == ${num_verts}`)
-    console.log(`${fname} num_tris  == ${num_tris}`)
-
+    if ( debug_mesh ) 
+    {
+        Log(`${fname} num_verts == ${num_verts}`)
+        Log(`${fname} num_tris  == ${num_tris}`)
+    }
     // const max_num_tris = -1 // 100000
     // if (  max_num_tris > 0 && num_tris >  max_num_tris )  // truncate number of vertexes .....??
     //     num_tris = max_num_tris
@@ -471,8 +500,8 @@ function ParsePLYLines( lines )
         }
         const 
             x = parseFloat( tokens[0] ),
-            y = parseFloat( tokens[1] ),
-            z = parseFloat( tokens[2] ),
+            y = parseFloat( tokens[2] ),   //// flip Y <-> Z ???
+            z = parseFloat( tokens[1] ),
             r = parseInt( tokens[3] ),
             g = parseInt( tokens[4] ),
             b = parseInt( tokens[5] ),
@@ -530,7 +559,30 @@ function ParsePLYLines( lines )
         
         it++ 
     }
+
+    const normalize_coords = true
     
+    if ( normalize_coords )
+    {
+        // normalize coordinates to -1 to +1 
+        let   bbox   = ComputeBBox( coords_data )
+        const maxdim = Math.max( bbox.xmax-bbox.xmin, bbox.ymax-bbox.ymin, bbox.zmax-bbox.zmin ),
+              center = [ 0.5*(bbox.xmax+bbox.xmin), 0.5*(bbox.ymax+bbox.ymin), 0.5*(bbox.zmax+bbox.zmin) ],
+              scale  = 2.0/maxdim
+
+        if ( debug_mesh )
+        {  
+            Log( `${fname}: maxdim == ${maxdim}` )
+            Log( `${fname}: center == ${center}` )
+        }
+        for( let iv = 0 ; iv < num_verts ; iv++ )
+        {
+            const p = 3*iv
+            for( let ic = 0 ; ic < 3 ; ic++ )
+                coords_data[p+ic] = scale*( coords_data[p+ic] - center[ic] )
+        }
+    }
+    // done
     result.coords_data = coords_data
     result.colors_data = colors_data
     result.triangles_data = triangles_data

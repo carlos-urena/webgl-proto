@@ -443,6 +443,10 @@ function ParsePLYLines( lines )
     console.log(`${fname} num_verts == ${num_verts}`)
     console.log(`${fname} num_tris  == ${num_tris}`)
 
+    // const max_num_tris = -1 // 100000
+    // if (  max_num_tris > 0 && num_tris >  max_num_tris )  // truncate number of vertexes .....??
+    //     num_tris = max_num_tris
+
     coords_data     = new Float32Array( 3*num_verts )
     triangles_data  = new Uint32Array( 3*num_tris )
     colors_data     = new Float32Array( 3*num_verts )
@@ -456,7 +460,7 @@ function ParsePLYLines( lines )
         const tokens = lines[l].trim().split(' ')
         if ( tokens.length != 7 )
         {
-            result.parse_message = `vertex at line ${l}: expected 7 numbers but found ${tokens.length}\n`
+            result.parse_message =  `vertex at line ${l}: expected 7 numbers but found ${tokens.length}\n`
             result.parse_message += `line ${l} is: '${lines[l]}'`
             return result
         }
@@ -501,9 +505,9 @@ function ParsePLYLines( lines )
             return result
         }
         const 
-            i0 = parseInt( tokens[4] ),
-            i1 = parseInt( tokens[5] ),
-            i2 = parseInt( tokens[6] )
+            i0 = parseInt( tokens[1] ),
+            i1 = parseInt( tokens[2] ),
+            i2 = parseInt( tokens[3] )
 
         if ( i0 < 0 || num_tris < i0  || 
              i1 < 0 || num_tris < i1  || 

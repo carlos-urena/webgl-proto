@@ -27,13 +27,14 @@ const uniforms_decls =
     `
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
 
-        uniform int     do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
-        uniform mat4    model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
-        uniform mat4    view_mat ;   // view matrix (world coords. --> camera coords.)
-        uniform mat4    proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
-        uniform mat4    norm_mat ;   // normal matrix (master normal coords --> world normal coords)
-        uniform int     do_texture ; // 1 -> sample the texture, 0 -> do not sample the texture
-        uniform sampler texture ;    // texture sampler, accesed only when 'do_texture' is 1
+        uniform int       do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
+        uniform mat4      model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
+        uniform mat4      view_mat ;   // view matrix (world coords. --> camera coords.)
+        uniform mat4      proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
+        uniform mat4      norm_mat ;   // normal matrix (master normal coords --> world normal coords)
+        uniform int       do_texture ; // 1 -> use texture color, 0 -> do not use
+        uniform sampler2D tsampler0 ;    // texture sampler, accesed only when 'do_texture' is 1
+                                         
     `
 
 const vertex_attrs_decls_wgl1 =
@@ -43,6 +44,7 @@ const vertex_attrs_decls_wgl1 =
         attribute vec3  in_vertex_pos_mcc ;   // attribute 0 (positions in master coordinates)
         attribute vec3  in_vertex_color ;     // attribute 1 (vertex color)
         attribute vec3  in_vertex_normal_mcc; // attribute 2 (normals in master coordinates)
+        attribute vec2  in_vertex_texcoo;     // attribute 3 (texture coordinates, used when do_texture==1)
     `
 
 const vertex_attrs_decls_wgl2 =
@@ -52,6 +54,7 @@ const vertex_attrs_decls_wgl2 =
         layout(location = 0) in vec3 in_vertex_pos_mcc ;    // attribute 0 (positions in master coordinates)
         layout(location = 1) in vec3 in_vertex_color ;      // attribute 1 (vertex color)
         layout(location = 2) in vec3 in_vertex_normal_mcc ; // attribute 2 (normals in master coordinates)
+        layout(location = 3) in vec2 in_vertex_texcoo;      // attribute 3 (texture coordinates, used when do_texture==1)
     `
 
 const vertex_inout_decls_wgl1 =
@@ -61,6 +64,7 @@ const vertex_inout_decls_wgl1 =
         varying vec3 vertex_color ;       // vertex color to be interpolated
         varying vec3 vertex_pos_wcc ;     // vertex position in world coords, to be interpolated
         varying vec3 vertex_norm_wcc ;    // vertex normal in world coords, to be interpolated
+        varying vec2 vertex_texcoo ;      // vertex texture coordinates, to be interpolated
     `
 
 const vertex_inout_decls_wgl2 =
@@ -70,6 +74,7 @@ const vertex_inout_decls_wgl2 =
         out vec3 vertex_color ;    // vertex color to be interpolated
         out vec3 vertex_pos_wcc ;  // vertex position in world coords, to be interpolated
         out vec3 vertex_norm_wcc ; // vertex normal in world coords, to be interpolated
+        out vec2 vertex_texcoo ;   // vertex texture coordinates, to be interpolated
     `
 
 const fragment_inout_decls_wgl1 =
@@ -82,6 +87,7 @@ const fragment_inout_decls_wgl2 =
         in  vec3 vertex_color ;    // interpolated primitive color 
         in  vec3 vertex_pos_wcc ;  // interpolated fragment center position in world coordinates
         in  vec3 vertex_norm_wcc ; // interpolated fragment normal in world coordinates
+        in  vec2 vertex_texcoo ;   // interpolated texture coordinates 
         out vec4 frag_color ;      // output: fragment color
     `
 
@@ -96,6 +102,7 @@ const vertex_main =
             vertex_color    = in_vertex_color ;
             vertex_pos_wcc  = pos_wcc.xyz ;
             vertex_norm_wcc = (norm_mat * vec4( in_vertex_normal_mcc, 0 )).xyz ;
+            vertex_texcoo   = in_vertex_texcoo ;
         }
     `
 
@@ -120,6 +127,17 @@ const fragment_functions =
 
             return diff ;//+ spec ;
         }
+
+        vec3 BaseColor()
+        {
+            if ( do_texture == 0 )
+                return vertex_color ;
+            else
+            {
+                vec4 tcol = texture( tsampler0, vertex_texcoo ) ;
+                return tcol.xyz ;
+            }
+        }
     `
 
 const fragment_main_wgl1 =
@@ -129,7 +147,7 @@ const fragment_main_wgl1 =
         void main() 
         {
             if ( do_shading == 0 )
-                gl_FragColor = vec4( vertex_color, 1.0 ) ;
+                gl_FragColor = vec4( BaseColor(), 1.0 ) ;
             else
                 gl_FragColor = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
         }
@@ -143,7 +161,9 @@ const fragment_main_wgl2 =
         void main() 
         {
             if ( do_shading == 0 )
-                frag_color = vec4( vertex_color, 1.0 ) ;
+            {
+                frag_color = vec4( BaseColor(), 1.0 ) ;
+            }
             else
                 frag_color = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
         }
@@ -266,10 +286,11 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
     gl.bindAttribLocation( program, 1, "in_vertex_color"   )
     gl.bindAttribLocation( program, 2, "in_vertex_normal_mcc"  )
+    gl.bindAttribLocation( program, 3, "in_vertex_texcoo"  )
     CheckGLError( gl )
     /// done....
 
-    const show_source = false // set to 'true' to see the sources even with no errors
+    const show_source = true // set to 'true' to see the sources even with no errors
 
     // link and then (if neccesary) show link errors
     gl.linkProgram( program )
@@ -366,13 +387,19 @@ class SimpleGPUProgram
         this.view_mat_loc    = gl.getUniformLocation( this.program, 'view_mat' )
         this.proj_mat_loc    = gl.getUniformLocation( this.program, 'proj_mat' )
         this.norm_mat_loc    = gl.getUniformLocation( this.program, 'norm_mat' )
+        this.tsampler0_loc   = gl.getUniformLocation( this.program, 'tsampler0' )
         this.do_shading_loc  = gl.getUniformLocation( this.program, 'do_shading' )
+        this.do_texture_loc  = gl.getUniformLocation( this.program, 'do_texture' )
 
         Check( this.model_mat_loc  != null, 'unable to get location of model matrix' )
         Check( this.view_mat_loc   != null, 'unable to get location of view matrix' )
-        Check( this.proj_mat_loc   != null, 'unable to get location of projection matrix' )
+        Check( this.tsampler0_loc  != null, 'unable to get location of `tsampler1` sampler' )
         Check( this.do_shading_loc != null, 'unable to get location of `do_shading` uniform' )
+        Check( this.do_shading_loc != null, 'unable to get location of `do_shading` uniform' )
+        Check( this.do_texture_loc != null, 'unable to get location of `do_texture` uniform' )
 
+        // will be created when 'useTexture( null )' is called 
+        this.default_gl_texture = null
 
         // initialize model matrix stack (empty)
         this.model_mat_stack = []
@@ -383,6 +410,7 @@ class SimpleGPUProgram
       
         // initialize other uniforms
         this.doShading( false )
+        this.useTexture( null )
 
         // restore previously used shader program 
         gl.useProgram( prev_program )            
@@ -393,7 +421,7 @@ class SimpleGPUProgram
      */
     getNumVertexAttrs()
     {
-        return 3 ; // vertex coordinates, vertex colors and vertex normals
+        return 4 ; // vertex coordinates, vertex colors, vertex normals and texture coordinates
     }
     // ------------------------------------------------------------------------------------------------
     /**
@@ -405,6 +433,38 @@ class SimpleGPUProgram
         //CheckType( new_do_shading, 'bool' )
         const v = new_do_shading ? 1 : 0 
         this.context.uniform1i( this.do_shading_loc, v )
+    }
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * sets whether this program queries the texture or not (program must be in use), and which texture to query
+     * @param {bool} new_do_texture -- 'true' --> use texture, 'false' --> do not use
+     */
+    useTexture( gl_texture )
+    {
+        let gl = this.context 
+
+        if ( gl_texture != null )  // use 'gl_texture'
+        {
+            CheckType( gl_texture, 'WebGLTexture' )
+            this.context.uniform1i( this.do_texture_loc, 1 )  // set the flag on the shader
+            gl.activeTexture( gl.TEXTURE0 + 0 )   // Tell WebGL we want to affect texture unit 0
+            gl.bindTexture( gl.TEXTURE_2D, gl_texture ) // Bind the texture to texture unit 0
+            gl.uniform1i( this.tsampler0_loc, 0 )  // Tell the shader we bound the texture sampler to texture unit 0
+        }
+        else // create (if neccesary) and use a dummy 1x1 texture, webgl yields warnings if this is not done....
+        {
+            
+            if ( this.default_gl_texture == null )
+            {
+                const pixel = new Uint8Array([0, 0, 255, 255])  // opaque blue
+                let tx = gl.createTexture()
+                gl.bindTexture( gl.TEXTURE_2D, tx )
+                gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 1,1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel )
+                this.default_gl_texture = tx
+            }
+            gl.bindTexture( gl.TEXTURE_2D, this.default_gl_texture )
+            this.context.uniform1i( this.do_texture_loc, 0 )
+        }
     }
 
     // ------------------------------------------------------------------------------------------------

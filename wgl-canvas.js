@@ -636,6 +636,10 @@ class WebGLCanvas
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
             console.log(`${fname} mipmap NOT generated.`)
         }
+
+        gl.bindTexture( gl.TEXTURE_2D, null )  // unbind any texture ???
+
+        console.log(`${fname} texture class = '${texture.constructor.name}'`)
         
         /// done: register the new texture, redraw the frame
         this.gl_texture = texture

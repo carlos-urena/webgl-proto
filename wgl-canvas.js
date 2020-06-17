@@ -534,17 +534,66 @@ class WebGLCanvas
         Check( jpg_file.type == 'image/jpeg' )
         const fname = `WebGLCanvas.jpgFileDropped():`
         console.log(`${fname} begins, file name == '${jpg_file.name}', type == '${jpg_file.type}'`)
-        console.log(`${fname} (nothing to do...)`)
+        
+        this.setStatus(`Loading JPG file '${jpg_file.name}' ...`)
 
-        console.log(`${fname} ends`)
+        /// Read the image, this is based on
+        /// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
 
-        /// TODO: actually read the image, see: (uses FileReader??)
-        /// https://developer.mozilla.org/es/docs/Web/API/FileReader/readAsDataURL
-       
+        let reader = new FileReader()
+        reader.onloadend = e => this.jpgFileLoaded( e )
+        reader.onerror   = e => this.fileLoadError( e, 'plyFileDropped', ply_file.name )
+
+        reader.readAsDataURL( jpg_file )
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called after the JPG File (Blob) has been loaded, this adds the JPG to the scene as a texture
+     *   @param {ProgressEvent} evt 
+     *   @param {File} jpg_file -- jpg file blob to parse (load will be started after ply parsing ends)
+     */
+    jpgFileLoaded( evt )
+    {
+        const fname = 'WebGLCanvas.jpgFileLoaded():'
+        Check( this.loading_object , "'this.loading_object' is not 'true'")
+        CheckType( evt, 'ProgressEvent' )
+
+        console.log(`${fname} evt.target class == ${evt.target.constructor.name}`)
+        console.log(`${fname} evt.target result class == ${evt.target.result.constructor.name}`)
+        
+        // 'evt.target.result' is a string with text encoding the raw JPEG file 
+        
+
+        let img_elem = document.getElementById( 'texture_image_id')
+        if ( img_elem != null )
+        {
+            img_elem.src = evt.target.result
+            img_elem.style.width = '512px' 
+            console.log(`${fname} image inserted in page, ok.`)
+        }
+        else 
+            console.log(`${fname} Error: image NOT inserted in page.`)
+        
+        this.setStatus(`Files loaded ok.`)
         this.loading_object = false
         this.drawFrame()
     }
-
+    // -------------------------------------------------------------------------------------------------
+    /**
+     *  called after an error during a file reading operation 
+     *     @param {ProgressEvent} evt --  progress event ??
+     *     @param {String} fun_name   --  name of function which started the load
+     *     @param {String} file_name  --  name of file being loaded 
+     */
+    fileLoadError( evt, fun_name, file_name )
+    {
+        let msg = ` Unable to load file '${file_name}' from file system: internal error.`
+        this.loading_object = false
+        if ( this.debug )
+            Log( `${fun_name}: ${msg}`)
+        this.setStatus( msg )
+        
+    }
     // -------------------------------------------------------------------------------------------------
     /**
      * Process a new ply file which has been just dropped onto the canvas
@@ -576,17 +625,12 @@ class WebGLCanvas
         let  reader = new FileReader()
         this.loading_object = true
 
-        reader.onload = e => this.plyFileLoaded( e, jpg_file )
-        reader.onerror = function (evt) 
-        {
-            //console.log(`${fname} error while loading file`)
-            alert(`Cannot load file. An error ocurred while trying to read from the file system`)
-            this.canvas_obj.loading_object = false 
-            this.setStatus('Unable to read ply file.')
-        }
+        reader.onload  = e => this.plyFileLoaded( e, jpg_file )  // or it should be 'onloadend' ??
+        reader.onerror = e => this.fileLoadError( e, 'plyFileDropped', ply_file.name )
 
         reader.readAsText( ply_file )// , "UTF-8" )
     }
+    
     // -------------------------------------------------------------------------------------------------
     /**
      * Called after the ply File (Blob) has been loaded, this adds the PLY object to the scene

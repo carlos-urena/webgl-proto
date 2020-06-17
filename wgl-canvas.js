@@ -474,31 +474,46 @@ class WebGLCanvas
         if ( file_list.length == 0 ) // should not happen ....
             throw new Error(`${fname} 'file_list' length is 0`)
 
-        if ( file_list.length > 1 )
+        if ( file_list.length != 2 )
         {   
             this.parent_elem.style.borderColor = err_border_color
-            alert(`Sorry, you can only drop a single file, but you're trying to drop ${file_list.length}`)
+            alert(`Sorry, you must drop 2 files, but you're trying to drop ${file_list.length}`)
             this.parent_elem.style.borderColor = def_border_color
             return
         }
-        const file_blob = file_list.item(0)  // https://developer.mozilla.org/en-US/docs/Web/API/File
-        if ( file_blob == null )  // should not happen ....
-            throw new Error(`${fname} 'file_blob' is 'null'`)
 
-        const extension = file_blob.name.split('.').pop().toLowerCase() 
+        /// get the ply_file_blob, and possibly the jpeg_file_blob
+
+        let exts = [  ]  // list of files extensions
+        for( let i = 0 ; i < file_list.length ; i++ )
+            exts.push( file_list.item(i).name.split('.').pop().toLowerCase() )
+
+        let iply = 0, 
+            ijpg = 1
         
-        if ( extension != 'ply' )
+        if ( exts[iply] != 'ply' || exts[ijpg] != 'jpg' )
+        {   
+            iply = 1
+            ijpg = 0
+        }
+        if ( exts[iply] != 'ply' || exts[ijpg] != 'jpg' )
         {
             this.parent_elem.style.borderColor = err_border_color
-            alert( "Sorry, in this development stage, you can only load files " +
-                   "with '.ply' extension, but you dropped a file with " + 
-                   `${extension} extension` )
+            alert(`Sorry, you must drop a '.ply' file and a '.jpg' file, but extensions are: '.${exts[0]}' and '.${exts[1]}'`)
             this.parent_elem.style.borderColor = def_border_color
-            return 
+            return
         }
+
+        const ply_file_blob = file_list.item( iply ),  // https://developer.mozilla.org/en-US/docs/Web/API/File
+              jpg_file_blob = file_list.item( ijpg )
+          
+        if ( ply_file_blob == null || jpg_file_blob == null )  // should not happen ....
+            throw new Error(`${fname} internal error: a file blob is 'null'`)
+
         this.parent_elem.style.borderColor = err_border_color
-        this.plyFileDropped( file_blob )
+        this.plyFileDropped( ply_file_blob, jpg_file_blob )
         this.parent_elem.style.borderColor = def_border_color
+
     }
     // -------------------------------------------------------------------------------------------------
     
@@ -508,13 +523,32 @@ class WebGLCanvas
         if ( st != null )
             st.innerHTML = msg
     }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Process a new jpg file which has been just dropped onto the canvas
+     * @param {File} jpg_file 
+     */
+    jpgFileDropped( jpg_file )
+    {
+        CheckType( jpg_file, 'File' )
+        Check( jpg_file.type == 'image/jpeg' )
+        const fname = `WebGLCanvas.jpgFileDropped():`
+        console.log(`${fname} begins, file name == '${jpg_file.name}', type == '${jpg_file.type}'`)
+        console.log(`${fname} (nothing to do...)`)
+
+        console.log(`${fname} ends`)
+       
+        this.loading_object = false
+        this.drawFrame()
+    }
 
     // -------------------------------------------------------------------------------------------------
     /**
      * Process a new ply file which has been just dropped onto the canvas
-     * @param {File} ply_file 
+     * @param {File} ply_file -- ply file blob to parse
+     * @param {File} jpg_file -- jpg file blob to parse (load will be started after ply parsing ends)
      */
-    plyFileDropped( ply_file )
+    plyFileDropped( ply_file, jpg_file )
     {
         CheckType( ply_file, 'File' )
         const fname = `WebGLCanvas.plyFileDropped():`
@@ -533,14 +567,13 @@ class WebGLCanvas
             Log(`${fname} ## LOADING ###  .....`)
         }
         
-
         const mb = Math.floor( 100.0*ply_file.size/1024.0 )/ 100.0
         this.setStatus(`Loading ${this.ply_file_name} (${mb.toLocaleString('EN')} MB) .....`)
 
         let  reader = new FileReader()
         this.loading_object = true
 
-        reader.onload = e => this.plyFileLoaded( e )
+        reader.onload = e => this.plyFileLoaded( e, jpg_file )
         reader.onerror = function (evt) 
         {
             //console.log(`${fname} error while loading file`)
@@ -554,9 +587,10 @@ class WebGLCanvas
     // -------------------------------------------------------------------------------------------------
     /**
      * Called after the ply File (Blob) has been loaded, this adds the PLY object to the scene
-     * @param {*} evt 
+     *   @param {ProgressEvent} evt 
+     *   @param {File} jpg_file -- jpg file blob to parse (load will be started after ply parsing ends)
      */
-    plyFileLoaded( evt )
+    plyFileLoaded( evt, jpg_file )
     {
         const fname = 'WebGLCanvas.plyFileLoaded():'
         Check( this.loading_object , "'this.loading_object' is not 'true'")
@@ -586,19 +620,28 @@ class WebGLCanvas
             Log(`${fname} PARSING....`)
         }
         let loaded_object  = new TriMeshFromPLYLines_FTCC( lines )   //// use which version _VC ??
-        if ( loaded_object.n_verts > 0 )
+
+        if ( loaded_object.n_verts == 0 )
         {   
-            this.loaded_object = loaded_object
-            this.setStatus(`PLY file '${this.ply_file_name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`)
-            this.drawFrame()
-        }
-        else
             this.setStatus(`PLY file '${this.ply_file_name}' couldn't be loaded.`)
+            if ( this.debug )
+                Log(`${fname} couldn't load PLY, won't try the jpeg. `)
+            this.loading_object = false
+            return
+        }
+
+        this.loaded_object = loaded_object
+        const msg = `PLY file '${this.ply_file_name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
+        this.setStatus( msg )
+        if ( this.debug )
+                Log( msg )
+
+        this.jpgFileDropped( jpg_file )
         
         if ( this.debug )
-            Log(`${fname} parsing ended.`)
+            Log(`${fname} loading PLY ended.`)
         
-        this.loading_object = false
+       
     }
     // -------------------------------------------------------------------------------------------------
     /**

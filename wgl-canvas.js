@@ -64,29 +64,7 @@ class WebGLCanvas
         // Create the WebGL context for this canvas, if it is not possible, return.
         this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
 
-        // check if we can use 'unsigned int' for the indexes in an indexed vertex sequence
-        if ( this.debug )
-            console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
         
-        if ( this.context.getExtension('OES_element_index_uint') == null )
-        {
-            if ( this.debug )
-            {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
-                Log( msg )
-            }
-            //throw Error( msg )
-            this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
-        }
-        else 
-            this.context.has_32bits_indexes = true 
-
-        this.showGLVersionInfo()
-        if ( this.webgl_version == 0 )
-        {
-            const msg = `${fname} Unable to create a webgl canvas, neither ver 1 nor ver 2`
-            Log( msg )
-            throw Error( msg )
-        }
         // creates the GPU Program (= vertex shader + fragment shader)
         this.program = new SimpleGPUProgram( this.context )
 
@@ -113,6 +91,11 @@ class WebGLCanvas
         this.cam_alpha_deg = 35.0
         this.cam_beta_deg  = 20.0
         this.cam_dist      = 2.0
+
+        // initialize object angles and scale 
+        this.scene_alpha_deg = 0.0
+        this.scene_beta_deg  = 0.0
+        this.scene_scale     = 1.0
 
         /// tests vec3, Mat4
         /// TestVec3()
@@ -235,7 +218,7 @@ class WebGLCanvas
         if ( ! this.is_mouse_right_down )
             return true
 
-        const fname = 'WebGLCanvas.mouseMove (right drag):'
+        const fname = 'WebGLCanvas.mouseMove (right/left drag):'
         CheckType( mevent, 'MouseEvent' )
 
         // compute displacement from the original position ( where mouse button was pressed down)
@@ -254,13 +237,21 @@ class WebGLCanvas
             Log(`${fname} dx,dy == (${dx},${dy})`)
 
         // update camera parameters
+
+        if ( mevent.altKey )
+        {
+            this.scene_alpha_deg = Trunc( this.scene_alpha_deg - dx*0.20, -180, +180 )
+            this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -85,  +85  )
+            //Log(`${fname} SCENE alpha,beta == (${this.scene_alpha_deg.toPrecision(5)},${this.scene_beta_deg.toPrecision(5)})`)
+        }
+        else
+        {
+            this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
+            this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
         
-        this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
-        this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
-
-        if ( this.debug )
-            Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
-
+            if ( this.debug )
+                Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
+        }
         // redraw:
         this.drawFrame()
         
@@ -776,9 +767,7 @@ class WebGLCanvas
             first = true 
         
         if ( this.debug && first )
-        {   
             Log(`${fname} first call`)
-        }
 
         this.try_webgl2 = true // set this to 'false' to debug WebGL 1 code on a WebGL 1 & 2 capable desktop browser
         this.context    = null
@@ -804,12 +793,36 @@ class WebGLCanvas
             else
                 this.webgl_version = 1
         }
+
+        // check if we can use 'unsigned int' for the indexes in an indexed vertex sequence
+        if ( first )
+        {
+            if ( this.debug )
+                console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
+            
+            // if ( this.context.getExtension('OES_element_index_uint') == null )
+            // {
+            //     if ( this.debug )
+            //     {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
+            //         Log( msg )
+            //     }
+            //     //throw Error( msg )
+            //     this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
+            // }
+            // else 
+            //     this.context.has_32bits_indexes = true 
+
+            this.showGLVersionInfo()
+            if ( this.webgl_version == 0 )
+            {
+                const msg = `${fname} Unable to create a webgl canvas, neither ver 1 nor ver 2`
+                Log( msg )
+                throw Error( msg )
+            }
+        }
         
         if ( this.debug )
-        {   
-            Log(`${fname} using WebGL version ${this.webgl_version}.`)
             Log(`${fname} ends.`)
-        }
     }
     // ------------------------------------------------------------------------------------------------
 
@@ -1031,31 +1044,42 @@ class WebGLCanvas
         // draw axes and grid (axes allways hide grid ....)
         this.drawGridXZ()
         this.drawAxes()
-        
-        // actually draw something.....(test)
-        if ( this.loaded_object == null )
-        {
-            if ( this.test_3d_mesh == null )
-                //this.test_3d_mesh = new SphereMesh( 300, 300 )
-                //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-                this.test_3d_mesh = new ConeMesh( 1300, 1000 )
 
-            pr.doShading(false)
-            pr.pushMM()
-                pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                this.test_3d_mesh.draw( gl )
-            pr.popMM()
-        }
-        else
-        {
-            //console.log('drawing loaded object')
-            pr.doShading(false)
-            pr.pushMM()
-                pr.useTexture( this.gl_texture )
-                pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                this.loaded_object.draw( gl )
-            pr.popMM()
-        }
+        pr.pushMM()
+
+            const 
+                rotx_mat       = Mat4_RotationXdeg( this.scene_beta_deg ),
+                roty_mat       = Mat4_RotationYdeg( -this.scene_alpha_deg ),
+                rotation_mat   = rotx_mat.compose( roty_mat )
+        
+            pr.compMM( rotation_mat )
+
+            // actually draw something.....(test)
+            if ( this.loaded_object == null )
+            {
+                if ( this.test_3d_mesh == null )
+                    //this.test_3d_mesh = new SphereMesh( 300, 300 )
+                    //this.test_3d_mesh = new CylinderMesh( 300, 300 )
+                    this.test_3d_mesh = new ConeMesh( 1300, 1000 )
+
+                pr.doShading(false)
+                pr.pushMM()
+                    pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+                    this.test_3d_mesh.draw( gl )
+                pr.popMM()
+            }
+            else
+            {
+                //console.log('drawing loaded object')
+                pr.doShading(false)
+                pr.pushMM()
+                    pr.useTexture( this.gl_texture )
+                    pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+                    this.loaded_object.draw( gl )
+                pr.popMM()
+            }
+
+        pr.popMM()
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

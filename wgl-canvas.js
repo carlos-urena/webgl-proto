@@ -93,6 +93,9 @@ class WebGLCanvas
         // 3d mesh used to test 'IndexedTriangleMesh' class  
         this.test_3d_mesh  = null 
 
+        // gl texture, null before any object has been loaded
+        this.gl_texture = null 
+
         // set mouse events state info
         this.is_mouse_left_down  = false
         this.is_mouse_right_down = false
@@ -103,8 +106,7 @@ class WebGLCanvas
         this.loaded_object  = null
         this.loading_object = false 
 
-        // prevent the context menu from appearing, typically after a right click
-        this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
+        
 
         // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
@@ -119,7 +121,10 @@ class WebGLCanvas
         //let gl = this.context
         //console.log(`line width == ${gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)}`);
 
-        // sets events handlers (mostly mouse events)
+        // prevent the context menu from appearing, typically after a right click
+        this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
+
+        // sets mouse events handlers 
         this.canvas_elem.addEventListener( 'mousedown', e => this.mouseDown(e), true )
         this.canvas_elem.addEventListener( 'mouseup',   e => this.mouseUp(e), true )
         this.canvas_elem.addEventListener( 'mousemove', e => this.mouseMove(e), true )
@@ -548,7 +553,7 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
     /**
-     * Called after the JPG File (Blob) has been loaded, this adds the JPG to the scene as a texture
+     * Called after the JPG File (Blob) has been loaded, this  trigers decoding
      *   @param {ProgressEvent} evt 
      */
     imageFileLoaded( evt )
@@ -581,11 +586,15 @@ class WebGLCanvas
 
        
         let image  = new Image()
-        image.onload = e => this.imageDecoded( e )
+        image.onload = e => this.imageFileDecoded( e )
         image.src    = evt.target.result  /// this triggers decoding of the base64 text, then 'imageDecoded' is called
     }
-    // ------
-    imageDecoded( evt )
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called after an image text has been decoded, this adds the JPG to the scene as a texture
+     *   @param {ProgressEvent} evt 
+     */
+    imageFileDecoded( evt )
     {
         const fname = 'WebGLCanvas.imageDecoded():'
         let   gl    = this.context,
@@ -594,18 +603,43 @@ class WebGLCanvas
         console.log(`${fname} evt target class == '${image.constructor.name}'`)
         console.log(`${fname} image object, width = ${image.width}, height = ${image.height} `)
 
-        const 
-            level     = 0,
-            intFormat = gl.RGB,   // gl.RGBA
-            width     = 1,
-            height    = 1,
-            border    = 0,
-            srcFormat = gl.RGBA,
-            srcType   = gl.UNSIGNED_BYTE
+        // Create the texture (should be in its own function). Again, see:
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
 
-    
+        const 
+            level       = 0,
+            internalFmt = gl.RGBA,   // gl.RGBA
+            //width     = 1,
+            //height    = 1,
+            //border      = 0,
+            srcFmt      = gl.RGBA,   //// check this .....    
+            srcType     = gl.UNSIGNED_BYTE
+
+        // create, bind and fill the texture
+        const texture = gl.createTexture()
+        gl.bindTexture( gl.TEXTURE_2D, texture )
+        gl.texImage2D ( gl.TEXTURE_2D, level, internalFmt, srcFmt, srcType, image )
+
+        // Generate MIPMAPS ....
+        // WebGL1 has different requirements for power of 2 images
+        // vs non power of 2 images so check if the image is a
+        // power of 2 in both dimensions.
+        if (isPowerOf2(image.width) && isPowerOf2(image.height)) 
+        {
+            // Yes, it's a power of 2. Generate mips.
+            gl.generateMipmap( gl.TEXTURE_2D )
+        } 
+        else 
+        {
+            // No, it's not a power of 2. Turn off mips and set
+            // wrapping to clamp to edge
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
         
-        /// done: redraw the frame
+        /// done: register the new texture, redraw the frame
+        this.gl_texture = texture
         this.setStatus(`Files loaded ok.`)
         this.loading_object = false
         this.drawFrame()

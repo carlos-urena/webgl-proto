@@ -168,3 +168,16 @@ function CheckGLError( gl )
     Log( msg )
     throw new Error( msg )
 }
+
+// ----------------------------------------------
+
+/**
+ *  returns true iif parameter value is a number and power of two 
+ *  taken from: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
+ *    @param   {number} value -- value to test
+ *    @returns {bool}         -- true iif value is 2^n for some integer 'n', false otherwise
+ */
+function isPowerOf2(value) 
+{
+    return (value & (value - 1)) == 0;
+}

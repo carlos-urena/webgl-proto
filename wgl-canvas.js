@@ -525,55 +525,87 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
     /**
-     * Process a new jpg file which has been just dropped onto the canvas
-     * @param {File} jpg_file 
+     * Process a new image file which has been just dropped onto the canvas
+     * @param {File} img_file 
      */
-    jpgFileDropped( jpg_file )
+    imageFileDropped( img_file )
     {
-        CheckType( jpg_file, 'File' )
-        Check( jpg_file.type == 'image/jpeg' )
+        CheckType( img_file, 'File' )
+        Check( img_file.type == 'image/jpeg' )
         const fname = `WebGLCanvas.jpgFileDropped():`
-        console.log(`${fname} begins, file name == '${jpg_file.name}', type == '${jpg_file.type}'`)
+        console.log(`${fname} begins, file name == '${img_file.name}', type == '${img_file.type}'`)
         
-        this.setStatus(`Loading JPG file '${jpg_file.name}' ...`)
+        this.setStatus(`Loading JPG file '${img_file.name}' ...`)
 
         /// Read the image, this is based on
         /// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
 
         let reader = new FileReader()
-        reader.onloadend = e => this.jpgFileLoaded( e )
-        reader.onerror   = e => this.fileLoadError( e, 'plyFileDropped', ply_file.name )
+        reader.onloadend = e => this.imageFileLoaded( e )
+        reader.onerror   = e => this.fileLoadError( e, 'imgFileDropped', img_file.name )
 
-        reader.readAsDataURL( jpg_file )
+        reader.readAsDataURL( img_file )
     }
     // -------------------------------------------------------------------------------------------------
     /**
      * Called after the JPG File (Blob) has been loaded, this adds the JPG to the scene as a texture
      *   @param {ProgressEvent} evt 
-     *   @param {File} jpg_file -- jpg file blob to parse (load will be started after ply parsing ends)
      */
-    jpgFileLoaded( evt )
+    imageFileLoaded( evt )
     {
-        const fname = 'WebGLCanvas.jpgFileLoaded():'
+        const fname = 'WebGLCanvas.imageFileLoaded():'
         Check( this.loading_object , "'this.loading_object' is not 'true'")
         CheckType( evt, 'ProgressEvent' )
 
         console.log(`${fname} evt.target class == ${evt.target.constructor.name}`)
         console.log(`${fname} evt.target result class == ${evt.target.result.constructor.name}`)
         
-        // 'evt.target.result' is a string with text encoding the raw JPEG file 
+        // 'evt.target.result' is a string with base 64 text encoding the raw (compressed?) JPEG file 
+        /// see: https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
         
-
+        /// if there is a texture preview element in the page, display the image there
         let img_elem = document.getElementById( 'texture_image_id')
         if ( img_elem != null )
         {
             img_elem.src = evt.target.result
-            img_elem.style.width = '512px' 
-            console.log(`${fname} image inserted in page, ok.`)
+            img_elem.style.width = '256px'  // (take care of not reducing the texture 
+                                            // resolution in the image which is loaded to the GPU)
+            console.log(`${fname} image inserted in preview element, ok.`)
         }
         else 
-            console.log(`${fname} Error: image NOT inserted in page.`)
+            console.log(`${fname} image NOT inserted in preview element.`)
+
+        /// create an Image object and then the WebGL texture .....
+        /// TODO: take this out to an independent function ??
+        /// see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
+
+       
+        let image  = new Image()
+        image.onload = e => this.imageDecoded( e )
+        image.src    = evt.target.result  /// this triggers decoding of the base64 text, then 'imageDecoded' is called
+    }
+    // ------
+    imageDecoded( evt )
+    {
+        const fname = 'WebGLCanvas.imageDecoded():'
+        let   gl    = this.context,
+              image = evt.target 
+
+        console.log(`${fname} evt target class == '${image.constructor.name}'`)
+        console.log(`${fname} image object, width = ${image.width}, height = ${image.height} `)
+
+        const 
+            level     = 0,
+            intFormat = gl.RGB,   // gl.RGBA
+            width     = 1,
+            height    = 1,
+            border    = 0,
+            srcFormat = gl.RGBA,
+            srcType   = gl.UNSIGNED_BYTE
+
+    
         
+        /// done: redraw the frame
         this.setStatus(`Files loaded ok.`)
         this.loading_object = false
         this.drawFrame()
@@ -587,7 +619,7 @@ class WebGLCanvas
      */
     fileLoadError( evt, fun_name, file_name )
     {
-        let msg = ` Unable to load file '${file_name}' from file system: internal error.`
+        let msg = ` Unable to load file '${file_name}' from the file system or an URL: internal error.`
         this.loading_object = false
         if ( this.debug )
             Log( `${fun_name}: ${msg}`)
@@ -683,7 +715,7 @@ class WebGLCanvas
         if ( this.debug )
                 Log( msg )
 
-        this.jpgFileDropped( jpg_file )
+        this.imageFileDropped( jpg_file )
         
         if ( this.debug )
             Log(`${fname} loading PLY ended.`)

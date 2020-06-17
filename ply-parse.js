@@ -454,9 +454,9 @@ function ParsePLYLines_FTCC( lines )
               p1 = 2*i1, 
               p2 = 2*i2
 
-        texcoo_data[p0+0] = parseFloat( tokens[5] ); texcoo_data[p0+1] = parseFloat( tokens[6] )
-        texcoo_data[p1+0] = parseFloat( tokens[7] ); texcoo_data[p1+1] = parseFloat( tokens[8] )
-        texcoo_data[p2+0] = parseFloat( tokens[9] ); texcoo_data[p2+1] = parseFloat( tokens[10] )
+        texcoo_data[p0+0] = parseFloat( tokens[5] ); texcoo_data[p0+1] = 1.0-parseFloat( tokens[6] )
+        texcoo_data[p1+0] = parseFloat( tokens[7] ); texcoo_data[p1+1] = 1.0-parseFloat( tokens[8] )
+        texcoo_data[p2+0] = parseFloat( tokens[9] ); texcoo_data[p2+1] = 1.0-parseFloat( tokens[10] )
     }
 
     const normalize_coords = true

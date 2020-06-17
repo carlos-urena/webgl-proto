@@ -93,7 +93,10 @@ class IndexedTrianglesMesh
         //this.bbox = ComputeBBox( coords_data )
 
         // create the vertex array with all the data
-        this.vertex_array = new VertexArray ( 3, 3, coords_data )  // Note: 3 attributes: positions, colors, normals
+        const num_attrs = 4,  // Note: 4 attributes: positions, colors, normals and tex coords
+              vec_len   = 3
+
+        this.vertex_array = new VertexArray ( num_attrs, vec_len, coords_data )  
         this.vertex_array.setIndexesData( triangles_data )
     }
  
@@ -103,13 +106,14 @@ class IndexedTrianglesMesh
      * returns true iif data array length is multiple of 3 and type is 'Float32Array'
      * @param {string}       fname     -- function calling this
      * @param {Float32Array} attr_data -- reference to the data
+     * @param {number}       vec_len -- length of vectors in the data (must be 2 or 3)
      */
-    checkAttrData( fname, attr_data )
+    checkAttrData( fname, attr_data, vec_len )
     {
         Check( this.n_verts >  0 )   // fails if this is an empty mesh...
         CheckType( attr_data, 'Float32Array' )
         const l = attr_data.length
-        Check( l === 3*this.n_verts, `${fname} attribute array length (== ${l}) must be 3 times num.verts. (== ${3*this.n_verts})`)
+        Check( l === vec_len*this.n_verts, `${fname} attribute array length (== ${l}) must be ${vec_len} times num.verts. (== ${3*this.n_verts})`)
     }
     // ----------------------------------------------------------------------------------
 
@@ -119,7 +123,7 @@ class IndexedTrianglesMesh
      */
     setColorsData( colors_data )
     {
-        this.checkAttrData(`Mesh.setColorsData():`, colors_data )
+        this.checkAttrData(`Mesh.setColorsData():`, colors_data, 3 )
         this.colors_data = colors_data
         this.vertex_array.setAttrData( 1, 3, colors_data )
     }
@@ -131,9 +135,20 @@ class IndexedTrianglesMesh
      */
     setNormalsData( normals_data )
     {
-        this.checkAttrData(`Mesh.setNormalsData():`, normals_data )
+        this.checkAttrData(`Mesh.setNormalsData():`, normals_data, 3 )
         this.normals_data = normals_data
         this.vertex_array.setAttrData( 2, 3, normals_data )
+    }
+    // ----------------------------------------------------------------------------------
+    /**
+     * specify a new vertexes texture coords array for the Mesh
+     * @param {Float32Array} normals_data -- new vertexes normals (length must be 3*num.vertexes)
+     */
+    setTexCooData( texcoo_data )
+    {
+        this.checkAttrData(`Mesh.setNormalsData():`, texcoo_data, 2 )
+        this.texcoo_data = texcoo_data
+        this.vertex_array.setAttrData( 3, 2, texcoo_data )
     }
     // ----------------------------------------------------------------------------------
 
@@ -383,11 +398,10 @@ class TriMeshFromPLYLines_FTCC extends IndexedTrianglesMesh
             return
         }
 
-        super( result.coords_data, result.triangles_data )  // this will fail...
+        super( result.coords_data, result.triangles_data )  
+        this.setTexCooData( result.texcoo_data )
 
-        // would like to do this, 
-        //this.setTexCooData( result.texcoo_data )
-        //but, in the mean time I'll just transfer t.cc. to vertex colors (R,G), just to debug:
+        // create a vertex color pattern from texture coordinates, just to  debug texture coordinates
 
         console.log(`transfering t.cc. to vertex colors, num_verts == ${this.n_verts}`)
         let colors_data = new Float32Array( 3*this.n_verts )
@@ -407,6 +421,8 @@ class TriMeshFromPLYLines_FTCC extends IndexedTrianglesMesh
             colors_data[pc+2] = b
         }
         this.setColorsData( colors_data )
+
+        
     }
 }
 // -------------------------------------------------------------------------------------------------

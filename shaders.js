@@ -443,16 +443,19 @@ class SimpleGPUProgram
     {
         let gl = this.context 
 
-        if ( gl_texture != null )  // use 'gl_texture'
+        if ( gl_texture != null )  
         {
+            // use 'gl_texture'
             CheckType( gl_texture, 'WebGLTexture' )
             this.context.uniform1i( this.do_texture_loc, 1 )  // set the flag on the shader
             gl.activeTexture( gl.TEXTURE0 + 0 )   // Tell WebGL we want to affect texture unit 0
             gl.bindTexture( gl.TEXTURE_2D, gl_texture ) // Bind the texture to texture unit 0
             gl.uniform1i( this.tsampler0_loc, 0 )  // Tell the shader we bound the texture sampler to texture unit 0
         }
-        else // create (if neccesary) and use a dummy 1x1 texture, webgl yields warnings if this is not done....
+        else 
         {
+            // create (if neccesary) and use a dummy 1x1 texture, 
+            // (webgl continuously yields warnings if this is not done)
             
             if ( this.default_gl_texture == null )
             {

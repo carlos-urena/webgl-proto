@@ -637,7 +637,7 @@ class WebGLCanvas
             console.log(`${fname} mipmap NOT generated.`)
         }
 
-        gl.bindTexture( gl.TEXTURE_2D, null )  // unbind any texture ???
+        ///gl.bindTexture( gl.TEXTURE_2D, null )  // unbind any texture ??? --> NO: yields warnings !
 
         console.log(`${fname} texture class = '${texture.constructor.name}'`)
         
@@ -1011,7 +1011,7 @@ class WebGLCanvas
        
         // clear screen, set viewport
         gl.clearColor(0.0, 0.1, 0.13, 1.0)
-        gl.clear(gl.COLOR_BUFFER_BIT  | gl.DEPTH_BUFFER_BIT )
+        gl.clear( gl.COLOR_BUFFER_BIT  | gl.DEPTH_BUFFER_BIT )
         gl.viewport(0, 0, sx, sy )
         CheckGLError( gl )
 
@@ -1020,6 +1020,7 @@ class WebGLCanvas
 
         // do not shade ....
         pr.doShading( false )
+        pr.useTexture( null )
 
         // set default color (attribute location 1)
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
@@ -1050,6 +1051,7 @@ class WebGLCanvas
             //console.log('drawing loaded object')
             pr.doShading(false)
             pr.pushMM()
+                pr.useTexture( this.gl_texture )
                 pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
                 this.loaded_object.draw( gl )
             pr.popMM()

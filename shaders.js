@@ -27,11 +27,13 @@ const uniforms_decls =
     `
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
 
-        uniform int  do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
-        uniform mat4 model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
-        uniform mat4 view_mat ;   // view matrix (world coords. --> camera coords.)
-        uniform mat4 proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
-        uniform mat4 norm_mat ;   // normal matrix (master normal coords --> world normal coords)
+        uniform int     do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
+        uniform mat4    model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
+        uniform mat4    view_mat ;   // view matrix (world coords. --> camera coords.)
+        uniform mat4    proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
+        uniform mat4    norm_mat ;   // normal matrix (master normal coords --> world normal coords)
+        uniform int     do_texture ; // 1 -> sample the texture, 0 -> do not sample the texture
+        uniform sampler texture ;    // texture sampler, accesed only when 'do_texture' is 1
     `
 
 const vertex_attrs_decls_wgl1 =

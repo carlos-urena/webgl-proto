@@ -537,6 +537,9 @@ class WebGLCanvas
         console.log(`${fname} (nothing to do...)`)
 
         console.log(`${fname} ends`)
+
+        /// TODO: actually read the image, see: (uses FileReader??)
+        /// https://developer.mozilla.org/es/docs/Web/API/FileReader/readAsDataURL
        
         this.loading_object = false
         this.drawFrame()

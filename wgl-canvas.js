@@ -608,11 +608,8 @@ class WebGLCanvas
 
         const 
             level       = 0,
-            internalFmt = gl.RGBA,   // gl.RGBA
-            //width     = 1,
-            //height    = 1,
-            //border      = 0,
-            srcFmt      = gl.RGBA,   //// check this .....    
+            internalFmt = gl.RGBA,   
+            srcFmt      = gl.RGBA,      
             srcType     = gl.UNSIGNED_BYTE
 
         // create, bind and fill the texture
@@ -628,14 +625,16 @@ class WebGLCanvas
         {
             // Yes, it's a power of 2. Generate mips.
             gl.generateMipmap( gl.TEXTURE_2D )
+            console.log(`${fname} mipmap generated.`)
         } 
         else 
         {
             // No, it's not a power of 2. Turn off mips and set
             // wrapping to clamp to edge
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+            console.log(`${fname} mipmap NOT generated.`)
         }
         
         /// done: register the new texture, redraw the frame

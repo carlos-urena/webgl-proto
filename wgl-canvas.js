@@ -97,12 +97,7 @@ class WebGLCanvas
         this.scene_beta_deg  = 0.0
         this.scene_scale     = 1.0
 
-        /// tests vec3, Mat4
-        /// TestVec3()
-        /// TestMat4()
-
-        //let gl = this.context
-        //console.log(`line width == ${gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)}`);
+        /// ADD Various event handlers
 
         // prevent the context menu from appearing, typically after a right click
         this.canvas_elem.addEventListener('contextmenu', e => e.preventDefault() )
@@ -128,9 +123,21 @@ class WebGLCanvas
         document.addEventListener( 'drop',       e => this.documentDragDrop(e), true )
         document.addEventListener( 'dragover',   e => this.documentDragOver(e), true )
 
+        // add button click event handlers
+        this.help_button = document.getElementById('help_button_id')
+        this.log_button  = document.getElementById('log_button_id')
+
+        if ( this.help_button != null )
+            this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
+        if ( this.log_button != null )
+            this.log_button.addEventListener( 'click', e => this.logButtonClicked(e) )
+
         // call 'this.dragDrop' when the user drops some files on this canvas element
         this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
-        
+
+        // keys pressed down/released on the canvas (not fired, why ?)
+        window.addEventListener( 'keydown', e =>this.keyDown(e), true )
+        window.addEventListener( 'keyup',   e =>this.keyUp(e), true  )
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
@@ -147,7 +154,31 @@ class WebGLCanvas
         this.clog_span.innerHTML = msg
     }
     // -------------------------------------------------------------------------------------------------
-
+    helpButtonClicked( evt )
+    {
+        this.setStatus('help button clicked')
+    }
+    // -------------------------------------------------------------------------------------------------
+    logButtonClicked( evt )
+    {
+        this.setStatus('log button clicked')
+    }
+    // -------------------------------------------------------------------------------------------------
+    keyDown( evt )  // key event
+    {
+        const msg = `keydown -- code == ${evt.code}` ;
+        this.setStatus( msg )
+        console.log( msg )
+        
+    }
+    // -------------------------------------------------------------------------------------------------
+    keyUp( evt )
+    {
+        const msg = `keyup -- code == ${evt.code}` ;
+        this.setStatus( msg )
+        console.log( msg )
+    }
+    // -------------------------------------------------------------------------------------------------
     /**
      * Called right after a mouse button has been pressed down
      * @param {MouseEvent} mevent -- mouse event created by the browser

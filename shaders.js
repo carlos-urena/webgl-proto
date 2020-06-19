@@ -290,7 +290,7 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     CheckGLError( gl )
     /// done....
 
-    const show_source = true // set to 'true' to see the sources even with no errors
+    const show_source = false // set to 'true' to see the sources even with no errors
 
     // link and then (if neccesary) show link errors
     gl.linkProgram( program )

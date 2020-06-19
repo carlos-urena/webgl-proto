@@ -52,12 +52,14 @@ a
    padding-right     : 13px ;
    padding-top       : 4px ;
    padding-bottom    : 4px ;
-   margin-bottom     : 10px ;
 }
 
 
 
-
+#buttons_row_div_id
+{
+   padding-bottom : 5px ;
+}
 
 #status_div_id
 {
@@ -66,7 +68,11 @@ a
    width            : 100% ;
    padding          : 4px ;
    margin-top      : 8px ;
-   
+   border-radius    : 10px ;
+   padding-left      : 13px ;
+   padding-right     : 13px ;
+   padding-top       : 6px ;
+   padding-bottom    : 6px ;
 }
 
 /**

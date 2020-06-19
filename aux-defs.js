@@ -17,8 +17,8 @@ function BuscarElemId( id )
     let node = document.getElementById( id )
     if ( node === null )
     {
-        const str = `No encuentro en el documento el elemento con identificador'${id}' (ver consola)`
-        Log( msg )
+        const str = `Cannot find HTML element with identifier '${id}' in the page`
+        Log( str )
         throw new Error(str)
     }
     return node

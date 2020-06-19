@@ -27,12 +27,13 @@
    <script src='wgl-canvas.js'>   </script>  
    <script src='ply-parse.js'>    </script>
    <script src='main.js'>         </script>
+   <script>document.addEventListener("DOMContentLoaded", OnDOMLoaded );</script>
 
 </head>
 
 <!-- ***************************************************************************************** -->
 
-<body onload="OnDocumentLoad()" onresize="OnBodyResize()">
+<body onresize="OnBodyResize()">
 <div id='outer_div_id'>
     <div id='upper_container_id'>
         <h1>Simple WebGL 3D mesh viewer.</h1>    
@@ -46,41 +47,10 @@
         <div id='status_div_id'>
             &nbsp;
         </div>
-        <!-- p>
-            CLOG output: <span id='clog_span_id'></span>
-        </p -->
     </div>
     <div id='canvas_container_id'>
     </div>
-    <div id='lower_container_id'>
-        <!-- 
-        <div id=''>
-        </div>
-        <hr noshade>
-        <h2>Log</h2>
-        <div id='log_div_id'>
-        </div>
-        <hr noshade>
-        <h2>WebGL info. table</h2>
-        <div id='info_div_id'>
-        </div>
-        -->
-        <hr noshade>
-        <h3>Texture image preview</h3>
-        <img id='texture_image_id'></img>
-        <hr noshade>
-        URI: <span id='uri_span_id'></span><br/>
-        Last modified: <span id='last_modified_span_id'></span><br/>
-        <!-- 
-        <h3>Log</h3>
-        <div id='log_div_id'>
-        </div>
-        -->
-        <h3>PLY file contents</h3>
-        <pre id='ply_file_contents_pre_id' style='font-size : 12pt'>
-            not loaded.....
-        </pre>
-    </div>
+    <div id='lower_container_id'>URI:&nbsp;<b><span id='uri_span_id'></span></b>&nbsp;--&nbsp;Last modified:&nbsp;<b><span id='last_modified_span_id'></span></b></div>
 </div>
 </body>
 </html>

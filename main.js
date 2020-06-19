@@ -8,31 +8,43 @@ var canvas = null
 
 // -------------------------------------------------------------------------------------------------
 
-/** Adapts the canvas container size to the window size
+/** Adapts the page containers divs to window size
 */
-function ResizeCanvasContainer()
+function ResizePageElements()
 {
-    if ( canvas == null )
-        return 
-
     let canvas_container_elem = BuscarElemId('canvas_container_id')
 
-    const nx = Math.min( 2048, Math.max( 256, Math.floor(window.innerWidth*0.8  ) ) ),
-          ny = Math.min( 2048, Math.max( 256, Math.floor(window.innerHeight*0.8 ) ) )
+    // compute and set new canvas sizes (nx,ny) from window size
+    let border  = Trunc( window.innerWidth*0.05, 10, 30 ),
+        canv_nx = window.innerWidth - border,
+        canv_ny = Math.floor(window.innerHeight*0.7)
 
-    canvas_container_elem.style.width   = nx.toString() + "px"
-    canvas_container_elem.style.height  = ny.toString() + "px"
-    if ( main_debug )
-        Log(`ResizeCanvasContainer, new w = ${nx}, h = ${ny}`)
-    canvas.resize()  // resizes the canvas according to div dimensions
+    canvas_container_elem.style.width   = canv_nx.toString() + "px"
+    canvas_container_elem.style.height  = canv_ny.toString() + "px"
+
+    // compute and set the new width (cont_nx) for the header and footer containers 
+    let cont_upp    = BuscarElemId( 'upper_container_id' ),
+        cont_low    = BuscarElemId( 'lower_container_id' ),
+        cont_nx     = Trunc( 1024, 0, canv_nx ),
+        cont_nx_str = cont_nx.toString() + 'px'   
+
+    cont_upp.style.width = cont_nx_str
+    cont_low.style.width = cont_nx_str
+
+    // resizes the canvas according to the 'canvas_container' div dimensions
+    // (and then redraws the frame)
+    if ( canvas != null )
+        canvas.resize()  
 }
 
 // -------------------------------------------------------------------------------------------------
-/* this is executed once, after the body has finished loading
+/* this is executed once, after all the html elements are loaded (but does not waits for CSS, imgs, etc...)
 */
 
-function OnDocumentLoad()
+function OnDOMLoaded()
 {
+    ResizePageElements()
+
     let fname = 'OnDocumentLoad() :'
     if ( main_debug )
         Log(`${fname} begins.`)
@@ -52,11 +64,8 @@ function OnDocumentLoad()
         throw RangeError(`'canvas' is not null on document load`)   
     canvas = new WebGLCanvas( 'canvas_container_id' )
 
-    // fit the canvas size to that of its container
-    ResizeCanvasContainer()
-
-    // do a sample draw, just to check everything is fine
-    canvas.drawFrame() 
+    // resize canvas container, canvas, and redraw frame
+    ResizePageElements()
 
     if ( main_debug )
         Log("OnDocumentLoad: ends")
@@ -65,7 +74,8 @@ function OnDocumentLoad()
 
 function OnBodyResize()
 {
-   ResizeCanvasContainer()
+   ResizePageElements()
+   
 }
 // -------------------------------------------------------------------------------------------------
 

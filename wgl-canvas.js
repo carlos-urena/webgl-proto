@@ -1058,10 +1058,14 @@ class WebGLCanvas
             if ( this.loaded_object == null )
             {
                 if ( this.test_3d_mesh == null )
+                {
                     //this.test_3d_mesh = new SphereMesh( 300, 300 )
                     //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-                    this.test_3d_mesh = new ConeMesh( 1300, 1000 )
-
+                    const ns = 1047, nt = 1047
+                    this.setStatus(`Generating test geometry (${ns*nt} triangles) ...`)
+                    this.test_3d_mesh = new ConeMesh( ns, nt )
+                    this.setStatus('Generating test geometry: done.')
+                }
                 pr.doShading(false)
                 pr.pushMM()
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )

@@ -20,7 +20,7 @@ a
    text-decoration     : none ;
    border-bottom-width : 2pt ;
    border-bottom-style : solid ;
-   border-bottom-color : rgb( 75%, 45%, 0% );    
+   border-bottom-color : sandybrown;    
    color               : rgb( 95%, 95%, 95%) ;
 }
 #outer_div_id
@@ -39,12 +39,33 @@ a
    **/
 }
 
+.bsp_class
+{
+   cursor           : pointer ;
+   background-color : rgb(30%,30%,30%) ;
+   color            : sandybrown;    
+   border-style     : solid ;
+   border-color     : sandybrown;
+   border-width     : 2px ;
+   border-radius    : 10px ;
+   padding-left      : 13px ;
+   padding-right     : 13px ;
+   padding-top       : 4px ;
+   padding-bottom    : 4px ;
+   margin-bottom     : 10px ;
+}
+
+
+
+
+
 #status_div_id
 {
    color            : rgb( 0%,  0%, 0%);
    background-color : sandybrown ;
    width            : 100% ;
    padding          : 4px ;
+   margin-top      : 8px ;
    
 }
 
@@ -71,6 +92,7 @@ a
 {
    /** width            : 1024px ; 
    height           : 1024px ; **/
+   cursor  : all-scroll ;
    border-width     : 5px ;
      border-style     : solid ;
      border-color     : rgb(50%,50%,50%);

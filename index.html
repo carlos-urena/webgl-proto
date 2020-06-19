@@ -37,20 +37,21 @@
 <div id='outer_div_id'>
     <div id='upper_container_id'>
         <h1>Simple WebGL 3D mesh viewer.</h1>    
-        <p>
-        A simple prototype for rendering meshes with WebGL+GLSL. This is work in progress. 
-        Source code is available at this Github repository:
-        <a href='https://github.com/carlos-urena/webgl-proto'>github.com/carlos-urena/webgl-proto</a>. 
-        Drag (right mouse button) or swipe (on mobile devices) to rotate the camera. Use mouse wheel to zoom in or out.
-        You can also drag & drop a PLY file.
-        </p>
+        <div id='buttons_row_div_id'>
+            <span class='bsp_class' id='help_button_id'>Help</span>
+            <span class='bsp_class' id='log_button_id'>Log</span>
+        </div>
         <div id='status_div_id'>
             &nbsp;
         </div>
     </div>
     <div id='canvas_container_id'>
     </div>
-    <div id='lower_container_id'>URI:&nbsp;<b><span id='uri_span_id'></span></b>&nbsp;--&nbsp;Last modified:&nbsp;<b><span id='last_modified_span_id'></span></b></div>
+    <div id='lower_container_id'>URI:&nbsp;<b><span id='uri_span_id'></span></b><br/>
+    Last modified:&nbsp;<b><span id='last_modified_span_id'></span></b>
+    <br/>Source&nbsp;code&nbsp;at:&nbsp;<a href="https://github.com/carlos-urena/webgl-proto">github.com/carlos-urena/webgl-proto</a>
+    </div>
+
 </div>
 </body>
 </html>

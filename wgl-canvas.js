@@ -1061,7 +1061,7 @@ class WebGLCanvas
                 {
                     //this.test_3d_mesh = new SphereMesh( 300, 300 )
                     //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-                    const ns = 1047, nt = 1047
+                    const ns = 254, nt = 254
                     this.setStatus(`Generating test geometry (${ns*nt} triangles) ...`)
                     this.test_3d_mesh = new ConeMesh( ns, nt )
                     this.setStatus('Generating test geometry: done.')

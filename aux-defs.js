@@ -112,16 +112,18 @@ function LogLines( title, source )
  */
 
  var log_count = 0
+ var global_log_elem = null 
 
 function Log( msg )
 {    
     log_count++ 
     console.log( msg )
-    let log_elem = document.getElementById('log_div_id')
-    if ( log_elem == null )
+    if ( global_log_elem == null )
+    {
         return
+    }
     const str = `${log_count}: ${msg}<br/>`
-    log_elem.innerHTML = log_elem.innerHTML + str
+    global_log_elem.innerHTML = global_log_elem.innerHTML + str
 }
 
 

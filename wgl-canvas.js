@@ -820,23 +820,22 @@ class WebGLCanvas
                 this.webgl_version = 1
         }
 
-        // check if we can use 'unsigned int' for the indexes in an indexed vertex sequence
+        // enable 32 bits unsigned ints extension
         if ( first )
         {
             if ( this.debug )
                 console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
             
-            // if ( this.context.getExtension('OES_element_index_uint') == null )
-            // {
-            //     if ( this.debug )
-            //     {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
-            //         Log( msg )
-            //     }
-            //     //throw Error( msg )
-            //     this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
-            // }
-            // else 
-            //     this.context.has_32bits_indexes = true 
+            if ( this.context.getExtension('OES_element_index_uint') == null )
+            {
+                if ( this.debug )
+                {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
+                    Log( msg )
+                }
+                this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
+            }
+            else 
+                this.context.has_32bits_indexes = true 
 
             this.showGLVersionInfo()
             if ( this.webgl_version == 0 )
@@ -1087,10 +1086,10 @@ class WebGLCanvas
                 {
                     //this.test_3d_mesh = new SphereMesh( 300, 300 )
                     //this.test_3d_mesh = new CylinderMesh( 300, 300 )
-                    const ns = 254, nt = 254
+                    const ns = 100, nt = 100
                     this.setStatus(`Generating test geometry (${ns*nt} triangles) ...`)
                     this.test_3d_mesh = new ConeMesh( ns, nt )
-                    this.setStatus('Generating test geometry: done.')
+                    this.setStatus(`Generated test geometry (${ns*nt} triangles).`)
                 }
                 pr.doShading(false)
                 pr.pushMM()

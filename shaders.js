@@ -242,6 +242,8 @@ function CreateAndCompileShader( gl, source, type )
         Log('------------------------------------------------')
         Log(msg)
         Log('------------------------------------------------')
+        if ( this.debug_mode )
+            ShowLogWin() 
         throw new Error(`Unable to compile the ${type_str} shader, see console`)
     }
     else if ( debug_shaders )

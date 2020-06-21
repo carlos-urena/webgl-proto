@@ -825,19 +825,23 @@ class WebGLCanvas
         {
             if ( this.debug )
                 console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
-            
-            if ( this.context.getExtension('OES_element_index_uint') == null )
-            {
-                if ( this.debug )
-                {   const msg = `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device`
-                    Log( msg )
-                }
-                this.context.has_32bits_indexes = false // adding a property to a library class here .... does it works???
-            }
-            else 
-                this.context.has_32bits_indexes = true 
 
             this.showGLVersionInfo()
+            
+            if ( this.webgl_version == 1 )
+            {
+                if ( this.context.getExtension('OES_element_index_uint') == null )
+                {
+                    Log( `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device` )
+                    this.context.has_32bits_indexes = false // adding a property to a library class object here .... does it works???
+                }
+                else 
+                {
+                    Log( `${fname} extension 'OES_element_index_uint' is available` )
+                    this.context.has_32bits_indexes = true 
+                }
+            }
+            
             if ( this.webgl_version == 0 )
             {
                 const msg = `${fname} Unable to create a webgl canvas, neither ver 1 nor ver 2`

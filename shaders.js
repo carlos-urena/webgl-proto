@@ -138,6 +138,14 @@ const fragment_functions =
                 return tcol.xyz ;
             }
         }
+
+        vec4 FragColor()
+        {
+            if ( do_shading == 0 )
+                return vec4( BaseColor(), 1.0 ) ;
+            else
+                return vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
+        }
     `
 
 const fragment_main_wgl1 =
@@ -146,10 +154,7 @@ const fragment_main_wgl1 =
 
         void main() 
         {
-            if ( do_shading == 0 )
-                gl_FragColor = vec4( BaseColor(), 1.0 ) ;
-            else
-                gl_FragColor = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
+            gl_FragColor = FragColor()
         }
     `
 
@@ -160,12 +165,7 @@ const fragment_main_wgl2 =
 
         void main() 
         {
-            if ( do_shading == 0 )
-            {
-                frag_color = vec4( BaseColor(), 1.0 ) ;
-            }
-            else
-                frag_color = vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
+            frag_color = FragColor()
         }
     `
 // --------------------------------------------------------

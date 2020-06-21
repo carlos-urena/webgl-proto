@@ -128,6 +128,9 @@ const fragment_functions =
             return diff ;//+ spec ;
         }
 
+        // returns 'base color', (the surface reflectivity), which is either the 
+        // interpolated vertex color (when no texturing) or the texture color (when texturing)
+
         vec3 BaseColor()
         {
             if ( do_texture == 0 )
@@ -154,7 +157,7 @@ const fragment_main_wgl1 =
 
         void main() 
         {
-            gl_FragColor = FragColor()
+            gl_FragColor = FragColor() ;
         }
     `
 
@@ -165,7 +168,7 @@ const fragment_main_wgl2 =
 
         void main() 
         {
-            frag_color = FragColor()
+            frag_color = FragColor() ;
         }
     `
 // --------------------------------------------------------

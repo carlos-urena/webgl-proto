@@ -19,7 +19,7 @@ const wgl2_version_decl  =
     `
 const precision  =
     `
-        precision highp float; // ---> 32 bits ???
+        precision mediump float; // ---> 32 bits ???
         precision highp  int ;  // ---> 32 bits ....
     `
 

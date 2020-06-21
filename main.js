@@ -43,7 +43,9 @@ function ResizePageElements()
 
 function OnDOMLoaded()
 {
+    ShowLogWin()
     ResizePageElements()
+
 
     let fname = 'OnDocumentLoad() :'
     if ( main_debug )

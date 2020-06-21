@@ -105,25 +105,80 @@ function LogLines( title, source )
     }
     Log('-----------------------------------------------------------')
 }
+
+
+
 // -------------------------------------------------------------------------------------------------
 /**
  * Logs a message both in the console and in the web page (when a div with id 'log_div_id' exists)
  * @param {string} msg -- message to log. 
  */
 
- var log_count = 0
+ var global_log_count = 0
  var global_log_elem = null 
+ var global_log_lines  = []
 
 function Log( msg )
 {    
-    log_count++ 
+    global_log_count++ 
     console.log( msg )
-    if ( global_log_elem == null )
+    global_log_lines.push( msg )
+    if ( global_log_elem != null )
     {
-        return
+        let lines_elem = document.getElementById('log_lines_id')
+        if ( lines_elem != null )
+        {
+            lines_elem.innerHTML += `${global_log_count}: ${msg}<br/>`
+        }
+    }    
+}
+
+
+// ----
+
+/**
+ *  Shows the log window or div on the page, if it is already shown, does nothing
+ */
+function ShowLogWin()
+{
+    if ( global_log_elem != null )
+        return 
+
+    let contents = 
+        `   <div id='log_head_id'>
+                <h1>JS DEVELOPMENT LOG</h1>
+                <div class='buttons_row_div_class'>
+                    <hr noshade>
+                    <span class='bsp_class' id='log_close_button_id'>Close</span>
+                <hr noshade>
+                </div>
+            </div>
+        `
+    let log_elem       = document.createElement('div')
+    //log_elem.className     = 'popup_style_class'
+    log_elem.innerHTML = contents
+    log_elem.onclick   = function() { CloseLogWin() }
+    log_lines_elem     = document.createElement('div')
+    log_lines_elem.id  = 'log_lines_id'
+    log_lines_elem.innerHTML = ''
+
+    let count = 1
+    for( let line of global_log_lines )
+    {   log_lines_elem.innerHTML += `${count}: ${line}<br/>`
+        count ++ 
     }
-    const str = `${log_count}: ${msg}<br/>`
-    global_log_elem.innerHTML = global_log_elem.innerHTML + str
+    log_elem.appendChild( log_lines_elem )
+
+    global_log_elem = log_elem
+    document.body.appendChild( global_log_elem )
+}
+// -------------------------------------------------------------------------------------------------
+function CloseLogWin()
+{
+    if ( global_log_elem == null )
+        return
+    document.body.removeChild( global_log_elem )
+    global_log_elem = null 
 }
 
 

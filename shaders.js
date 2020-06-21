@@ -1,4 +1,4 @@
-var debug_shaders = false
+var debug_shaders = true
 
 // -------------------------------------------------------------------------------------
 // GLSL ES sources for WebGL 1 and 2
@@ -326,13 +326,17 @@ class SimpleGPUProgram
 {
     constructor( wgl_ctx )
     {
+
+        ShowLogWin() // to debug shaders in mobile browsers 
+        
         const fname = 'SimpleGPUProgam.constructor():'
         const cname = wgl_ctx.constructor.name 
+        this.debug_mode = debug_shaders
 
         if ( this.debug_mode )
-            Log(`${fname} : begins, webgl context class == '${cname}'`)
+            Log(`${fname} : begins.`)
 
-        this.debug_mode    = debug_shaders
+        
         this.webgl_version = null 
         
         if ( cname == 'WebGL2RenderingContext' )
@@ -347,7 +351,7 @@ class SimpleGPUProgram
         }
          
         if ( this.debug_mode )
-            Log(`${fname} : begins, wgl ver = ${this.webgl_version}`)
+            Log(`${fname} : wgl ver = ${this.webgl_version}`)
         
         let gl       = wgl_ctx
         this.context = wgl_ctx
@@ -413,7 +417,12 @@ class SimpleGPUProgram
         this.useTexture( null )
 
         // restore previously used shader program 
-        gl.useProgram( prev_program )            
+        gl.useProgram( prev_program )    
+        
+        if ( this.debug_mode )
+        {
+            Log(`${fname} ends.`)
+        }
     }
     // ------------------------------------------------------------------------------------------------
     /**

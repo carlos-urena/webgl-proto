@@ -130,7 +130,7 @@ class WebGLCanvas
         if ( this.help_button != null )
             this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
         if ( this.log_button != null )
-            this.log_button.addEventListener( 'click', e => this.logButtonClicked(e) )
+            this.log_button.addEventListener( 'click', e => ShowLogWin() )
 
         // call 'this.dragDrop' when the user drops some files on this canvas element
         this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
@@ -158,45 +158,14 @@ class WebGLCanvas
     {
         this.setStatus('help button clicked')
     }
-    // -------------------------------------------------------------------------------------------------
-    logButtonClicked( evt )
-    {
-        this.setStatus('log button clicked')
-        let log_lines = null
-
-        if ( global_log_elem == null )
-        {
-            let log_elem           = document.createElement('div')
-            log_elem.id        = 'popup'
-            log_elem.innerHTML = '<h1>JS DEVELOPMENT LOG</h1>'
-            log_lines          = document.createElement('div')
-            log_lines.id       = 'log_lines_id'
-            log_lines.innerHTML = ''
-
-            for( let i = 0 ; i < 500 ; i++ )
-                log_lines.innerHTML += `line num: ${i}<br/>`
-
-            log_elem.appendChild( log_lines )
-            document.body.appendChild( log_elem )
-
-            global_log_elem = log_elem
-        }
-        log_lines = document.getElementById('log_lines_id')
-        if ( log_lines == null )
-        {
-            console.log('log lines en NULL')
-            return
-        } 
-        log_lines.innerHTML += 'another click'
-
-
-    }
+    
+    
     // -------------------------------------------------------------------------------------------------
     keyDown( evt )  // key event
     {
         const msg = `keydown -- code == ${evt.code}` ;
         this.setStatus( msg )
-        console.log( msg )
+        Log( msg )
         
     }
     // -------------------------------------------------------------------------------------------------
@@ -204,7 +173,7 @@ class WebGLCanvas
     {
         const msg = `keyup -- code == ${evt.code}` ;
         this.setStatus( msg )
-        console.log( msg )
+        Log( msg )
     }
     // -------------------------------------------------------------------------------------------------
     /**

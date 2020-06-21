@@ -56,7 +56,7 @@ a
 
 
 
-#buttons_row_div_id
+.buttons_row_div_class
 {
    padding-bottom : 5px ;
 }
@@ -112,31 +112,26 @@ a
 }
 
 
-#popup
+.popup_style_class
 {
-   position : absolute ;
-   z-index  : 10 ;
-   left     : 50px ;
-   top      : 50px ;
-   width    : 50% ;
-   height   : 50% ;
-   resize   : both ;
+   font-family : 'Courier New', Courier, monospace ;
+   position   : absolute ;
+   z-index    : 10 ;
+   left       : 50px ;
+   top        : 50px ;
+   width      : 75% ;
+   height     : 75% ;
+   resize     : both ;
    overflow-y : scroll ;
-
-   background-color : rgb(10%,10%,10%);
-   border-style     : solid ;
-   border-color     : rgb(90%,20%,0%);
-   border-radius    : 4px ;
-
-
    
+   font-size  : 12pt ;
+
+   background-color : rgb(30%,30%,30%);
+   /** border-style     : solid ;
+   border-color     : rgb(90%,80%,0%); */
+   border-radius    : 10px ;
+   padding      : 1em ;
 }
-
-
-
-
-
-
 
 /*** see flexbox template areas as an easy way to define layout **/
 /*** https://developer.mozilla.org/es/docs/Web/CSS/grid-template-areas **/

@@ -19,8 +19,8 @@ const wgl2_version_decl  =
     `
 const precision  =
     `
-        precision mediump float; // ---> 32 bits ???
-        precision highp  int ;  // ---> 32 bits ....
+        precision mediump float; // 'highp' here makes 'texture' GLSL function to fail (check this)
+        precision highp  int ;  // (what happens if I write 'mediump' here ? can mesh indexes still be very large??)
     `
 
 const uniforms_decls = 

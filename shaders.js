@@ -19,7 +19,7 @@ const wgl2_version_decl  =
     `
 const precision  =
     `
-        precision mediump float; // 'highp' here makes 'texture' GLSL function to fail (check this)
+        precision highp float; // ??
         precision highp  int ;  // (what happens if I write 'mediump' here ? can mesh indexes still be very large??)
     `
 
@@ -50,7 +50,7 @@ const vertex_attrs_decls_wgl1 =
 const vertex_attrs_decls_wgl2 =
     `   
         // Vertex attributes declarations (GLSL ES 3.0)
-
+        
         layout(location = 0) in vec3 in_vertex_pos_mcc ;    // attribute 0 (positions in master coordinates)
         layout(location = 1) in vec3 in_vertex_color ;      // attribute 1 (vertex color)
         layout(location = 2) in vec3 in_vertex_normal_mcc ; // attribute 2 (normals in master coordinates)
@@ -137,7 +137,7 @@ const fragment_functions =
                 return vertex_color ;
             else
             {
-                vec4 tcol = texture( tsampler0, vertex_texcoo ) ;
+                vec4 tcol = QUERY_TEXTURE_2D( tsampler0, vertex_texcoo ) ;
                 return tcol.xyz ;
             }
         }
@@ -206,7 +206,30 @@ const wgl2_fragment_complete_str =
     fragment_functions + 
     fragment_main_wgl2
 
-    // -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+
+var webgl_version = 0 
+
+
+function ReplaceSyms( glsl_src )
+{
+    let res = glsl_src
+    if ( webgl_version == 1 )
+    {
+        res = res.replace('QUERY_TEXTURE_2D','texture2D')
+    }
+    else if ( webgl_version == 2 )
+    {
+        res = res.replace('QUERY_TEXTURE_2D','texture')
+    }
+    else 
+        throw new Error('webgl_version is not 1 nor 2')
+
+    return res ;
+}
+// -------------------------------------------------------------------------------------------------
+
 /**
  * Creates and compiles a vertex or fragment shader, if there are errors, shows the source and the errors,
  * and raises an exception, if it is correct, returns the shader.
@@ -231,7 +254,7 @@ function CreateAndCompileShader( gl, source, type )
 
     const type_str = ( type === gl.VERTEX_SHADER ) ? "vertex" : "fragment" 
 
-    let shader = gl.createShader( type ); 
+    let shader = gl.createShader( type )
     CheckType( shader, 'WebGLShader' )
 
     gl.shaderSource( shader, source )
@@ -318,9 +341,6 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
     else if ( debug_shaders )
         Log(`${fname} program linked ok.`)   
 
-
-     
-
     return program
 }
 
@@ -344,9 +364,14 @@ class SimpleGPUProgram
         this.webgl_version = null 
         
         if ( cname == 'WebGL2RenderingContext' )
+        {   
+            webgl_version = 2 
             this.webgl_version = 2
+        }
         else if ( cname == 'WebGLRenderingContext' )
+        {   webgl_version = 1
             this.webgl_version = 1
+        }
         else 
         {   
             this.webgl_version = 0 // just in case 'this' object is used after throw ..
@@ -364,18 +389,18 @@ class SimpleGPUProgram
         this.vertex_source = null 
         this.fragment_source = null 
 
-        // register shaders sources
+        // register shaders sources (after replacing some symbols)
         if ( this.webgl_version == 2 )
         {
             Log(`${fname} using webgl 2 sources`)
-            this.vertex_source   = wgl2_vertex_complete_str   //wgl2_vertex_source
-            this.fragment_source = wgl2_fragment_complete_str //wgl2_fragment_source
+            this.vertex_source   = ReplaceSyms(wgl2_vertex_complete_str)   //wgl2_vertex_source
+            this.fragment_source = ReplaceSyms(wgl2_fragment_complete_str) //wgl2_fragment_source
         }
         else
         {
             Log(`${fname} using webgl 1 sources`)
-            this.vertex_source   = wgl1_vertex_complete_str    //wgl1_vertex_source
-            this.fragment_source = wgl1_fragment_complete_str //wgl1_fragment_source
+            this.vertex_source   = ReplaceSyms(wgl1_vertex_complete_str)    //wgl1_vertex_source
+            this.fragment_source = ReplaceSyms(wgl1_fragment_complete_str) //wgl1_fragment_source
         }
 
         // compile shaders

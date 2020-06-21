@@ -305,6 +305,8 @@ function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader
         Log('------------------------------------------------')
         Log(msg)
         Log('------------------------------------------------')
+        if ( this.debug_mode )
+            ShowLogWin()  
         if ( ! link_ok )
             throw new Error(`Unable to link program.`)
     }
@@ -326,9 +328,6 @@ class SimpleGPUProgram
 {
     constructor( wgl_ctx )
     {
-
-        ShowLogWin() // to debug shaders in mobile browsers 
-        
         const fname = 'SimpleGPUProgam.constructor():'
         const cname = wgl_ctx.constructor.name 
         this.debug_mode = debug_shaders

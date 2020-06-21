@@ -128,9 +128,10 @@ class WebGLCanvas
         this.log_button  = document.getElementById('log_button_id')
 
         if ( this.help_button != null )
-            this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
+            //this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
         if ( this.log_button != null )
-            this.log_button.addEventListener( 'click', e => ShowLogWin() )
+            //this.log_button.addEventListener( 'click', e => ShowLogWin() )
+            this.log_button.onclick = e => ShowLogWin()
 
         // call 'this.dragDrop' when the user drops some files on this canvas element
         this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
@@ -165,15 +166,12 @@ class WebGLCanvas
     {
         const msg = `keydown -- code == ${evt.code}` ;
         this.setStatus( msg )
-        Log( msg )
-        
     }
     // -------------------------------------------------------------------------------------------------
     keyUp( evt )
     {
         const msg = `keyup -- code == ${evt.code}` ;
         this.setStatus( msg )
-        Log( msg )
     }
     // -------------------------------------------------------------------------------------------------
     /**

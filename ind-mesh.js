@@ -30,7 +30,7 @@ function ComputeBBox( coords_array )
     }
     if ( debug_mesh )
     {
-        Log(`${fname} num verts == ${this.n_verts}`)
+        Log(`${fname} num verts == ${nv}`)
         Log(`${fname} bbox min  == (${minx},${miny},${minz})`)
         Log(`${fname} bbox max  == (${maxx},${maxy},${maxz})`)
     }

@@ -1,6 +1,8 @@
 // Info about PLY format
 // http://paulbourke.net/dataformats/ply/
 
+
+
 /**
  * Parses the PLY header, returns an object 
  * @param {Array<string>} lines        --  
@@ -71,8 +73,7 @@ function ParsePLYHeader( lines, end_line_num )
                 return result
             }
             if ( results.element.has( element.name ) )
-            {
-                result.parse_message = "duplicate element name in two lines"
+            {   result.parse_message = "duplicate element name in two lines"
                 return result
             }
             result.elements.set( element.name, element )   
@@ -113,8 +114,7 @@ function ParsePLYHeader( lines, end_line_num )
             let properties = result.elements[ result.elements.length-1 ].properties
 
             if ( properties.has( property.name ) )
-            {
-                result.parse_message = "duplicate property name in two lines of an element description in header"
+            {   result.parse_message = "duplicate property name in two lines of an element description in header"
                 return result
             }
             properties.set( property.name, property )
@@ -122,10 +122,33 @@ function ParsePLYHeader( lines, end_line_num )
         
     }
 
+    /// check minimal (required) elements/properties
+    let elems = result.elements 
 
+    if ( ! elems.has('vertex') )
+    {   result.parse_message = "header does not include 'vertex' element"
+        return result
+    }
+    let vep = elems.get( 'vertex').properties 
 
+    if ( ! vep.has('x') || !vep.has('y') || !vep.has('z') )
+    {   result.parse_message = "'vertex' element has no 'x/y/z' properties"
+        return result
+    }
+    if ( ! elems.has('face') )
+    {
+        result.parse_message = "header does not include 'face' element"
+        return result
+    }
+    let fep = elems.get( 'face' ).properties
+    if ( !fep.has('vertex_index') )
+    {
+        result.parse_message = "'face' element has no 'vertex_index' list"
+        return result 
+    }
 
     result.parse_ok = true 
+    return result
 }
 
 // -------------------------------------------------------------------------------------------------

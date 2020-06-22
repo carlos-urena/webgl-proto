@@ -2,6 +2,7 @@
 // http://paulbourke.net/dataformats/ply/
 
 
+let debug_ply_parse = true 
 
 /**
  * Parses the PLY header, returns an object 
@@ -17,10 +18,13 @@ function ParsePLYHeader( lines, end_line_num )
             elements          : new Map()  // elements array, indexed by element names 
         }
 
-     // seek for 'end_header' line
-     let ehl = 2    // end header line num
-     while( ehl < lines.length && (lines[ehl]).trim() != 'end_header'   )
-         ehl ++ 
+    // valid value types 
+    const valid_types = [ 'char','uchar','short', 'ushort', 'int', 'uint', 'float', 'double' ]     
+
+    // seek for 'end_header' line
+    let ehl = 2    // end header line num
+    while( ehl < lines.length && (lines[ehl]).trim() != 'end_header'   )
+        ehl ++ 
 
     /// Check basic header properties
  
@@ -43,11 +47,16 @@ function ParsePLYHeader( lines, end_line_num )
 
     /// Process header lines, check it is syntactically valid
 
+    let curr_first_line = ehl
+    let last_element    = null
+
     for( let l = 3 ; l < ehl ; l++ )
     {
         const
             line     = lines[l].trim(), 
             tokens   = line.split(' ')
+
+        console.log(`header: "${line}"`)
 
         result.parse_message_line = `line ${l}: "${line}"`
 
@@ -63,26 +72,32 @@ function ParsePLYHeader( lines, end_line_num )
             {   result.parse_message = "line starting with 'element' has invalid format (not 3 words)"
                 return result
             }
-            let element = 
-            {   name       : tokens[1], 
-                num_lines  : parseInt( tokens[2], 10 ), 
-                properties : new Map()  // element properties, indexed by properties' names
-            }
-            if ( element.num_lines === NaN || element.num_lines <= 0  )
+            const elem_num_lines = parseInt( tokens[2], 10 )
+            if ( elem_num_lines === NaN || elem_num_lines <= 0  )
             {   result.parse_message = "line starting with 'element' has invalid number of items"
                 return result
             }
-            if ( results.element.has( element.name ) )
+            let element = 
+            {   name       : tokens[1], 
+                num_lines  : elem_num_lines,
+                properties : new Map(),  // element properties, indexed by properties' names
+                first_line : curr_first_line,
+                last_line  : curr_first_line + elem_num_lines -1
+            }
+            curr_first_line += elem_num_lines
+            
+            if ( result.elements.has( element.name ) )
             {   result.parse_message = "duplicate element name in two lines"
                 return result
             }
             result.elements.set( element.name, element )   
+            last_element = element
         }
         else if ( tokens[0] == 'property'  ) // property description line
         {
             let property = null 
 
-            if ( result.elements.length == 0 )
+            if ( last_element == null )
             {   result.parse_message = "there is a 'property' line before any 'element' line"
                 return result
             }
@@ -111,13 +126,13 @@ function ParsePLYHeader( lines, end_line_num )
                     length_type : tokens[2]
                 }
             }
-            let properties = result.elements[ result.elements.length-1 ].properties
+            
 
-            if ( properties.has( property.name ) )
+            if ( last_element.properties.has( property.name ) )
             {   result.parse_message = "duplicate property name in two lines of an element description in header"
                 return result
             }
-            properties.set( property.name, property )
+            last_element.properties.set( property.name, property )
         }
         
     }
@@ -129,9 +144,9 @@ function ParsePLYHeader( lines, end_line_num )
     {   result.parse_message = "header does not include 'vertex' element"
         return result
     }
-    let vep = elems.get( 'vertex').properties 
+    let vep = elems.get('vertex').properties 
 
-    if ( ! vep.has('x') || !vep.has('y') || !vep.has('z') )
+    if ( ! vep.has('x') || ! vep.has('y') || ! vep.has('z') )
     {   result.parse_message = "'vertex' element has no 'x/y/z' properties"
         return result
     }
@@ -141,19 +156,22 @@ function ParsePLYHeader( lines, end_line_num )
         return result
     }
     let fep = elems.get( 'face' ).properties
-    if ( !fep.has('vertex_index') )
+    if ( ! fep.has('vertex_index') )
     {
         result.parse_message = "'face' element has no 'vertex_index' list"
         return result 
     }
 
+   
+
+    // done
     result.parse_ok = true 
     return result
 }
 
 // -------------------------------------------------------------------------------------------------
 
-bool debug_ply_parse = true 
+
 
 /**
  * Parses the lines of a PLY file, this version 
@@ -186,8 +204,8 @@ function ParsePLYLines( lines )
     
     
 
-    const header = ParsePLYHeader( lines, ehl )
-    if ( ! header.parse_ok )
+    const header = ParsePLYHeader( lines )
+    //if ( ! header.parse_ok )
         return header
     
     
@@ -230,7 +248,6 @@ function ParsePLYLines( lines )
 
     coords_data     = new Float32Array( 3*num_verts )
     triangles_data  = new Uint32Array( 3*num_tris )
-    colors_data     = new Float32Array( 3*num_verts )
     
     // load vertexes coords and  vertex colors
 
@@ -606,6 +623,8 @@ function ParsePLYLines_VC( lines )
  */
 function ParsePLYLines_FTCC( lines )
 {
+    ParsePLYLines( lines ) // debug !! (does nothing)
+
     const fname = 'ParsePLYLines_FTCC():'
     if ( debug_mesh ) 
         Log(`${fname} begins.`)

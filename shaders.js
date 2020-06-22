@@ -3,28 +3,34 @@ var debug_shaders = true
 // -------------------------------------------------------------------------------------
 // GLSL ES sources for WebGL 1 and 2
 //
-//  See GLSL ES and corresponding WebGL versions here: 
-//  https://en.wikipedia.org/wiki/OpenGL_Shading_Language#Versions)
+// See GLSL ES and corresponding WebGL versions here: 
+// https://en.wikipedia.org/wiki/OpenGL_Shading_Language#Versions)
 //
-
 // Modularized srcs, see 'gman' answer to Fabrice Neyret question:
 // https://stackoverflow.com/questions/43666688/is-there-a-way-to-test-the-glsl-es-version-in-the-shader
+//
+// uses template literals with a TAG function
+// (process template literals with 'glsl' prefix, such as  glsl`....`)
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_template_literals
+//
+// In vscode, you can get syntax highlighting of these literals by using 'glsl-literal' extension
+// https://github.com/boyswan/vscode-glsl-literal/blob/master/syntaxes/glsl-literal.json
+
 
 const wgl1_version_decl  =
-    `   #version 100 
-    `
+    glsl`#version 100`
 
 const wgl2_version_decl  =
-    `   #version 300 es 
-    `
+    glsl`#version 300 es`
+
 const precision  =
-    `
+    glsl`
         precision highp float; // ??
         precision highp  int ;  // (what happens if I write 'mediump' here ? can mesh indexes still be very large??)
     `
 
 const uniforms_decls = 
-    `
+    glsl`
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
 
         uniform int       do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
@@ -33,12 +39,11 @@ const uniforms_decls =
         uniform mat4      proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
         uniform mat4      norm_mat ;   // normal matrix (master normal coords --> world normal coords)
         uniform int       do_texture ; // 1 -> use texture color, 0 -> do not use
-        uniform sampler2D tsampler0 ;    // texture sampler, accesed only when 'do_texture' is 1
-                                         
+        uniform sampler2D tsampler0 ;    // texture sampler, accesed only when 'do_texture' is 1                                 
     `
 
 const vertex_attrs_decls_wgl1 =
-    `   
+    glsl`   
         // Vertex attributes declarations (GLSL ES 1.0)
 
         attribute vec3  in_vertex_pos_mcc ;   // attribute 0 (positions in master coordinates)
@@ -48,7 +53,7 @@ const vertex_attrs_decls_wgl1 =
     `
 
 const vertex_attrs_decls_wgl2 =
-    `   
+    glsl`   
         // Vertex attributes declarations (GLSL ES 3.0)
         
         layout(location = 0) in vec3 in_vertex_pos_mcc ;    // attribute 0 (positions in master coordinates)
@@ -58,7 +63,7 @@ const vertex_attrs_decls_wgl2 =
     `
 
 const vertex_inout_decls_wgl1 =
-    `
+    glsl`
         // Output (varying) variables (GLSL ES 1.0)
 
         varying vec3 vertex_color ;       // vertex color to be interpolated
@@ -68,7 +73,7 @@ const vertex_inout_decls_wgl1 =
     `
 
 const vertex_inout_decls_wgl2 =
-    `
+    glsl`
         // Output variables (GLSL ES 3.0)
 
         out vec3 vertex_color ;    // vertex color to be interpolated
@@ -81,7 +86,7 @@ const fragment_inout_decls_wgl1 =
     vertex_inout_decls_wgl1
 
 const fragment_inout_decls_wgl2 =
-    `
+    glsl`
         // Input and output variables (GLSL ES 3.0)
 
         in  vec3 vertex_color ;    // interpolated primitive color 
@@ -92,7 +97,7 @@ const fragment_inout_decls_wgl2 =
     `
 
 const vertex_main =
-    `   
+    glsl`   
         // Main function (writes the output variables) (GLSL ES 1.0 or 3.0)
 
         void main(  ) 
@@ -107,7 +112,7 @@ const vertex_main =
     `
 
 const fragment_functions = 
-    `   
+    glsl`   
         // Shade: computes opaque RGB color from (currently a simple test...)
         //    pos  : shading point position
         //    vcol : interpolated vertex color at the shading point position
@@ -152,7 +157,7 @@ const fragment_functions =
     `
 
 const fragment_main_wgl1 =
-    `   
+    glsl`   
         // Main function (writes the output variables)
 
         void main() 
@@ -163,7 +168,7 @@ const fragment_main_wgl1 =
 
 
 const fragment_main_wgl2 =
-    `   
+    glsl`   
         // Main function (writes the output variables)
 
         void main() 
@@ -171,6 +176,8 @@ const fragment_main_wgl2 =
             frag_color = FragColor() ;
         }
     `
+
+
 // --------------------------------------------------------
 // full shader srcs (composed from strings)
 
@@ -206,13 +213,23 @@ const wgl2_fragment_complete_str =
     fragment_functions + 
     fragment_main_wgl2
 
+// --------------------------------------------------------
+// Tag function for GLSL literals
+// (process template literals with 'glsl' prefix, such as  glsl`....`)
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_template_literals
+
+function glsl( strings )
+{
+    return strings.raw[0]
+}
+
 // -------------------------------------------------------------------------------------------------
-
-
-var webgl_version = 0 
-
-
-function ReplaceSyms( glsl_src )
+/**
+ * Replaces symbols in a GLSL source code string, according to the webgl version 
+ * @param {string} glsl_src 
+ * @param {number} webgl_version -- either 1 or 2 (otherwise an error is thrown) 
+ */
+function ReplaceSyms( glsl_src, webgl_version )
 {
     let res = glsl_src
     if ( webgl_version == 1 )
@@ -230,118 +247,15 @@ function ReplaceSyms( glsl_src )
 }
 // -------------------------------------------------------------------------------------------------
 
-/**
- * Creates and compiles a vertex or fragment shader, if there are errors, shows the source and the errors,
- * and raises an exception, if it is correct, returns the shader.
- * 
- * @param   {WebGLContext} gl      -- webgl context
- * @param   {string}       source  -- string with shader source, may contain newlines
- * @param   {GLenum}       type    -- shader type either gl.FRAGMENT_SHADER or gl.VERTEX_SHADER
- * @returns {WebGLShader}          -- compiled shader
- */
-function CreateAndCompileShader( gl, source, type )
+function FSSource( webgl_version )
 {
-    const fname = 'CreateAndCompileShader()'
-
-    const glclass = gl.constructor.name 
-    if ( glclass != 'WebGLRenderingContext' && glclass != 'WebGL2RenderingContext')
-        throw "Error: invalid parameter 'gl', it is not a webgl rendering context"
-
-    CheckType( source, 'string' )
-
-    if ( type != gl.VERTEX_SHADER && type != gl.FRAGMENT_SHADER )
-        throw new Error('invalid shader type')
-
-    const type_str = ( type === gl.VERTEX_SHADER ) ? "vertex" : "fragment" 
-
-    let shader = gl.createShader( type )
-    CheckType( shader, 'WebGLShader' )
-
-    gl.shaderSource( shader, source )
-    gl.compileShader( shader )
-    const msg = gl.getShaderInfoLog( shader )
-
-    if ( ! gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) 
-    {
-        LogLines(`${type_str} shader:`, source )
-        Log(`Compilation of ${type_str} shader was not succesfull:`)
-        Log('------------------------------------------------')
-        Log(msg)
-        Log('------------------------------------------------')
-        if ( this.debug_mode )
-            ShowLogWin() 
-        throw new Error(`Unable to compile the ${type_str} shader, see console`)
-    }
-    else if ( debug_shaders )
-        Log(`${fname} ${type_str} shader compiled ok.`)   
-
-    return shader
+    return ReplaceSyms( webgl_version == 1 ? wgl1_fragment_complete_str : wgl2_fragment_complete_str, webgl_version )
 }
 // -------------------------------------------------------------------------------------------------
-/**
- *  Creates and compiles a program, given its two (already compiled) shaders.
- *  If there is any error, it is reported and an exception is thrown, otherwise the program is returned
- * 
- * @param   {WebGL2RenderingContext} gl             -- a rendering context (it can be a 'WebGLRenderingContext' instead)
- * @param   {WebGLShader}           vertex_shader   -- already compiled vertex shader 
- * @param   {WebGLShader}           fragment_shader -- already compiled fragment shader
- * @param   {string}                vertex_source   -- vertex shader source (just used to show it if an error happens)
- * @param   {string}                fragment_source -- fragment shader source (just used to show it if an error happens)
- * @returns {WebGLProgram}                          -- the newly created program
- */
 
-function CreateAndLinkProgram( gl, vertex_shader, vertex_source, fragment_shader,  fragment_source )
+function VSSource( webgl_version )
 {
-    const fname = 'CreateAndLinkProgram()'
-
-    const glclass = gl.constructor.name 
-    if ( glclass != 'WebGLRenderingContext' && glclass != 'WebGL2RenderingContext')
-        throw new Error("Error: invalid parameter 'gl', it is not a webgl rendering context")
-
-    CheckType( vertex_shader,   'WebGLShader' )
-    CheckType( vertex_source,   'string' )
-    CheckType( fragment_shader, 'WebGLShader' )
-    CheckType( fragment_source, 'string' )
-
-    // Create the WebGL GPU program and attach the shaders.... 
-
-    let program  = gl.createProgram(); CheckType( program, 'WebGLProgram' ) 
-    gl.attachShader( program, vertex_shader )
-    gl.attachShader( program, fragment_shader )
-
-    // Tell to the linker which attributes locations we want for each attributes
-    CheckGLError( gl )
-    gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
-    gl.bindAttribLocation( program, 1, "in_vertex_color"   )
-    gl.bindAttribLocation( program, 2, "in_vertex_normal_mcc"  )
-    gl.bindAttribLocation( program, 3, "in_vertex_texcoo"  )
-    CheckGLError( gl )
-    /// done....
-
-    const show_source = false // set to 'true' to see the sources even with no errors
-
-    // link and then (if neccesary) show link errors
-    gl.linkProgram( program )
-
-    const link_ok = gl.getProgramParameter( program, gl.LINK_STATUS)
-    if ( !  link_ok || show_source ) 
-    {
-        const msg = gl.getProgramInfoLog( program )
-        LogLines("Vertex shader source",   vertex_source )
-        LogLines("Fragment shader source", fragment_source )
-        Log(`Output from program linking:`)
-        Log('------------------------------------------------')
-        Log(msg)
-        Log('------------------------------------------------')
-        if ( this.debug_mode )
-            ShowLogWin()  
-        if ( ! link_ok )
-            throw new Error(`Unable to link program.`)
-    }
-    else if ( debug_shaders )
-        Log(`${fname} program linked ok.`)   
-
-    return program
+    return ReplaceSyms( webgl_version == 1 ? wgl1_vertex_complete_str : wgl2_vertex_complete_str, webgl_version )
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -363,14 +277,13 @@ class SimpleGPUProgram
         
         this.webgl_version = null 
         
-        if ( cname == 'WebGL2RenderingContext' )
-        {   
-            webgl_version = 2 
-            this.webgl_version = 2
-        }
-        else if ( cname == 'WebGLRenderingContext' )
-        {   webgl_version = 1
+        if ( cname == 'WebGLRenderingContext' )
+        { 
             this.webgl_version = 1
+        }
+        else if ( cname == 'WebGL2RenderingContext' )
+        { 
+            this.webgl_version = 2
         }
         else 
         {   
@@ -389,27 +302,15 @@ class SimpleGPUProgram
         this.vertex_source = null 
         this.fragment_source = null 
 
-        // register shaders sources (after replacing some symbols)
-        if ( this.webgl_version == 2 )
-        {
-            Log(`${fname} using webgl 2 sources`)
-            this.vertex_source   = ReplaceSyms(wgl2_vertex_complete_str)   //wgl2_vertex_source
-            this.fragment_source = ReplaceSyms(wgl2_fragment_complete_str) //wgl2_fragment_source
-        }
-        else
-        {
-            Log(`${fname} using webgl 1 sources`)
-            this.vertex_source   = ReplaceSyms(wgl1_vertex_complete_str)    //wgl1_vertex_source
-            this.fragment_source = ReplaceSyms(wgl1_fragment_complete_str) //wgl1_fragment_source
-        }
-
-        // compile shaders
-        this.vertex_shader   = CreateAndCompileShader( gl, this.vertex_source,   gl.VERTEX_SHADER )
-        this.fragment_shader = CreateAndCompileShader( gl, this.fragment_source, gl.FRAGMENT_SHADER )
+        // register shaders sources in the instance (after replacing some webgl-version-depending symbols)
+        Log(`${fname} using webgl ${this.webgl_version} sources`)
+        this.vertex_source   = VSSource( this.webgl_version ) 
+        this.fragment_source = FSSource( this.webgl_version ) 
         
-        // link program
-        this.program = CreateAndLinkProgram  ( gl, this.vertex_shader,   this.vertex_source, 
-                                                   this.fragment_shader, this.fragment_source )
+        // compile shaders and link program (writes 'this.program')
+        this.createAndCompileShader( gl.VERTEX_SHADER )
+        this.createAndCompileShader( gl.FRAGMENT_SHADER )
+        this.createAndLinkProgram( )
 
         // save previously used shader program, then activate (use) this program
         let prev_program = gl.getParameter( gl.CURRENT_PROGRAM ) 
@@ -453,6 +354,104 @@ class SimpleGPUProgram
             Log(`${fname} ends.`)
         }
     }
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * Creates and compiles a vertex or fragment shader, if there are errors, shows the source and the errors,
+     * and raises an exception, if it is correct, returns the shader. Uses 'this.context'.
+     * 
+     *  Reads:  'this.vertex_source'   or 'this.fragment_source' (depending on 'type')
+     *  Writes: 'this.fragment_shader' or 'this.vertex_shader' (depending on 'type')
+     * 
+     * @param {GLenum} type  -- shader type either gl.FRAGMENT_SHADER or gl.VERTEX_SHADER
+     */
+    createAndCompileShader( type )
+    {
+        const fname = 'SimpleGPUProgram.createAndCompileShader()'
+        const gl = this.context 
+
+        Check( type === gl.VERTEX_SHADER || type === gl.FRAGMENT_SHADER , `${fname} Invalid type `)
+        const source   = ( type === gl.VERTEX_SHADER ) ? this.vertex_source : this.fragment_source
+        const type_str = ( type === gl.VERTEX_SHADER ) ? "vertex" : "fragment" 
+
+        let shader = gl.createShader( type )
+        CheckType( shader, 'WebGLShader' )
+
+        gl.shaderSource( shader, source )
+        gl.compileShader( shader )
+        const msg = gl.getShaderInfoLog( shader )
+
+        if ( ! gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) 
+        {
+            LogLines(`${type_str} shader:`, source )
+            Log(`Compilation of ${type_str} shader was not succesfull:`)
+            Log('------------------------------------------------')
+            Log(msg)
+            Log('------------------------------------------------')
+            if ( this.debug_mode )
+                ShowLogWin() 
+            throw new Error(`Unable to compile the ${type_str} shader, see console`)
+        }
+        else if ( debug_shaders )
+            Log(`${fname} ${type_str} shader compiled ok.`)   
+
+        if ( type === gl.VERTEX_SHADER )
+            this.vertex_shader = shader 
+        else 
+            this.fragment_shader = shader
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     *  Creates and compiles a program, given its two (already compiled) shaders. Uses 'this.context'.
+     *    Reads: 'this.vertex_shader' and 'this.fragment_shader' (must be already compiled)
+     *    Writes: 'this.program'
+     */
+
+    createAndLinkProgram(  )
+    {
+        const fname = 'SimpleGPUProgram.createAndLinkProgram()'
+        let gl = this.context
+
+        // Create the WebGL GPU program and attach the shaders.... 
+
+        let program  = gl.createProgram(); CheckType( program, 'WebGLProgram' ) 
+        gl.attachShader( program, this.vertex_shader )
+        gl.attachShader( program, this.fragment_shader )
+
+        // Tell to the linker which attributes locations we want for each attributes
+
+        CheckGLError( gl )
+        gl.bindAttribLocation( program, 0, "in_vertex_pos_mcc" )
+        gl.bindAttribLocation( program, 1, "in_vertex_color"   )
+        gl.bindAttribLocation( program, 2, "in_vertex_normal_mcc"  )
+        gl.bindAttribLocation( program, 3, "in_vertex_texcoo"  )
+        CheckGLError( gl )
+
+        const show_source = false // set to 'true' to see the sources even with no errors
+
+        // link and then (if neccesary) show link errors
+        gl.linkProgram( program )
+
+        const link_ok = gl.getProgramParameter( program, gl.LINK_STATUS)
+        if ( !  link_ok || show_source ) 
+        {
+            const msg = gl.getProgramInfoLog( program )
+            LogLines("Vertex shader source",   this.vertex_source )
+            LogLines("Fragment shader source", this.fragment_source )
+            Log(`Output from program linking:`)
+            Log('------------------------------------------------')
+            Log(msg)
+            Log('------------------------------------------------')
+            if ( this.debug_mode )
+                ShowLogWin()  
+            if ( ! link_ok )
+                throw new Error(`Unable to link program.`)
+        }
+        else if ( debug_shaders )
+            Log(`${fname} program linked ok.`)   
+
+        this.program = program
+    }
+
     // ------------------------------------------------------------------------------------------------
     /**
      * returns the number of vertex attributes this program handles, including vertex coords at location 0

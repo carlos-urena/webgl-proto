@@ -15,6 +15,10 @@ var debug_shaders = true
 //
 // In vscode, you can get syntax highlighting of these literals by using 'glsl-literal' extension
 // https://github.com/boyswan/vscode-glsl-literal/blob/master/syntaxes/glsl-literal.json
+//
+// TODO: split this into a base class with generic code and a derived class for concrete shaders sources, 
+// uniforms and vertex attrs  (idea: the base class uses methods 'getFragmentSrc, getVertexSrc', defined in 
+// the derived class, the derived class includes uniform locations and specific methods)
 
 
 const wgl1_version_decl  =

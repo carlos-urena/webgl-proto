@@ -412,7 +412,15 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
 
         super( parser.coords_data, parser.triangles_data )
         if ( parser.texcoo_data != null )  // unnecesary, we can pass 'null' to 'setTexCooData' ??  
+        {   
             this.setTexCooData( parser.texcoo_data )
+            Log(`${fname} including texture coordinates data in the mesh`)
+        }
+        if ( parser.normals_data != null )  // unnecesary, we can pass 'null' to 'setTexCooData' ??  
+        {   
+            this.setNormalsData( parser.normals_data )
+            Log(`${fname} including normals data in the mesh`)
+        }
 
         if ( this.texcoo_data != null )
         {

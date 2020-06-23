@@ -199,13 +199,27 @@ class PLYParser
      */
     parseVertexElem()
     {
-        let vertex_elem = this.elements.get('vertex'),
+        const fname = 'PLYParser.parseVertexElem():'
+
+        let vertex_elem   = this.elements.get('vertex'),
+            props         = vertex_elem.properties,
+            parse_normals = false,
+            normals_idx   = 0,   // position of 'nx' in vertex line, starting at 0 ('index' of the property)
             p = 0
         
         Check( vertex_elem != null )
 
+        /// check if we have normals data in the input (properties: nx,ny,nz) 
+        if ( props.has('nx') && props.has('ny') && props.has('nz'))
+        {
+            parse_normals     = true 
+            normals_idx       = props.get('nx').index
+            this.normals_data = new Float32Array( 3*this.num_verts )
+            Log(`${fname} parsing normals for each vertex, pos == ${normals_idx}`)
+        }
+
         /// Parse vertex coordinates
-        
+        p = 0 
         for( let line_num = vertex_elem.first_line ; line_num <= vertex_elem.last_line ; line_num++ )
         {
             this.parse_message_line = `line ${line_num}: "${this.lines[line_num]}"`
@@ -224,10 +238,28 @@ class PLYParser
             {   this.parse_message = `vertex coords. line: cannot convert vertex coordinates to floating point numbers`
                 return 
             }
-            /// store coordinates (swap Y <-> Z and negate X)
+            /// store vertex coordinates (swap Y <-> Z and negate X)
             this.coords_data[p+0] = -vc_x
             this.coords_data[p+1] = vc_z   
             this.coords_data[p+2] = vc_y
+
+            if ( parse_normals )
+            {
+                const 
+                    vn_x = parseFloat( tokens[normals_idx + 0] ),
+                    vn_y = parseFloat( tokens[normals_idx + 1] ),  
+                    vn_z = parseFloat( tokens[normals_idx + 2] )
+
+                if ( vn_x === NaN || vn_y === NaN || vn_z === NaN )
+                {   this.parse_message = `vertex coords. line: cannot convert normals coordinates to floating point numbers`
+                    return 
+                }
+                /// store normal (swap Y <-> Z and negate X)
+                this.normals_data[p+0] = -vn_x
+                this.normals_data[p+1] = vn_z   
+                this.normals_data[p+2] = vn_y
+            }
+            // advance pointer to float arrays
             p += 3
         }
         this.parse_ok = true

@@ -132,7 +132,16 @@ class IndexedTrianglesMesh
         this.vertex_array = new VertexArray ( num_attrs, vec_len, coords_data )  
         this.vertex_array.setIndexesData( triangles_data )
     }
- 
+    // ----------------------------------------------------------------------------------
+    hasTexCoords()
+    {
+        return this.text_coord_data != null 
+    }
+    // ----------------------------------------------------------------------------------
+    hasNormals()
+    {
+        return this.normals_data != null 
+    }
     // ----------------------------------------------------------------------------------
 
     /**

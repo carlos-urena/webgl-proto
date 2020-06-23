@@ -1108,6 +1108,10 @@ class WebGLCanvas
                 pr.doShading(false)
                 pr.pushMM()
                     pr.useTexture( this.gl_texture )
+                    if ( this.loaded_object.hasNormals())
+                        pr.doShading( true )
+                    else 
+                        pr.doShading( false )
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
                     this.loaded_object.draw( gl )
                 pr.popMM()

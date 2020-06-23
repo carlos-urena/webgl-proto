@@ -13,14 +13,12 @@ class PLYParser
      *   - adds elements to the 'this.elements' array
      *   - writes 'this.parse_ok' to true or false, if false, also sets 'this.parse_message'
      */
-    parseHeader(  )
+    parseHeader( )
     {
         const fname = 'PLYParser.parseHeader():'
 
         if ( debug_ply_parse )
             Log(`${fname} begins.`)
-
-        
 
         // valid value types 
         const valid_types = [ 'char','uchar','short', 'ushort', 'int', 'uint', 'float', 'double' ]     
@@ -33,20 +31,24 @@ class PLYParser
         /// Check basic header properties
     
         if ( this.lines.length == ehl )
-        {   result.parse_message = "end of header not found"
-            return result 
+        {   this.parse_message = "end of header not found"
+            return 
         }
         if ( this.lines.length < 3 )
-        {   result.parse_message = "invalid file, it has less than 3 lines"
-            return result
+        {   this.parse_message = "invalid file, it has less than 3 lines"
+            return 
         }
-        if ( this.lines[0] != 'ply' )
-        {   result.parse_message = "invalid header: first line is not exactly 'ply'"
-            return result
+
+        this.parse_message_line = this.lines[0]
+        if ( this.lines[0].trim() != 'ply' )
+        {   this.parse_message = "invalid PLY file: first line is not 'ply'"
+            return 
         }
-        if ( this.lines[1] != 'format ascii 1.0' )
-        {   result.parse_message = "invalid header: second line is not exactly 'format ascii 1.0'"
-            return result
+
+        this.parse_message_line = this.lines[1]
+        if ( this.lines[1].trim() != 'format ascii 1.0' )
+        {   this.parse_message = "invalid header: it is encoded as a binary file, cannot process it"
+            return 
         }
 
         /// Process header lines, check it is syntactically valid
@@ -151,6 +153,7 @@ class PLYParser
                 next_property_index ++ 
             }
         }
+        this.parse_message_line = '(line text is not available)'
   
         // Check vertex element is valid
 
@@ -351,11 +354,12 @@ class PLYParser
         this.lines              = lines
         this.parse_ok           = false,    // parsing is erroneous excepto when 'parse_ok' is set to true 
         this.parse_message      = 'no errors found so far' ,
-        this.parse_message_line = '',
+        this.parse_message_line = '(line text is not available)'
         this.elements           = new Map(),
         this.coords_data        = null,
         this.triangles_data     = null,
-        this.texcoo_data        = null
+        this.texcoo_data        = null,
+        this.normals_data       = null
         
         // parse the header, if an error ocurred, do nothing more
         this.parseHeader( )

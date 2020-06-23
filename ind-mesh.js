@@ -401,7 +401,11 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
         if ( ! parser.parse_ok )
         {   
             super( null, null )  // empty mesh
-            alert( "Parse error:\n"+result.parse_message )
+            
+            Log(`${fname} PLY parse error`)
+            Log(`${fname} ${parser.parse_message}`)
+            Log(`${fname} Line: ${parser.parse_message_line}`)
+            alert( `Parse error:\n ${parser.parse_message}\n Line: ${parser.parse_message_line}\n` )
             return
         }
         Log(`${fname} PLY parsed ok, num_verts == ${parser.num_verts}, num_tris == ${parser.num_tris}`)

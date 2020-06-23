@@ -752,7 +752,8 @@ class WebGLCanvas
             Log(`${fname} ###### end`)
             Log(`${fname} PARSING....`)
         }
-        let loaded_object  = new TriMeshFromPLYLines_FTCC( lines )   //// use which version _VC ??
+        //let loaded_object  = new TriMeshFromPLYLines_FTCC( lines )   //// use which version _VC ??
+        let loaded_object  = new TriMeshFromPLYLines( lines )   
 
         if ( loaded_object.n_verts == 0 )
         {   

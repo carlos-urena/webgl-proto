@@ -10,7 +10,7 @@ var debug_mesh = true
  */
 function ComputeBBox( coords_array )
 {
-    const fname = 'ComputeBBox'
+    const fname = 'ComputeBBox():'
     CheckType( coords_array, 'Float32Array' )
     CheckNat( coords_array.length/3 )
 
@@ -41,6 +41,39 @@ function ComputeBBox( coords_array )
             zmin: minz, zmax: maxz 
         }
     return bbox
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/**
+ * Normalizes vertex coordinates
+ * @param {Float32array} coords_data -- (x,y,z) coordintes data 
+ */
+function NormalizeCoords( coords_data )
+{
+    const fname = `NormalizeCoords():`
+    CheckType( coords_data, 'Float32Array')
+    const num_verts = Math.floor(coords_data.length/3)
+    Check( num_verts*3 === coords_data.length) 
+
+    // normalize coordinates to -1 to +1 
+    let   bbox   = ComputeBBox( coords_data )
+    const maxdim = Math.max( bbox.xmax-bbox.xmin, bbox.ymax-bbox.ymin, bbox.zmax-bbox.zmin ),
+          center = [ 0.5*(bbox.xmax+bbox.xmin), 0.5*(bbox.ymax+bbox.ymin), 0.5*(bbox.zmax+bbox.zmin) ],
+          scale  = 2.0/maxdim
+
+    if ( debug_mesh )
+    {  
+        Log( `${fname}: maxdim == ${maxdim}` )
+        Log( `${fname}: center == ${center}` )
+    }
+    for( let iv = 0 ; iv < num_verts ; iv++ )
+    {
+        const p = 3*iv
+        for( let ic = 0 ; ic < 3 ; ic++ )
+            coords_data[p+ic] = scale*( coords_data[p+ic] - center[ic] )
+    }
+    
 }
 
 
@@ -349,10 +382,10 @@ const simple_vertex_coords =
             [   0,1,3, 
                 0,3,2 
             ]
-
 // -------------------------------------------------------------------------------------------------
 
-class TriMeshFromPLYLines_VC extends IndexedTrianglesMesh
+
+class TriMeshFromPLYLines extends IndexedTrianglesMesh
 {
     /**
      * Buids an indexed mesh from a strings array with the lines from an ascii PLY file.
@@ -362,66 +395,43 @@ class TriMeshFromPLYLines_VC extends IndexedTrianglesMesh
      */
     constructor( lines )
     {
-        let result = ParsePLYLines_VC( lines )
+        let fname  = 'TriMeshFromPLYLines.constructor():',
+            parser = new PLYParser( lines )
         
-        if ( ! result.parse_ok )
-        {   
-            
-            super( null, null )  // empty mesh
-            alert( "Parse error:\n"+result.parse_message )
-            return
-        }
-        
-        super( result.coords_data, result.triangles_data )
-        this.setColorsData( colors_data )
-    }
-}
-// -------------------------------------------------------------------------------------------------
-
-
-class TriMeshFromPLYLines_FTCC extends IndexedTrianglesMesh
-{
-    /**
-     * Buids an indexed mesh from a strings array with the lines from an ascii PLY file.
-     * Sets 'parse_ok' and 'parse_message'
-     * 
-     * @param {Array<string>} lines -- input strings array with lines
-     */
-    constructor( lines )
-    {
-        let result = ParsePLYLines_FTCC( lines )
-        
-        if ( ! result.parse_ok )
+        if ( ! parser.parse_ok )
         {   
             super( null, null )  // empty mesh
             alert( "Parse error:\n"+result.parse_message )
             return
         }
+        Log(`${fname} PLY parsed ok, num_verts == ${parser.num_verts}, num_tris == ${parser.num_tris}`)
 
-        super( result.coords_data, result.triangles_data )  
-        this.setTexCooData( result.texcoo_data )
+        super( parser.coords_data, parser.triangles_data )
+        if ( parser.texcoo_data != null )  // unnecesary, we can pass 'null' to 'setTexCooData' ??  
+            this.setTexCooData( parser.texcoo_data )
 
-        // create a vertex color pattern from texture coordinates, just to  debug texture coordinates
-
-        console.log(`transfering t.cc. to vertex colors, num_verts == ${this.n_verts}`)
-        let colors_data = new Float32Array( 3*this.n_verts )
-
-        for( let iv = 0 ; iv < this.n_verts ; iv++ )
+        if ( this.texcoo_data != null )
         {
-            const pc = 3*iv,
-                  pt = 2*iv,
-                  s  = result.texcoo_data[pt+0],
-                  t  = result.texcoo_data[pt+1],
-                  ns = Math.floor( s*20 ),
-                  nt = Math.floor( t*20 ),
-                  b  = (ns+nt)% 2 == 0 ?  0.9 : 0.1
+            // create a vertex color pattern from texture coordinates, just to  debug texture coordinates
+            Log(`${fname} transfering t.cc. to vertex colors, num_verts == ${this.n_verts}`)
+            let colors_data = new Float32Array( 3*this.n_verts )
 
-            colors_data[pc+0] = s
-            colors_data[pc+1] = t
-            colors_data[pc+2] = b
+            for( let iv = 0 ; iv < this.n_verts ; iv++ )
+            {
+                const pc = 3*iv,
+                    pt = 2*iv,
+                    s  = this.texcoo_data[pt+0],
+                    t  = this.texcoo_data[pt+1],
+                    ns = Math.floor( s*20 ),
+                    nt = Math.floor( t*20 ),
+                    b  = (ns+nt)% 2 == 0 ?  0.9 : 0.1
+
+                colors_data[pc+0] = s
+                colors_data[pc+1] = t
+                colors_data[pc+2] = b
+            }
+            this.setColorsData( colors_data )
         }
-        this.setColorsData( colors_data )
-
         
     }
 }

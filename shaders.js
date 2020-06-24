@@ -18,7 +18,7 @@ var debug_shaders = true
 //
 // TODO: split this into a base class with generic code and a derived class for concrete shaders sources, 
 // uniforms and vertex attrs  (idea: the base class uses methods 'getFragmentSrc, getVertexSrc', defined in 
-// the derived class, the derived class includes uniform locations and specific methods)
+// the derived class, the derived class includes specific sources, uniform locations and methods)
 
 
 const wgl1_version_decl  =
@@ -122,11 +122,11 @@ const fragment_functions =
         //    vcol : interpolated vertex color at the shading point position
         //    unor : shading point normal (not neccesarily normalized)
         
-        vec3 Shade( vec3 pos, vec3 vcol, vec3 unor )
+        vec3 Shade( vec3 pos, vec3 base_color, vec3 unor )
         {
             vec3 nor   = normalize(unor);
             vec3 light = normalize( vec3( 1.0, 1.0, 1.0 ) );
-            vec3 diff  = max( 0.2, 1.2*dot( light, nor )) * vcol ;
+            vec3 diff  = max( 0.2, 1.2*dot( light, nor )) * base_color ;
 
             vec3  view    = normalize( vec3( 0.0, 0.0, 1.0 ) );
             vec3  halfw   = normalize( view+light );
@@ -156,9 +156,10 @@ const fragment_functions =
             if ( do_shading == 0 )
                 return vec4( BaseColor(), 1.0 ) ;
             else
-                return vec4( Shade( vertex_pos_wcc, vertex_color, vertex_norm_wcc ), 1.0 );
+                return vec4( Shade( vertex_pos_wcc, BaseColor(), vertex_norm_wcc ), 1.0 );
         }
-    `
+
+    ` // ends fragment_functions
 
 const fragment_main_wgl1 =
     glsl`   
@@ -259,7 +260,10 @@ function FSSource( webgl_version )
 
 function VSSource( webgl_version )
 {
-    return ReplaceSyms( webgl_version == 1 ? wgl1_vertex_complete_str : wgl2_vertex_complete_str, webgl_version )
+    return ReplaceSyms( webgl_version == 1 
+                            ? wgl1_vertex_complete_str 
+                            : wgl2_vertex_complete_str, 
+                        webgl_version )
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -488,7 +492,7 @@ class SimpleGPUProgram
         {
             // use 'gl_texture'
             CheckType( gl_texture, 'WebGLTexture' )
-            this.context.uniform1i( this.do_texture_loc, 1 )  // set the flag on the shader
+            gl.uniform1i( this.do_texture_loc, 1 )  // tell the shader to sample texture color
             gl.activeTexture( gl.TEXTURE0 + 0 )   // Tell WebGL we want to affect texture unit 0
             gl.bindTexture( gl.TEXTURE_2D, gl_texture ) // Bind the texture to texture unit 0
             gl.uniform1i( this.tsampler0_loc, 0 )  // Tell the shader we bound the texture sampler to texture unit 0
@@ -507,7 +511,7 @@ class SimpleGPUProgram
                 this.default_gl_texture = tx
             }
             gl.bindTexture( gl.TEXTURE_2D, this.default_gl_texture )
-            this.context.uniform1i( this.do_texture_loc, 0 )
+            gl.uniform1i( this.do_texture_loc, 0 ) // tell the shader NOT to sample texture color
         }
     }
 

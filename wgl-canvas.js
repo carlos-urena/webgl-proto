@@ -30,7 +30,8 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: begin`)
 
-        // check that a valid string has been given
+        // Checks:
+
         CheckType( parent_id, 'string' )
         if ( parent_id == '' )
         {
@@ -38,6 +39,17 @@ class WebGLCanvas
             Log( msg )
             throw RangeError( msg )
         }
+
+        const canvas_id        = parent_id+"_canvas_id",
+              prev_canvas_elem = document.getElementById( this.canvas_id )
+
+        if ( prev_canvas_elem != null )
+        {   const msg = `${fname} error: the page tried to create a canvas with an identifier already in use`
+            Log( msg )
+            throw RangeError( msg )
+        }
+
+        // 'this' object properties initialization
         
         // Check the parent element exists and retrieve it
         this.parent_elem   = BuscarElemId( parent_id )
@@ -46,30 +58,20 @@ class WebGLCanvas
         // Create and configure the canvas element 
         // (its size is that of parent element, which is typically a 'div')
 
-        this.canvas_id     = parent_id+"_canvas_id" 
-        this.canvas_elem   = document.getElementById( this.canvas_id )
-        if ( this.canvas_elem != null )
-        {   const msg = `${fname} error: the page tried to create a canvas with an identifier already in use`
-            Log( msg )
-            throw RangeError( msg )
-        }
+        this.canvas_id          = canvas_id
         this.canvas_elem        = document.createElement('canvas')
         this.canvas_elem.id     = this.canvas_id 
         this.canvas_elem.width  = this.parent_elem.clientWidth
         this.canvas_elem.height = this.parent_elem.clientHeight
         this.innerHTML          = `Tu navegador u ordendor parece no soportar <code>&lt;canvas&gt;</code>.<br/>
                                    <i>It looks like your browser or computer does not support <code>&lt;canvas&gt;</code> element.</i>`
-        this.parent_elem.appendChild( this.canvas_elem )
-
-        // Create the WebGL context for this canvas, if it is not possible, return.
-        this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
-
         
-        // creates the GPU Program (= vertex shader + fragment shader)
-        this.program = new SimpleGPUProgram( this.context )
+        // GPU Program (= vertex shader + fragment shader)
+        this.program = null 
 
-        // 3d mesh used to test 'IndexedTriangleMesh' class  
+        // objects to be drawn: 3d mesh used to test 'IndexedTriangleMesh' class  and 'loaded_object'
         this.test_3d_mesh  = null 
+        this.loaded_object = null
 
         // gl texture, null before any object has been loaded
         this.gl_texture = null 
@@ -84,8 +86,6 @@ class WebGLCanvas
         this.loaded_object  = null
         this.loading_object = false 
 
-        
-
         // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
         this.cam_alpha_deg = 35.0
@@ -96,6 +96,19 @@ class WebGLCanvas
         this.scene_alpha_deg = 0.0
         this.scene_beta_deg  = 0.0
         this.scene_scale     = 1.0
+
+        // get canvas button elements
+        this.help_button = BuscarElemId('help_button_id')
+        this.log_button  = BuscarElemId('log_button_id')
+        
+        // add the canvas element to the page
+        this.parent_elem.appendChild( this.canvas_elem )
+
+        // Create the WebGL context for this canvas, if it is not possible, return.
+        this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
+
+        // Create GPU Program (= vertex shader + fragment shader)
+        this.program = new SimpleGPUProgram( this.context )
 
         /// ADD Various event handlers
 
@@ -124,8 +137,6 @@ class WebGLCanvas
         document.addEventListener( 'dragover',   e => this.documentDragOver(e), true )
 
         // add button click event handlers
-        this.help_button = document.getElementById('help_button_id')
-        this.log_button  = document.getElementById('log_button_id')
 
         if ( this.help_button != null )
             //this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
@@ -580,7 +591,7 @@ class WebGLCanvas
         this.setStatus( msg1 )
 
         // set of valid image extensions Javascript can handle (TODO: complete)
-        const image_extensions = ['jpg','png','tiff'],    // only tested for '.jpg'
+        const image_extensions = ['jpg','png','tiff'],    
               mesh_extensions  = ['ply','obj']
 
         // launch the loader/parser, according to file extension, then return
@@ -663,29 +674,14 @@ class WebGLCanvas
         Log(`${fname} evt.target class == ${evt.target.constructor.name}`)
         Log(`${fname} evt.target result class == ${evt.target.result.constructor.name}`)
         
-        // 'evt.target.result' is a string with base 64 text encoding the raw (compressed?) JPEG file 
-        /// see: https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-        
-        // /// if there is a texture preview element in the page, display the image there
-        // let img_elem = document.getElementById( 'texture_image_id')
-        // if ( img_elem != null )
-        // {
-        //     img_elem.src = evt.target.result
-        //     img_elem.style.width = '256px'  // (take care of not reducing the texture 
-        //                                     // resolution in the image which is loaded to the GPU)
-        //     console.log(`${fname} image inserted in preview element, ok.`)
-        // }
-        // else 
-        //     console.log(`${fname} image NOT inserted in preview element.`)
-
         /// create an Image object and then the WebGL texture .....
         /// see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
-
-       
+ 
+        Log(`${fname} image base 64 : ${evt.target.result}`)
         let image  = new Image()
-        image.onload = e => this.imageFileDecoded( e, file_list, image_file_index )
-        // TODO : if there is an error, remaining files in the list won't be loaded ?????
-        image.src    = evt.target.result  /// this triggers decoding of the base64 text, then 'imageDecoded' is called
+        image.onload  = e => this.imageFileDecoded( e, file_list, image_file_index )
+        image.onerror = e => this.fileLoadError( e, file_list, image_file_index )
+        image.src     = evt.target.result  /// this triggers decoding of the base64 text, then 'imageDecoded' is called
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -832,12 +828,12 @@ class WebGLCanvas
             loaded_object  = new TriMeshFromPLYLines( lines )   
 
         if ( loaded_object.n_verts == 0 )
-        {   this.setStatus(`PLY file '${this.ply_file_name}' couldn't be loaded.`)
+        {   this.setStatus(`Model file '${file.name}' couldn't be loaded.`)
             Log(`${fname} couldn't load PLY`)
         }
         else
         {   this.loaded_object = loaded_object
-            const msg = `PLY file '${this.ply_file_name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
+            const msg = `PLY file '${file.name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
             this.setStatus( msg )
             Log( msg )
         }
@@ -1096,6 +1092,7 @@ class WebGLCanvas
      */
     drawFrame()
     {
+        const fname = 'WebGLCanvas.drawFrame(): '
         redraws_count = redraws_count +1 
         if ( this.debug )
         {
@@ -1115,7 +1112,7 @@ class WebGLCanvas
               sy = gl.drawingBufferHeight 
 
         if ( this.debug )
-            console.log(`WebGLCanvas.drawFrame: sx == ${sx}, sy == ${sy} `)
+            console.log(`${fname} sx == ${sx}, sy == ${sy} `)
 
         // config the context
         gl.enable( gl.DEPTH_TEST )
@@ -1157,13 +1154,31 @@ class WebGLCanvas
             {
                 if ( this.test_3d_mesh == null )
                 {
-                    //this.test_3d_mesh = new SphereMesh( 300, 300 )
-                    //this.test_3d_mesh = new CylinderMesh( 300, 300 )
                     const ns = 100, nt = 100
-                    this.setStatus(`Generating test geometry (${ns*nt} triangles) ...`)
-                    this.test_3d_mesh = new ConeMesh( ns, nt )
-                    this.setStatus(`Generated test geometry (${ns*nt} triangles).`)
+                    this.test_3d_mesh = new SphereMesh( ns, nt )
+                    //this.test_3d_mesh = new CylinderMesh( ns, nt )
+                    //this.test_3d_mesh = new ConeMesh( ns, nt )
                 }
+                
+
+                if ( this.test_3d_mesh.hasTextCoords() && this.gl_texture != null )
+                {    pr.useTexture( this.gl_texture )
+                     Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
+                }
+                else 
+                {
+                    pr.useTexture( null )
+                    //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
+                }
+                if ( this.test_3d_mesh.hasNormals())
+                {
+                    pr.doShading( true )
+                    Log(`#### ${fname} using shading for the 'test_3d_mesh'`)
+                }
+                else 
+                    pr.doShading( false )
+
+
                 pr.doShading(false)
                 pr.pushMM()
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
@@ -1172,14 +1187,20 @@ class WebGLCanvas
             }
             else
             {
+                if ( this.loaded_object.hasTextCoords() && this.gl_texture != null )
+                    pr.useTexture( this.gl_texture )
+                else 
+                    pr.useTexture( null )
+
+                if ( this.loaded_object.hasNormals())
+                    pr.doShading( true )
+                else 
+                    pr.doShading( false )
+                    
                 //console.log('drawing loaded object')
                 pr.doShading(false)
                 pr.pushMM()
-                    pr.useTexture( this.gl_texture )
-                    if ( this.loaded_object.hasNormals())
-                        pr.doShading( true )
-                    else 
-                        pr.doShading( false )
+                    
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
                     this.loaded_object.draw( gl )
                 pr.popMM()

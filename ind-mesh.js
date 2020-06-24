@@ -121,7 +121,7 @@ class IndexedTrianglesMesh
         this.triangles_data  = triangles_data
         this.colors_data     = null
         this.normals_data    = null
-        this.text_coord_data = null
+        this.texcoo_data     = null
         
         //this.bbox = ComputeBBox( coords_data )
 
@@ -133,14 +133,19 @@ class IndexedTrianglesMesh
         this.vertex_array.setIndexesData( triangles_data )
     }
     // ----------------------------------------------------------------------------------
-    hasTexCoords()
+    hasTextCoords()
     {
-        return this.text_coord_data != null 
+        return this.texcoo_data != null 
     }
     // ----------------------------------------------------------------------------------
     hasNormals()
     {
         return this.normals_data != null 
+    }
+    // ----------------------------------------------------------------------------------
+    hasColors()
+    {
+        return this.colors_data != null  
     }
     // ----------------------------------------------------------------------------------
 
@@ -165,7 +170,8 @@ class IndexedTrianglesMesh
      */
     setColorsData( colors_data )
     {
-        this.checkAttrData(`Mesh.setColorsData():`, colors_data, 3 )
+        const fname = 'Mesh.setColorsData():'
+        this.checkAttrData( fname, colors_data, 3 )
         this.colors_data = colors_data
         this.vertex_array.setAttrData( 1, 3, colors_data )
     }
@@ -177,7 +183,8 @@ class IndexedTrianglesMesh
      */
     setNormalsData( normals_data )
     {
-        this.checkAttrData(`Mesh.setNormalsData():`, normals_data, 3 )
+        const fname = 'Mesh.setNormalsData():'
+        this.checkAttrData( fname, normals_data, 3 )
         this.normals_data = normals_data
         this.vertex_array.setAttrData( 2, 3, normals_data )
     }
@@ -188,9 +195,11 @@ class IndexedTrianglesMesh
      */
     setTexCooData( texcoo_data )
     {
-        this.checkAttrData(`Mesh.setNormalsData():`, texcoo_data, 2 )
+        const fname = 'Mesh.setTexCooData():'
+        this.checkAttrData( fname, texcoo_data, 2 )
         this.texcoo_data = texcoo_data
         this.vertex_array.setAttrData( 3, 2, texcoo_data )
+        Log(`${fname} DONE !`)
     }
     // ----------------------------------------------------------------------------------
 
@@ -261,9 +270,10 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
         // create the coordinates (and colors) array
         const nver = (ns+1)*(nt+1) 
 
-        let coords  = new Float32Array( 3*nver ),
-            colors  = new Float32Array( 3*nver ),
-            normals = new Float32Array( 3*nver )
+        let coords    = new Float32Array( 3*nver ),
+            colors    = new Float32Array( 3*nver ),
+            normals   = new Float32Array( 3*nver ),
+            texcoords = new Float32Array( 2*nver )
 
         const num_color_bands = 20,
               mod_s           = Math.max( 2, Math.floor( ns/num_color_bands ) ),
@@ -274,19 +284,21 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
         {
             const s    = i/ns,
                   t    = j/nt,
-                  vert = param_func( s, t ),  // includes vert.pos, vert.nor, ver.cct
-                  b    = 3* (i + j*(ns+1))
+                  vert = param_func( s, t ),  // includes vert.pos, vert.nor
+                  p    = (i + j*(ns+1))
 
             for( let k = 0 ; k < 3 ; k++ )
-            {   coords[b+k]  = vert.pos[k]
-                normals[b+k] = vert.nor[k]
+            {   coords [ 3*p + k ] = vert.pos[k]
+                normals[ 3*p + k ] = vert.nor[k]
             } 
+            texcoords[ 2*p + 0 ] = 1-s
+            texcoords[ 2*p + 1 ] = 1-t
 
             // sample colors
             
-            colors[b+0] = ( i%mod_s < 0.9*mod_s ) ? 0.6 : 0.3
-            colors[b+1] = ( j%mod_t < 0.9*mod_t ) ? 0.6 : 0.3
-            colors[b+2] = ( (i+j)%(mod_s+mod_t) < 0.5*(mod_s+mod_t) ) ? 0.6 : 0.3
+            colors[ 3*p +0 ] = ( i%mod_s < 0.9*mod_s ) ? 0.6 : 0.3
+            colors[ 3*p +1 ] = ( j%mod_t < 0.9*mod_t ) ? 0.6 : 0.3
+            colors[ 3*p +2 ] = ( (i+j)%(mod_s+mod_t) < 0.5*(mod_s+mod_t) ) ? 0.6 : 0.3
         }
 
         // create the indexes (triangles) array  (2 triangles for each vertex except for last vertexes row/col)
@@ -316,6 +328,7 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
         // initialize the base Mesh instance
         super( coords, triangles )
         this.setColorsData( colors )
+        this.setTexCooData( texcoords )
         this.setNormalsData( normals )
     }
 }

@@ -1,4 +1,3 @@
-var debug_shaders = true
 
 // -------------------------------------------------------------------------------------
 // GLSL ES sources for WebGL 1 and 2
@@ -19,6 +18,8 @@ var debug_shaders = true
 // TODO: split this into a base class with generic code and a derived class for concrete shaders sources, 
 // uniforms and vertex attrs  (idea: the base class uses methods 'getFragmentSrc, getVertexSrc', defined in 
 // the derived class, the derived class includes specific sources, uniform locations and methods)
+
+var debug_shaders = true
 
 
 const wgl1_version_decl  =

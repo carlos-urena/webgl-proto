@@ -1,9 +1,17 @@
+// -----------------------------------------------------------------------------
+// File: main.js
+// Includes function ('OnDOMLoaded') excuted once after page elements are loaded
+//
+// MIT License 
+// Copyright (c) 2020 Carlos Ureña 
+// (see LICENSE file)
+// -----------------------------------------------------------------------------
 
+
+// set to true to debug
 var main_debug = false
 
-// -------------------------------------------------------------------------------------------------
 // variable which holds the single WebGLCanvas class instance 
-
 var canvas = null 
 
 // -------------------------------------------------------------------------------------------------

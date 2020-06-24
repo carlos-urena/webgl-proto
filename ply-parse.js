@@ -1,5 +1,14 @@
+// -----------------------------------------------------------------------------
+// File: ply-parse.js
+// Class definition: PLYParser (parser for PLY files with indexed triangle meshes)
+//
 // Info about PLY format
 // http://paulbourke.net/dataformats/ply/
+//
+// MIT License 
+// Copyright (c) 2020 Carlos Ureña 
+// (see LICENSE file)
+// -----------------------------------------------------------------------------
 
 
 const debug_ply_parse = true 

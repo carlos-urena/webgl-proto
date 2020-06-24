@@ -1,4 +1,13 @@
-
+// -----------------------------------------------------------------------------
+// File: glbuffers.js
+// Classes definitions: AttrBuffer, IndexesBuffer 
+// (each instance handles a OpenGL vertex buffer with a single table for a 
+// single vertex attribute or the indexes table) 
+//
+// MIT License 
+// Copyright (c) 2020 Carlos Ureña 
+// (see LICENSE file)
+// -----------------------------------------------------------------------------
 
 
 // -----------------------------------------------------------------------------

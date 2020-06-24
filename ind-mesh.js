@@ -1,3 +1,11 @@
+// -----------------------------------------------------------------------------
+// File: ind-mesh.js
+// Class definition: IndexedTrianglesMesh (for an indexed triangles mesh)
+//
+// MIT License 
+// Copyright (c) 2020 Carlos Ureña 
+// (see LICENSE file)
+// -----------------------------------------------------------------------------
 
 var debug_mesh = true
 

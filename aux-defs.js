@@ -1,3 +1,11 @@
+// -----------------------------------------------------------------------------
+// File: aux-defs.js
+// Auxiliary functions definitions
+//
+// MIT License 
+// Copyright (c) 2020 Carlos Ureña 
+// (see LICENSE file)
+// -----------------------------------------------------------------------------
 
 
 function Trunc( x, min, max )

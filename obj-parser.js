@@ -201,8 +201,10 @@ class OBJParser
             }
             Log(`${fname} group ivmin == ${ivmin}, ivmax == ${ivmax}, n.v.(diff) == ${ivmax-ivmin+1}`)
             
-            // create the triangles data for the group 
-            // compute group min-max indices ...., check group indexes are in-range
+            // create the triangles data for the group (we use separate vertex tables for each group)
+            // (we assume no vertex in the OBJ is shared between two groups, this is the case for the multi-group 
+            //  OBJs seen so far)
+
             p = 0
             for( let it = 0 ; it < group.num_tris ; it ++ )
             {

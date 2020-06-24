@@ -141,9 +141,12 @@ function Log( msg )
  */
 function ShowLogWin()
 {
+    // if already shown, close
     if ( global_log_elem != null )
+    {
+        CloseLogWin()
         return 
-
+    }
     let contents = 
         `   <div id='log_head_id'>
                 <h1>JS DEVELOPMENT LOG</h1>
@@ -155,7 +158,7 @@ function ShowLogWin()
             </div>
         `
     let log_elem       = document.createElement('div')
-    //log_elem.className     = 'popup_style_class'
+    log_elem.className = 'popup_style_class'
     log_elem.innerHTML = contents
     log_elem.onclick   = function() { CloseLogWin() }
     log_lines_elem     = document.createElement('div')
@@ -171,6 +174,8 @@ function ShowLogWin()
 
     global_log_elem = log_elem
     document.body.appendChild( global_log_elem )
+    
+    ResizeLogWin()
 }
 // -------------------------------------------------------------------------------------------------
 function CloseLogWin()
@@ -179,6 +184,15 @@ function CloseLogWin()
         return
     document.body.removeChild( global_log_elem )
     global_log_elem = null 
+}
+// --------------------------
+function ResizeLogWin()
+{
+    if ( global_log_elem == null )
+        return
+
+    //log_elem.width  = 
+    //log_elem.height = 
 }
 
 

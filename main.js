@@ -43,7 +43,7 @@ function ResizePageElements()
 
 function OnDOMLoaded()
 {
-    ShowLogWin()
+    //ShowLogWin()
     ResizePageElements()
 
 

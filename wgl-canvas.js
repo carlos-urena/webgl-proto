@@ -553,33 +553,34 @@ class WebGLCanvas
      * (this is done asynchronously, that is, control is returned to the event loop before load ends)
      *  'this.loading_file_list' must be true before calling this
      *  
-     * @param {FileList} file_list        -- FileList object with a sequence of file blobs, names, etc.. 
-     * @param {number}   next_file_index  -- number of the next file to process on the file list     
+     * @param {FileList} file_list   -- FileList object with a sequence of file blobs, names, etc.. 
+     * @param {number}   file_index  -- number of the file to process on the file list (starting at 0)
      */
-    loadFilesInList( file_list, next_file_index )
+    loadFilesInList( file_list, file_index )
     {
         const fname = 'WebGLCanvas.loadFilesInList():'
         CheckType( file_list, 'FileList' )
-        CheckNat( next_file_index )
-        Log(`${fname} starts from index ${next_file_index}`)
+        CheckNat( file_index )
+        Log(`${fname} starts from index ${file_index}`)
 
         // if we have ended processing all files, redraw the frame to reflect changes 
-        if ( file_list.length == next_file_index )
+        if ( file_list.length == file_index )
         {
+            Log(`${fname} ended processing file list`)
             this.loading_file_list = false 
             this.drawFrame()
             return
         }
 
-        const file       = file_list.item( next_file_index ),
+        const file       = file_list.item( file_index ),
               extension  = file.name.split('.').pop().toLowerCase(), 
-              msg        = `Loading file '${file.name}' (${next_file_index+1}/${file_list.length}) ...`
+              msg1        = `Loading file '${file.name}' (${file_index+1}/${file_list.length}) ...`
 
-        Log(`${fname} ${msg}`)
-        this.setStatus( msg )
+        Log(`${fname} ${msg1}`)
+        this.setStatus( msg1 )
 
         // set of valid image extensions Javascript can handle (TODO: complete)
-        const image_extensions = ['jpg','png','tiff'],    // ???
+        const image_extensions = ['jpg','png','tiff'],    // only tested for '.jpg'
               mesh_extensions  = ['ply','obj']
 
         // launch the loader/parser, according to file extension, then return
@@ -590,28 +591,28 @@ class WebGLCanvas
             /// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
 
             let reader = new FileReader()
-            reader.onloadend = e => this.imageFileLoaded( e, file_list, next_file_index )
-            reader.onerror   = e => this.fileLoadError( e, ..... )
-            reader.readAsDataURL( img_file )   // async read
+            reader.onloadend = e => this.imageFileLoaded( e, file_list, file_index )
+            reader.onerror   = e => this.fileLoadError( e, file_list, file_index )
+            reader.readAsDataURL( file )   // async read
             return   
         }
 
         if ( mesh_extensions.includes( extension ) )
         {
             
-            const mb = Math.floor( 100.0*ply_file.size/1024.0 )/ 100.0
+            const mb = Math.floor( 100.0*file.size/1024.0 )/ 100.0
             let  reader = new FileReader()
         
-            reader.onload  = e => this.modelFileLoaded( e, file_list, next_file_index )  // or it should be 'onloadend' ??
-            reader.onerror = e => this.fileLoadError( e, ..... )
-            reader.readAsText( ply_file )// , "UTF-8" )
+            reader.onload  = e => this.modelFileLoaded( e, file_list, file_index )  // or it should be 'onloadend' ??
+            reader.onerror = e => this.fileLoadError( e, file_list, file_index )
+            reader.readAsText( file )// , "UTF-8" )
             return
         }
 
         // we cannot process this extension, issue a warning and continue processing list (recursively)
-        const msg = `Cannot process file '${file.name}', extension '${extension}' is not currently supported`
-        Log(`${fname} ${msg}`)
-        alert( msg )
+        const msg2 = `Cannot process file '${file.name}', extension '${extension}' is not currently supported`
+        Log(`${fname} ${msg2}`)
+        alert( msg2 )
 
         this.loadFilesInList( file_list, next_file_number+1 )
     
@@ -811,27 +812,31 @@ class WebGLCanvas
         CheckType( file_list, 'FileList' )
         CheckNat( model_file_index )
 
-        const file = file_list.item( model_file_index )
-        
+        const file = file_list.item( model_file_index ),
+              ext = file.name.split('.').pop().toLowerCase()
+
+        if ( ext == 'obj' )
+        {
+            alert(`Sorry, 'obj' files can't be parsed right now, giving up on: '${file.name}'`)
+            this.loadFilesInList( file_list, model_file_index+1 )
+            return
+        }
 
         if ( this.debug )
-        {
-            Log(`${fname} event class  == ${evt.constructor.name}`)
+        {   Log(`${fname} event class  == ${evt.constructor.name}`)
             Log(`${fname} result class == ${evt.target.result.constructor.name}`) 
             Log(`${fname} splitting lines ....` )
         }
-        let lines  = evt.target.result.split('\n'),
-             
-        let loaded_object  = new TriMeshFromPLYLines( lines )   
+        const 
+            lines          = evt.target.result.split('\n'),
+            loaded_object  = new TriMeshFromPLYLines( lines )   
 
         if ( loaded_object.n_verts == 0 )
-        {   
-            this.setStatus(`PLY file '${this.ply_file_name}' couldn't be loaded.`)
+        {   this.setStatus(`PLY file '${this.ply_file_name}' couldn't be loaded.`)
             Log(`${fname} couldn't load PLY`)
         }
         else
-        {
-            this.loaded_object = loaded_object
+        {   this.loaded_object = loaded_object
             const msg = `PLY file '${this.ply_file_name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
             this.setStatus( msg )
             Log( msg )

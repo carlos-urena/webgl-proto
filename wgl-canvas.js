@@ -170,8 +170,6 @@ class WebGLCanvas
     {
         this.setStatus('help button clicked')
     }
-    
-    
     // -------------------------------------------------------------------------------------------------
     keyDown( evt )  // key event
     {
@@ -820,29 +818,35 @@ class WebGLCanvas
         const file = file_list.item( model_file_index ),
               ext = file.name.split('.').pop().toLowerCase()
 
-        if ( ext == 'obj' )
-        {
-            alert(`Sorry, 'obj' files can't be parsed right now, giving up on: '${file.name}'`)
-            this.loadFilesInList( file_list, model_file_index+1 )
-            return
-        }
+        // if ( ext == 'obj' )
+        // {
+        //     alert(`Sorry, 'obj' files can't be parsed right now, giving up on: '${file.name}'`)
+        //     this.loadFilesInList( file_list, model_file_index+1 )
+        //     return
+        // }
 
         if ( this.debug )
         {   Log(`${fname} event class  == ${evt.constructor.name}`)
             Log(`${fname} result class == ${evt.target.result.constructor.name}`) 
             Log(`${fname} splitting lines ....` )
         }
-        const 
-            lines          = evt.target.result.split('\n'),
-            loaded_object  = new TriMeshFromPLYLines( lines )   
+        const lines = evt.target.result.split('\n'),
+              loaded_object = null 
 
+        if ( ext == 'ply' )
+            loaded_object = new TriMeshFromPLYLines( lines )   
+        else if ( ext == 'obj' )
+            loaded_object = new ObjectFromOBJLines( lines )
+        else 
+            throw new Error(`${fname}: unexpected file extension (shouldn't happen)`)
+        
         if ( loaded_object.n_verts == 0 )
         {   this.setStatus(`Model file '${file.name}' couldn't be loaded.`)
-            Log(`${fname} couldn't load PLY`)
+            Log(`${fname} couldn't load model file`)
         }
         else
         {   this.loaded_object = loaded_object
-            const msg = `PLY file '${file.name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
+            const msg = `Model file '${file.name}' loaded ok. (núm. verts: ${this.loaded_object.n_verts}, núm. triangles: ${this.loaded_object.n_tris}).`
             this.setStatus( msg )
             Log( msg )
         }

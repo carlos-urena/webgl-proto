@@ -1,6 +1,9 @@
 // -----------------------------------------------------------------------------
 // File: ind-mesh.js
-// Class definition: IndexedTrianglesMesh (for an indexed triangles mesh)
+// Classes defined : IndexedTrianglesMesh (for an indexed triangles mesh)
+//                 : ParamSurfaceMesh, TriMeshFromPLY, TriMeshFromOBJ
+
+
 //
 // MIT License 
 // Copyright (c) 2020 Carlos Ureña 
@@ -474,6 +477,40 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
             }
             this.setColorsData( colors_data )
         }
+        
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+
+class ObjectFromOBJLines  /// extends CompositeObject ???
+{
+    /**
+     * Buids an indexed mesh from a strings array with the lines from an OBJ  file.
+     * Sets 'parse_ok' and 'parse_message'
+     * 
+     * @param {Array<string>} lines -- input strings array with lines
+     */
+    constructor( lines )
+    {
+        let fname  = 'ObjectFromOBJLines.constructor():',
+            parser = new OBJParser( lines )
+        
+        if ( ! parser.parse_ok )
+        {   
+            //super( null, null )  // empty mesh
+            
+            Log(`${fname} OBJ parse error`)
+            Log(`${fname} ${parser.parse_message}`)
+            Log(`${fname} ${parser.parse_message_line}`)
+            alert( `Parse error:\n ${parser.parse_message}\n Line: ${parser.parse_message_line}\n` )
+            return
+        }
+        Log(`${fname} OBJ parsed ok (this is a test dummy object)`)
+
+        this.n_verts = 0
+
+        //super( parser.coords_data, parser.triangles_data )
         
     }
 }

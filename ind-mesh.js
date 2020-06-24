@@ -530,6 +530,7 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
     {
         return false 
     }
+    // -------------------------------------------------------------------------------------------------
     hasNormals()
     {
         return false 

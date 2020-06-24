@@ -166,7 +166,7 @@ class OBJParser
         Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
         Log(`${fname} copying coordinates and triangles .....`)
 
-        // create  'coords_data' and 'triangles_data' for each group
+        // create  'coords_data' and 'triangles_data' for each group (and check indexes are in range)
         for ( let group of this.groups )
         {
             Log(`${fname} group '${group.name}', num_verts == ${group.num_verts}, num_tris == ${group.num_tris}, num_tcc == ${group.num_tcc}`)
@@ -186,10 +186,16 @@ class OBJParser
             p = 0
             for( let it = 0 ; it < group.num_tris ; it ++ )
             {
-                group.coords_data[ p+0 ] = (group.tris[it])[0]
-                group.coords_data[ p+1 ] = (group.tris[it])[1]
-                group.coords_data[ p+2 ] = (group.tris[it])[2]
-                p += 3
+                for( let j = 0 ; j < 3 ; j++ )
+                {
+                    const iv = (group.tris[it])[j]
+                    if ( group.num_verts <= iv )
+                    {   this.parse_message = `vertex index ${iv} out of range, this group num. verts is ${group.num_verts} `
+                        return
+                    }
+                    group.coords_data[ p ] = (group.tris[it])[j]
+                    p ++
+                }
             }
 
             group.coords = null   // remove group coords

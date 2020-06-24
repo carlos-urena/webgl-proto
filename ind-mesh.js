@@ -497,6 +497,7 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
             parser = new OBJParser( lines )
 
         this.n_verts = 0  // total number of vertexes (0 means we can't use this object)
+        this.n_tris  = 0
         
         if ( ! parser.parse_ok )
         {   
@@ -515,6 +516,8 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
         for( let group of parser.groups )
         {
             this.n_verts += group.num_verts
+            this.n_tris  += group.num_tris 
+
             Log(`${fname} creating mesh from group '${group.name}' ...`)
             let mesh = new IndexedTrianglesMesh( group.coords_data, group.triangles_data )
             this.meshes.push( mesh )

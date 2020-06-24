@@ -483,7 +483,7 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
 // -------------------------------------------------------------------------------------------------
 
 
-class ObjectFromOBJLines  /// extends CompositeObject ???
+class MultiMeshFromOBJLines  /// extends CompositeObject ???
 {
     /**
      * Buids an indexed mesh from a strings array with the lines from an OBJ  file.
@@ -495,6 +495,8 @@ class ObjectFromOBJLines  /// extends CompositeObject ???
     {
         let fname  = 'ObjectFromOBJLines.constructor():',
             parser = new OBJParser( lines )
+
+        this.n_verts = 0  // total number of vertexes (0 means we can't use this object)
         
         if ( ! parser.parse_ok )
         {   
@@ -504,15 +506,42 @@ class ObjectFromOBJLines  /// extends CompositeObject ???
             Log(`${fname} ${parser.parse_message}`)
             Log(`${fname} ${parser.parse_message_line}`)
             alert( `Parse error:\n ${parser.parse_message}\n Line: ${parser.parse_message_line}\n` )
-            this.n_verts = 0  // means we can't use this object
             return
         }
-        Log(`${fname} OBJ parsed ok (this is a test dummy object)`)
+        Log(`${fname} multimesh parsed ok, creating meshes ...`)
 
-        this.n_verts = 0 // means we can't use this object
+        this.meshes = []
+
+        for( let group of parser.groups )
+        {
+            this.n_verts += group.num_verts
+            Log(`${fname} creating mesh from group '${group.name}' ...`)
+            let mesh = new IndexedTrianglesMesh( group.coords_data, group.triangles_data )
+            this.meshes.push( mesh )
+        }
+        Log(`${fname} END (multimesh created ok)`)
+        
 
         //super( parser.coords_data, parser.triangles_data )
         
+    }
+    // -------------------------------------------------------------------------------------------------
+    hasTextCoords()
+    {
+        return false 
+    }
+    hasNormals()
+    {
+        return false 
+    }
+    // -------------------------------------------------------------------------------------------------
+    draw( wgl_ctx )
+    {
+        for( let mesh of this.meshes )
+        {
+            //Log(`Multimesh draw, class name = '${mesh.constructor.name}'`)
+            mesh.draw( wgl_ctx )
+        }
     }
 }
 // -------------------------------------------------------------------------------------------------

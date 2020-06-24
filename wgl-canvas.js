@@ -836,7 +836,7 @@ class WebGLCanvas
         if ( ext == 'ply' )
             loaded_object = new TriMeshFromPLYLines( lines )   
         else if ( ext == 'obj' )
-            loaded_object = new ObjectFromOBJLines( lines )
+            loaded_object = new MultiMeshFromOBJLines( lines )
         else 
             throw new Error(`${fname}: unexpected file extension (shouldn't happen)`)
         

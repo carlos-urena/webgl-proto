@@ -22,7 +22,10 @@ class OBJGroup
         this.num_verts = 0
         this.num_tris  = 0
         this.num_tcc   = 0
-        this.coords    = [] 
+        this.coords    = []   // array with 'Float32Array', each one has a vertex coords (deleted after creating coords_data)
+        this.tris      = []   // array with 'Uint32Array', each one has a triangle (deleted after creating triangles_data)
+        this.coords_data    = null     // Float32Array with vertex coordinates 
+        this.triangles_data = null     // Uint32Array with triangles indexes
     }
 }
 
@@ -55,6 +58,8 @@ class OBJParser
         this.parse_message      = 'no errors found so far' ,
         this.parse_message_line = '(line text is not available for this error)'
         this.groups             = []  // groups array, each group is a separate mesh ???
+        this.total_num_verts    = 0
+        this.total_num_tris     = 0
 
         let curr_group = null  // current group being processed
         
@@ -102,15 +107,55 @@ class OBJParser
                     return
                 }
                 curr_group.num_verts ++
+                this.total_num_verts ++
+
+                const 
+                    cx = parseFloat( tokens[1] ),
+                    cy = parseFloat( tokens[2] ),
+                    cz = parseFloat( tokens[3] )
+
+                if ( cx == NaN || cy == NaN || cz == NaN )
+                {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
+                    return
+                }
+                curr_group.coords.push ( new Float32Array([ cx, cy, cz ]) )
             }
             else if ( tokens[0] == 'f' )
             {    
-                // process 'f' line (we only accept triangles)
-                if ( tokens.length < 4 )
-                {   this.parse_message = `expected at least 3 vertexes in a 'f' line, but found just ${tokens.length-1}` 
+                // process 'f' line (we only accept triangles) (just ingore vertexes beyond 3rd ......????)
+                if ( tokens.length != 4 && tokens.length != 5 )
+                {   this.parse_message = `expected 3 or 4 vertexes in a 'f' line, but found  ${tokens.length-1}` 
                     return
                 }
-                curr_group.num_tris ++
+                const v_indexes = new Uint32Array( tokens.length-1 )
+
+                for( let i = 0 ; i < tokens.length-1 ; i++ )
+                {
+                    const 
+                        strs = tokens[i+1].split("/"),
+                        vidx = parseInt( strs[0] )
+
+                    if ( vidx === NaN )
+                    {   this.parse_message = `cannot convert string '${strs[0]}' in 'f' line to non-zero positive integer` 
+                        return
+                    }
+                    if ( vidx <= 0 )
+                    {   this.parse_message = `cannot accept 0 or negative integer in 'f' line (found ${vidx})` 
+                        return
+                    }
+                    v_indexes[i] = vidx-1  /// indexes in the OBJ file start from 1, but every other index in the world starts at 0
+                }
+                if ( tokens.length == 4 )  // 3 indexes: add triangular face
+                {   curr_group.tris.push( v_indexes )
+                    curr_group.num_tris ++
+                    this.total_num_tris ++
+                }
+                else // 4 indexes: found a rectangular face: add two triangles  
+                {   curr_group.tris.push( new Uint32Array( [ v_indexes[0], v_indexes[1], v_indexes[2] ]) )
+                    curr_group.tris.push( new Uint32Array( [ v_indexes[0], v_indexes[2], v_indexes[3] ]) )
+                    curr_group.num_tris += 2
+                    this.total_num_tris += 2
+                }
             }
             else if ( tokens[0] == 'vt' )
             {    
@@ -118,16 +163,44 @@ class OBJParser
                 curr_group.num_tcc ++
             }
         }
+        Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
+        Log(`${fname} copying coordinates and triangles .....`)
 
+        // create  'coords_data' and 'triangles_data' for each group
         for ( let group of this.groups )
         {
             Log(`${fname} group '${group.name}', num_verts == ${group.num_verts}, num_tris == ${group.num_tris}, num_tcc == ${group.num_tcc}`)
+            
+            group.coords_data    = new Float32Array( group.num_verts*3 )
+            group.triangles_data = new Uint32Array( group.num_tris*3 )
+
+            let p = 0
+            for( let iv = 0 ; iv < group.num_verts ; iv ++ )
+            {
+                group.coords_data[ p+0 ] = (group.coords[iv])[0]
+                group.coords_data[ p+1 ] = (group.coords[iv])[1]
+                group.coords_data[ p+2 ] = (group.coords[iv])[2]
+                p += 3
+            }
+
+            p = 0
+            for( let it = 0 ; it < group.num_tris ; it ++ )
+            {
+                group.coords_data[ p+0 ] = (group.tris[it])[0]
+                group.coords_data[ p+1 ] = (group.tris[it])[1]
+                group.coords_data[ p+2 ] = (group.tris[it])[2]
+                p += 3
+            }
+
+            group.coords = null   // remove group coords
+            group.tris   = null   // remove group triangles
+
         }
         
 
         // done
         this.parse_ok = true 
-        Log(`${fname} end (parse ok)`)
+        Log(`${fname} END (parse ok)`)
     }
 
 } // ends OBJParser class

@@ -177,23 +177,39 @@ class OBJParser
             let p = 0
             for( let iv = 0 ; iv < group.num_verts ; iv ++ )
             {
-                group.coords_data[ p+0 ] = (group.coords[iv])[0]
-                group.coords_data[ p+1 ] = (group.coords[iv])[1]
-                group.coords_data[ p+2 ] = (group.coords[iv])[2]
-                p += 3
+                for( let j = 0 ; j < 3 ; j++ )
+                {
+                    group.coords_data[ p ] = (group.coords[iv])[j]
+                    p ++
+                }
             }
 
+            let ivmin = -1, ivmax = -1 
+
+            // compute group min-max indices ...., check group indexes are in-range
+            for( let it = 0 ; it < group.num_tris ; it ++ )
+            for( let j = 0 ; j < 3 ; j++ )
+            {
+                const iv = (group.tris[it])[j]
+                if ( this.total_num_verts <= iv )
+                {   this.parse_message = `vertex index ${iv} out of range, this group num. verts is ${group.num_verts} `
+                    return
+                }
+                if ( ivmin == -1 || iv < ivmin ) ivmin = iv 
+                if ( ivmax == -1 || ivmax < iv ) ivmax = iv 
+                
+            }
+            Log(`${fname} group ivmin == ${ivmin}, ivmax == ${ivmax}, n.v.(diff) == ${ivmax-ivmin+1}`)
+            
+            // create the triangles data for the group 
+            // compute group min-max indices ...., check group indexes are in-range
             p = 0
             for( let it = 0 ; it < group.num_tris ; it ++ )
             {
                 for( let j = 0 ; j < 3 ; j++ )
                 {
                     const iv = (group.tris[it])[j]
-                    if ( group.num_verts <= iv )
-                    {   this.parse_message = `vertex index ${iv} out of range, this group num. verts is ${group.num_verts} `
-                        return
-                    }
-                    group.coords_data[ p ] = (group.tris[it])[j]
+                    group.triangles_data[ p ] = iv-ivmin
                     p ++
                 }
             }

@@ -504,11 +504,12 @@ class ObjectFromOBJLines  /// extends CompositeObject ???
             Log(`${fname} ${parser.parse_message}`)
             Log(`${fname} ${parser.parse_message_line}`)
             alert( `Parse error:\n ${parser.parse_message}\n Line: ${parser.parse_message_line}\n` )
+            this.n_verts = 0  // means we can't use this object
             return
         }
         Log(`${fname} OBJ parsed ok (this is a test dummy object)`)
 
-        this.n_verts = 0
+        this.n_verts = 0 // means we can't use this object
 
         //super( parser.coords_data, parser.triangles_data )
         

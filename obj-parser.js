@@ -13,6 +13,19 @@
 
 const debug_obj_parse = true 
 
+
+class OBJGroup
+{
+    constructor()
+    {
+        this.name      = 'default' 
+        this.num_verts = 0
+        this.num_tris  = 0
+        this.num_tcc   = 0
+        this.coords    = [] 
+    }
+}
+
 class OBJParser
 {
     
@@ -28,12 +41,7 @@ class OBJParser
      *   - parse_ok           {bool} -- true iif there where no errors
      *   - parse_message      {string} -- resulting message, if 'parse_ok' is 'fals', contains error description.
      *   - parse_message_line {string}  -- for some parse errors, the erroneous line
-     *   - groups             {Array} -- array of groups, each group has these properties
-     *        * name {string}      -- group name, 'default' for the group before any 'g' command
-     *        * num_verts {number} -- number of vertexes  
-     *        * num_tris  {number} -- number of faces 
-     *        * num_tcc   {number} -- number of texture coordinates
-     *                 
+     *   - groups             {Array} -- array of groups, each group is an 'OBJGroup' instance           
      */
     constructor( lines )
     {
@@ -50,16 +58,16 @@ class OBJParser
 
         let curr_group = null  // current group being processed
         
-        for( let i = 0 ; i < lines.length ; i++ )
+        for( let ln = 0 ; ln < lines.length ; ln++ )
         {
-            const tokens = lines[i].trim().split(/\s+/)
-            this.parse_message_line = `at line # ${i} == '${lines[i]}'`
+            const tokens = lines[ln].trim().split(/\s+/)
+            this.parse_message_line = `at line # ${ln} == '${lines[ln]}'`
 
             if ( tokens.length === 0 )
                 continue 
             else if ( tokens[0].substring(0,1) == '#' )
             {
-                Log(`${fname} comments: ${lines[i]}`)
+                Log(`${fname} comments: ${lines[ln]}`)
                 continue
             }
 
@@ -67,12 +75,7 @@ class OBJParser
             if ( ['v','vt','f'].includes( tokens[0] ) )
             if ( curr_group == null )
             {   
-                curr_group = 
-                {   name      : 'default', 
-                    num_verts : 0,
-                    num_tris  : 0,
-                    num_tcc   : 0 
-                }
+                curr_group = new OBJGroup()
                 this.groups.push( curr_group )
             }
             // process 
@@ -83,22 +86,30 @@ class OBJParser
                     this.parse_message = "group name not found after 'g' line"
                     return
                 }
-                curr_group = 
-                {   name      : 2 < tokens.length ? `${tokens[1]}/${tokens[2]}` : tokens[1],
-                    num_verts : 0,
-                    num_tris  : 0,
-                    num_tcc   : 0
-                }
+                curr_group      = new OBJGroup()
+                curr_group.name = tokens[1]
+
+                for( let i = 2 ; i < tokens.length ; i++ )
+                    curr_group.name += `/${tokens[i]}`
+                
                 this.groups.push( curr_group )
             }
             else if ( tokens[0] == 'v' )
             {    
-                // increase number of vertexes for this group
-                curr_group.num_tris ++
+                // process 'v' line (we ignore values beyond the first three, so far)
+                if ( tokens.length < 4 )
+                {   this.parse_message = `expected at least 3 values in a 'v' line, but found just ${tokens.length-1}` 
+                    return
+                }
+                curr_group.num_verts ++
             }
             else if ( tokens[0] == 'f' )
             {    
-                // increase number of triangles for this group
+                // process 'f' line (we only accept triangles)
+                if ( tokens.length < 4 )
+                {   this.parse_message = `expected at least 3 vertexes in a 'f' line, but found just ${tokens.length-1}` 
+                    return
+                }
                 curr_group.num_tris ++
             }
             else if ( tokens[0] == 'vt' )
@@ -108,9 +119,9 @@ class OBJParser
             }
         }
 
-        for ( let group of groups )
+        for ( let group of this.groups )
         {
-            Log(`${fname} group '${group.name}', num_verts == ${num_verts}, num_tris == ${num_tris}, num_tcc == ${num_tcc}`)
+            Log(`${fname} group '${group.name}', num_verts == ${group.num_verts}, num_tris == ${group.num_tris}, num_tcc == ${group.num_tcc}`)
         }
         
 

@@ -830,8 +830,8 @@ class WebGLCanvas
             Log(`${fname} result class == ${evt.target.result.constructor.name}`) 
             Log(`${fname} splitting lines ....` )
         }
-        const lines = evt.target.result.split('\n'),
-              loaded_object = null 
+        const lines         = evt.target.result.split('\n')
+        let   loaded_object = null 
 
         if ( ext == 'ply' )
             loaded_object = new TriMeshFromPLYLines( lines )   

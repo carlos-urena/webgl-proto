@@ -677,7 +677,7 @@ class WebGLCanvas
         /// create an Image object and then the WebGL texture .....
         /// see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
  
-        Log(`${fname} image base 64 : ${evt.target.result}`)
+        Log(`${fname} image base 64 : ${evt.target.result.substring(0,60)}`)
         let image  = new Image()
         image.onload  = e => this.imageFileDecoded( e, file_list, image_file_index )
         image.onerror = e => this.fileLoadError( e, file_list, image_file_index )
@@ -695,6 +695,8 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.imageFileDecoded():'
         let   gl    = this.context,
               image = evt.target 
+        const file  = file_list.item( image_file_index ) 
+        
 
         Log(`${fname} evt target class == '${image.constructor.name}'`)
         Log(`${fname} image object, width = ${image.width}, height = ${image.height} `)
@@ -707,6 +709,8 @@ class WebGLCanvas
             internalFmt = gl.RGBA,   
             srcFmt      = gl.RGBA,      
             srcType     = gl.UNSIGNED_BYTE
+
+            
 
         // create, bind and fill the texture
         const texture = gl.createTexture()
@@ -721,7 +725,7 @@ class WebGLCanvas
         {
             // Yes, it's a power of 2. Generate mips.
             gl.generateMipmap( gl.TEXTURE_2D )
-            console.log(`${fname} mipmap generated.`)
+            Log(`${fname} mipmap generated.`)
         } 
         else 
         {
@@ -730,15 +734,20 @@ class WebGLCanvas
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-            console.log(`${fname} mipmap NOT generated.`)
+            Log(`${fname} mipmap NOT generated.`)
         }
 
+        // register the texture in 'this' instance, so it can be drawn
         ///gl.bindTexture( gl.TEXTURE_2D, null )  // unbind any texture ??? --> NO: yields warnings !
         this.gl_texture = texture
 
-        Log(`${fname} texture class = '${texture.constructor.name}'`)
+        // display a log messagge
         
-        /// done: load remaining file in list, if any
+        const msg1 = `Image file '${file.name}' loaded and decoded.` 
+        Log(`${fname} ${msg1}`)
+        this.setStatus( msg1 )
+
+        /// load remaining file in list, if any
         this.loadFilesInList( file_list, image_file_index+1 )
     }
     // -------------------------------------------------------------------------------------------------
@@ -1163,23 +1172,22 @@ class WebGLCanvas
 
                 if ( this.test_3d_mesh.hasTextCoords() && this.gl_texture != null )
                 {    pr.useTexture( this.gl_texture )
-                     Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
+                     //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
                 }
                 else 
-                {
-                    pr.useTexture( null )
+                {   pr.useTexture( null )
                     //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
                 }
                 if ( this.test_3d_mesh.hasNormals())
                 {
                     pr.doShading( true )
-                    Log(`#### ${fname} using shading for the 'test_3d_mesh'`)
+                    //Log(`#### ${fname} YES using shading for the 'test_3d_mesh'`)
                 }
                 else 
-                    pr.doShading( false )
+                {   pr.doShading( false )
+                    //Log(`#### ${fname} NOT using shading for the 'test_3d_mesh'`)
+                }
 
-
-                pr.doShading(false)
                 pr.pushMM()
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
                     this.test_3d_mesh.draw( gl )
@@ -1188,17 +1196,25 @@ class WebGLCanvas
             else
             {
                 if ( this.loaded_object.hasTextCoords() && this.gl_texture != null )
+                {
                     pr.useTexture( this.gl_texture )
-                else 
-                    pr.useTexture( null )
+                    //Log(`#### ${fname} YES using textures for 'loaded_object'`)
+                }
+                else
+                {   pr.useTexture( null )
+                    //Log(`#### ${fname} NOT using textures for 'loaded_object'`)
+                }
 
                 if ( this.loaded_object.hasNormals())
-                    pr.doShading( true )
+                {   pr.doShading( true )
+                    //Log(`#### ${fname} YES using shading for 'loaded_object'`)
+                }
                 else 
-                    pr.doShading( false )
-                    
+                {   pr.doShading( false )
+                    //Log(`#### ${fname} NOT using shading for 'loaded_object'`)
+                }
                 //console.log('drawing loaded object')
-                pr.doShading(false)
+                
                 pr.pushMM()
                     
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )

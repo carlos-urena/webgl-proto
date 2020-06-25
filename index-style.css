@@ -1,7 +1,7 @@
 * 
 {  box-sizing  : border-box !important;  /** include content + border + padding in box size **/
    font-family : 'Crimson Pro', serif;
-   font-size   : 16pt ; 
+   font-size   : 12pt ; 
    overscroll-behavior: none;  /** see: https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior **/
 }
 

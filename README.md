@@ -1,4 +1,7 @@
 # webgl-proto
-Prototype for WebGL applications which display a 3D mesh
 
-A simple Javascript+WebGL project for a page which displays a 3D mesh, probably loaded from a PLY or MTL file. Totally WIP.
+Simple Javascript+WebGL code for displaying 3D triangle meshes. You can drag & drop (ascii) .PLY or .OBJ files onto the canvas rectangle. You can also drop image files (use any extension accepted in HTML pages), they are used for texturing when the model has texture coordinates. 
+
+You can try it on-line on github.io:
+
+[carlos-urena.github.io/webgl-proto](https://carlos-urena.github.io/webgl-proto "WebGL Mesh Viewer")

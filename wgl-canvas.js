@@ -588,9 +588,13 @@ class WebGLCanvas
         Log(`${fname} ${msg1}`)
         this.setStatus( msg1 )
 
-        // set of valid image extensions Javascript can handle (TODO: complete)
-        const image_extensions = ['jpg','png','tiff'],    
-              mesh_extensions  = ['ply','obj']
+
+        // set of valid image extensions Javascript can handle 
+        // see: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img
+        const image_extensions = ['bmp','gif','ico','jpg','jpeg','jfif','pjpeg','pjp','png','svg','webp']   
+        
+        // set of valid mesh files the code can handle
+        const mesh_extensions  = ['ply','obj']
 
         // launch the loader/parser, according to file extension, then return
         
@@ -675,7 +679,7 @@ class WebGLCanvas
         /// create an Image object and then the WebGL texture .....
         /// see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
  
-        Log(`${fname} image base 64 : ${evt.target.result.substring(0,60)}`)
+        Log(`${fname} image base 64 : "${evt.target.result.substring(0,60)}"`)  // if the result string is empty, something has gone wrong...
         let image  = new Image()
         image.onload  = e => this.imageFileDecoded( e, file_list, image_file_index )
         image.onerror = e => this.fileLoadError( e, file_list, image_file_index )
@@ -757,9 +761,11 @@ class WebGLCanvas
      */
     fileLoadError( evt, file_list, curr_file_index )
     {
+        const fname = 'WebGLCanvas.fileLoadError():'
         const file = file_list.item( curr_file_index )
-        let msg = `Unable to load or decode file '${file.name}': an internal error ocurred.`
-        Log( `${fun_name}: ${msg}`)
+        let msg = `Unable to load or decode file '${file.name}': an unknown internal error ocurred.`
+        Log( `${fname} ${msg}`)
+        Log( `${fname} evt class == '${evt.constructor.name}'`)
         alert( msg )
         // load remaining files, if any
         this.loadFilesInList( file_list, curr_file_index+1 )

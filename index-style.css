@@ -1,6 +1,6 @@
 * 
 {  box-sizing  : border-box !important;  /** include content + border + padding in box size **/
-   font-family : 'Crimson Pro', serif;
+   font-family : 'Open Sans', sans-serif ;
    font-size   : 12pt ; 
    overscroll-behavior: none;  /** see: https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior **/
 }
@@ -13,6 +13,16 @@ body
 h1, h2, h3
 {  font-family : 'Marcellus SC', sans-serif ;
    font-weight : bold ;
+}
+
+h1
+{  font-size : 18pt ;
+}
+h2
+{  font-size : 16pt ;
+}
+h3
+{  font-size : 14pt ;
 }
 
 a

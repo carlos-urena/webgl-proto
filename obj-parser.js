@@ -57,13 +57,16 @@ class OBJParser
 
         // initialize object
         this.lines              = lines
-        this.parse_ok           = false,    // parsing is erroneous excepto when 'parse_ok' is set to true 
+        this.parse_ok           = false,    // parsing is erroneous excepto when 'parse_ok' is explicitly set to true at the end
         this.parse_message      = 'no errors found so far' ,
         this.parse_message_line = '(line text is not available for this error)'
         this.groups             = []  // groups array, each group is a separate mesh ???
-        this.total_num_verts    = 0  // total number of vertexes, in all groups
-        this.total_num_tris     = 0  // idem triangles
-        this.total_num_tcc      = 0  // idem texture coordinates
+        this.total_num_verts    = 0   // total number of vertexes, in all groups
+        this.total_num_tris     = 0   // idem triangles
+        this.total_num_tcc      = 0   // idem texture coordinates
+        this.raw_coords         = []  // array of Float32Array (3 floats per cell): raw vertex coordinates as found in the source lines
+        this.raw_faces          = []  // raw faces, as found in the source lines: each cell has two 'Uint32Array' (vert,tcc)
+        this.raw_tcc            = []  // array of Float32Array (2 floats per cell): raw texture coordinates, as found in the source lines
 
         let curr_group = null  // current group being processed
         
@@ -109,19 +112,39 @@ class OBJParser
                 {   this.parse_message = `expected at least 3 values in a 'v' line, but found just ${tokens.length-1}` 
                     return
                 }
-                curr_group.num_verts ++
-                this.total_num_verts ++
-
-                const 
-                    cx = parseFloat( tokens[1] ),
-                    cy = parseFloat( tokens[2] ),
-                    cz = parseFloat( tokens[3] )
-
+                const cx = parseFloat( tokens[1] ),
+                      cy = parseFloat( tokens[2] ),
+                      cz = parseFloat( tokens[3] )
                 if ( cx == NaN || cy == NaN || cz == NaN )
                 {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
                     return
                 }
-                curr_group.coords.push ( new Float32Array([ cx, cy, cz ]) )
+                const vc = new Float32Array([ cx, cy, cz ])
+                curr_group.coords.push ( vc )
+                this.raw_coords.push( vc )
+                curr_group.num_verts ++
+                this.total_num_verts ++
+            }
+            else if ( tokens[0] == 'vt' )
+            {    
+                // process 'vt' line (a line with a texture coordinates tuple)
+                if ( tokens.length != 3 && tokens.length != 4 )
+                {   this.parse_message = `expected 2 or 3 values in a 'vt' line, but found  ${tokens.length-1}` 
+                    return
+                }
+                const s  = parseFloat( tokens[1] ),
+                      t  = parseFloat( tokens[2] )   
+                      // we are ignoring third texture coord ...
+
+                if ( s === NaN  || t === NaN )
+                {   this.parse_message = `cannot convert strings '${tokens[1]}' or '${tokens[2]}' in 'vt' line to non-zero positive floats` 
+                    return
+                }
+                const vtcc = new Float32Array([ s, 1-t ])   
+                curr_group.tcc.push( vtcc )
+                this.raw_tcc.push( vtcc )
+                curr_group.num_tcc ++
+                this.total_num_tcc ++
             }
             else if ( tokens[0] == 'f' )
             {    
@@ -130,57 +153,56 @@ class OBJParser
                 {   this.parse_message = `expected 3 or 4 vertexes in a 'f' line, but found  ${tokens.length-1}` 
                     return
                 }
-                const v_indexes = new Uint32Array( tokens.length-1 )
+                const vc_indexes = new Uint32Array( tokens.length-1 ) // vertex coordinates index into 'raw_coords' table
 
                 for( let i = 0 ; i < tokens.length-1 ; i++ )
                 {   const 
-                        strs = tokens[i+1].split("/"),
-                        vidx = parseInt( strs[0] )
+                        index_strs = tokens[i+1].split("/")
 
-                    if ( vidx === NaN )
-                    {   this.parse_message = `cannot convert string '${strs[0]}' in 'f' line to non-zero positive integer` 
+                    if ( index_strs.length > 3 )
+                    {   this.parse_message = `invalid 'f' line, just accepting up to 3 integers per face vertex (found this '${tokens[i+1]}')`
                         return
                     }
-                    if ( vidx <= 0 )
-                    {   this.parse_message = `cannot accept 0 or negative integer in 'f' line (found ${vidx})` 
+
+                    let indexes = new Uint32Array( index_strs.length )
+                    
+                    for( let k = 0 ; k < index_strs.length ; k++ )
+                    {   
+                        indexes[k] = -1
+                        if ( index_strs[k] != '' )   // an empty value is allowed in the standard (for instance: 1/2 or 1//3 is allowed)
+                        {   
+                            indexes[k] = parseInt( index_strs[k] )
+                            if ( indexes[k] === NaN || indexes[k] <= 0 )   // 0 is not allowed, as indexes start at 1 according to the standard
+                            {   this.parse_message = `invalid integer value in 'f' line ('${index_strs[i+1]}')`
+                                return
+                            }
+                        }
+                    }
+                    if ( indexes[0] == -1 )  // requiere the first index (vertex coords index)
+                    {   this.parse_message = `cannot find the vertex coordinates index in a vertex in a 'f' line`
                         return
                     }
-                    v_indexes[i] = vidx-1  /// indexes in the OBJ file start from 1, but every other index in the world starts at 0
+                    // get the vertex coordinates index
+                    vc_indexes[i] = indexes[0]-1  /// indexes in the OBJ file start from 1, but every other index in the world starts at 0
                 
                     // TODO: process the texture coordinates indexes after the / ......
                 
                 }
+
+                // TODO: process the raw_faces table.....
                 if ( tokens.length == 4 )  // 3 indexes: add triangular face
-                {   curr_group.tris.push( v_indexes )
+                {   curr_group.tris.push( vc_indexes )
                     curr_group.num_tris ++
                     this.total_num_tris ++
                 }
                 else // 4 indexes: found a rectangular face: add two triangles  
-                {   curr_group.tris.push( new Uint32Array( [ v_indexes[0], v_indexes[1], v_indexes[2] ]) )
-                    curr_group.tris.push( new Uint32Array( [ v_indexes[0], v_indexes[2], v_indexes[3] ]) )
+                {   curr_group.tris.push( new Uint32Array( [ vc_indexes[0], vc_indexes[1], vc_indexes[2] ]) )
+                    curr_group.tris.push( new Uint32Array( [ vc_indexes[0], vc_indexes[2], vc_indexes[3] ]) )
                     curr_group.num_tris += 2
                     this.total_num_tris += 2
                 }
             }
-            else if ( tokens[0] == 'vt' )
-            {    
-                // process 'vt' line 
-                if ( tokens.length != 3 && tokens.length != 4 )
-                {   this.parse_message = `expected 2 or 3 values in a 'vt' line, but found  ${tokens.length-1}` 
-                    return
-                }
-                const s    = parseFloat( tokens[1] ),
-                      t    = parseFloat( tokens[2] )   
-                      // we are ognoring third texture coord ...
-
-                if ( s === NaN  || t === NaN )
-                {   this.parse_message = `cannot convert strings '${tokens[1]}' or '${tokens[2]}' in 'vt' line to non-zero positive floats` 
-                    return
-                }
-                const vtcc = new Float32Array([ s, 1-t ])   
-                curr_group.tcc.push( vtcc )
-                curr_group.num_tcc ++
-            }
+           
         }
         Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
         Log(`${fname} copying coordinates and triangles .....`)

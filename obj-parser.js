@@ -16,19 +16,27 @@ const debug_obj_parse = true
 
 class OBJGroup
 {
-    constructor( name, first_vertex_index, first_tcc_index )
+    constructor( name )
     {
-        this.name       = name
-        this.num_verts  = 0
-        this.num_tris   = 0
-        this.num_tcc    = 0
-        this.first_vi   = first_vertex_index  // first vertex index in global list of indexes
-        this.first_tcci = first_tcc_index
-        this.coords     = []  // array with 'Float32Array', each one has a vertex coords (deleted after creating coords_data)
-        this.tris       = []  // array with 'Uint32Array', each one has a triangle (deleted after creating triangles_data)
-        this.tcc        = []  // array with 'Float32Array', each one a texture coordinates (2 floats) 
-        this.coords_data    = null     // Float32Array with vertex coordinates 
-        this.triangles_data = null     // Uint32Array with triangles indexes
+        this.name = name
+        this.in_num_coords  = 0
+        this.in_num_texcoo  = 0
+        this.in_num_faces   = 0
+
+         // vertex map: used to convert from input pairs to output vertex indexes
+        //  - the keys are strings like '123/456' as found in 'f' lines (vertex index / text.coord. index)
+        //  - the values are integer output vertexes indexes (generated sequencially, starting at 0 for each group )
+        this.v_map  = new Map() 
+
+        // output arrays with generated mesh
+        this.out_coords    = []  // array of Float32Array, (3 floats per output vertex)
+        this.out_texcoo    = []  // array of Float32Array, (2 floats per output vertex)
+        this.out_triangles = []  // array of Uint32Array, (3 integers per output triangle)
+
+        // output buffers created from the output arrays (usable for OpenGL VAOs)
+        this.coords_data    = null     // Float32Array with vertex coordinates  (3 floats per output vertex)
+        this.texcoo_data    = null     // Float32Array with vertex texture coords (2 floats per ouput vertex)
+        this.triangles_data = null     // Uint32Array with triangles indexes (3 integers per output face)
     }
 }
 
@@ -58,15 +66,11 @@ class OBJParser
         // initialize object
         this.lines              = lines
         this.parse_ok           = false,    // parsing is erroneous excepto when 'parse_ok' is explicitly set to true at the end
-        this.parse_message      = 'no errors found so far' ,
+        this.parse_message      = 'no errors found so far' 
         this.parse_message_line = '(line text is not available for this error)'
         this.groups             = []  // groups array, each group is a separate mesh ???
-        this.total_num_verts    = 0   // total number of vertexes, in all groups
-        this.total_num_tris     = 0   // idem triangles
-        this.total_num_tcc      = 0   // idem texture coordinates
-        this.raw_coords         = []  // array of Float32Array (3 floats per cell): raw vertex coordinates as found in the source lines
-        this.raw_faces          = []  // raw faces, as found in the source lines: each cell has two 'Uint32Array' (vert,tcc)
-        this.raw_tcc            = []  // array of Float32Array (2 floats per cell): raw texture coordinates, as found in the source lines
+        this.input_coords       = []  // array of Float32Arrays (3 floats per cell): raw vertex coordinates as found in the source lines
+        this.input_texcoo       = []  // array of Float32Arrays (2 floats per cell): raw texture coordinates, as found in the source lines
 
         let curr_group = null  // current group being processed
         
@@ -86,7 +90,7 @@ class OBJParser
             // if first 'v','vt' or 'f' line comes before any 'g' line, create 'default' group 
             if ( ['v','vt','f'].includes( tokens[0] ) )
             if ( curr_group == null )
-            {   curr_group = new OBJGroup( 'default', this.total_num_verts, this.total_num_tcc )
+            {   curr_group = new OBJGroup( 'default' )
                 this.groups.push( curr_group )
             }
 
@@ -98,7 +102,7 @@ class OBJParser
                 {   this.parse_message = "group name not found after 'g' line"
                     return
                 }
-                curr_group = new OBJGroup( tokens[1], this.total_num_verts, this.total_num_tcc )
+                curr_group = new OBJGroup( tokens[1]  )
 
                 for( let i = 2 ; i < tokens.length ; i++ )
                     curr_group.name += `/${tokens[i]}`
@@ -119,11 +123,8 @@ class OBJParser
                 {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
                     return
                 }
-                const vc = new Float32Array([ cx, cy, cz ])
-                curr_group.coords.push ( vc )
-                this.raw_coords.push( vc )
-                curr_group.num_verts ++
-                this.total_num_verts ++
+                this.input_coords.push( new Float32Array([ cx, cy, cz ]) )
+                curr_group.in_num_coords ++
             }
             else if ( tokens[0] == 'vt' )
             {    
@@ -133,76 +134,92 @@ class OBJParser
                     return
                 }
                 const s  = parseFloat( tokens[1] ),
-                      t  = parseFloat( tokens[2] )   
-                      // we are ignoring third texture coord ...
-
+                      t  = parseFloat( tokens[2] )     // we are ignoring third texture coord ...
                 if ( s === NaN  || t === NaN )
                 {   this.parse_message = `cannot convert strings '${tokens[1]}' or '${tokens[2]}' in 'vt' line to non-zero positive floats` 
                     return
                 }
-                const vtcc = new Float32Array([ s, 1-t ])   
-                curr_group.tcc.push( vtcc )
-                this.raw_tcc.push( vtcc )
-                curr_group.num_tcc ++
-                this.total_num_tcc ++
+                this.input_texcoo.push( new Float32Array([ s, 1-t ]) )
+                curr_group.in_num_texcoo ++
             }
             else if ( tokens[0] == 'f' )
             {    
-                // process 'f' line (we only accept triangles) (just ingore vertexes beyond 3rd ......????)
+                // process 'f' line (both triangles and quads are accepted)
                 if ( tokens.length != 4 && tokens.length != 5 )
                 {   this.parse_message = `expected 3 or 4 vertexes in a 'f' line, but found  ${tokens.length-1}` 
                     return
                 }
-                const vc_indexes = new Uint32Array( tokens.length-1 ) // vertex coordinates index into 'raw_coords' table
+                let ovi = []   // array with 2 or 3 output vertex indexes, corresponding to this face
+
+                // loop over each vertex in this face, the vertex is specified as a string ("123/456"), where: 
+                //  first number is an input vertex index, second number is an input text.coords. index
 
                 for( let i = 0 ; i < tokens.length-1 ; i++ )
-                {   const 
-                        index_strs = tokens[i+1].split("/")
+                {   
+                    const index_pair_str = tokens[i+1]
+                    const index_strings  = index_pair_str.split("/")
 
-                    if ( index_strs.length > 3 )
-                    {   this.parse_message = `invalid 'f' line, just accepting up to 3 integers per face vertex (found this '${tokens[i+1]}')`
+                    if ( index_strings.length != 2 )
+                    {   this.parse_message = `invalid 'f' line, expected just 2 integers per face vertex  (found this '${tokens[i+1]}')`
                         return
                     }
-
-                    let indexes = new Uint32Array( index_strs.length )
                     
-                    for( let k = 0 ; k < index_strs.length ; k++ )
-                    {   
-                        indexes[k] = -1
-                        if ( index_strs[k] != '' )   // an empty value is allowed in the standard (for instance: 1/2 or 1//3 is allowed)
+                    // compute 'out_v_idx' 
+                    const out_v_idx = -1
+                    if ( curr_group.v_map.has( index_pair_str ) )
+                    {
+                        // pair already seen in this group, get output vertex index
+                        out_v_idx = curr_group.v_map.get( index_pair_str ) 
+                    }
+                    else 
+                    {
+                        // the pair is new in this group: create new output vertex index and add it to map
+                        out_v_idx = curr_group.out_num_verts 
+                        curr_group.out_num_verts ++
+                        curr_group.v_map.set( index_pair_str, out_v_idx )
+
+                        // get and check the input vertex and tex.coo. indexes (in_vc_ind, in_tc_ind)
+                        const in_vcc_ind = parseInt( index_strings[0] ),
+                              in_tcc_ind = parseInt( index_strings[1] )
+              
+                        if ( in_vcc_ind === NaN || in_vcc_ind <= 0 ||   // 0 is not allowed, as indexes start at 1 according to the standard
+                            in_tcc_ind === NaN || in_tcc_ind <= 0  )  
                         {   
-                            indexes[k] = parseInt( index_strs[k] )
-                            if ( indexes[k] === NaN || indexes[k] <= 0 )   // 0 is not allowed, as indexes start at 1 according to the standard
-                            {   this.parse_message = `invalid integer value in 'f' line ('${index_strs[i+1]}')`
-                                return
-                            }
+                            this.parse_message = `invalid integer value in 'f' line ('${index_strs[i+1]}')`
+                            return
                         }
+                        in_vcc_ind --  /// indexes in the OBJ file start from 1, but our arrays indexes start from '0'
+                        in_tcc_ind --  // idem
+
+                        if ( in_vcc_ind <= this.input_coords.length  || in_tcc_ind <= this.input_texcoo.length )
+                        {
+                            this.parse_message = `found forward reference to a still-not-seen input coords or tex.coords (in a 'f' line) ...`
+                            return 
+                        }
+
+                        // gather coords. and texture coords. from input array and copy them onto output array
+                        curr_group.out_coords.push( new Float32Array( this.input_coords[in_vcc_ind] ) )
+                        curr_group.out_texcoo.push( new Float32Array( this.input_texcoo[in_tcc_ind] ) )
                     }
-                    if ( indexes[0] == -1 )  // requiere the first index (vertex coords index)
-                    {   this.parse_message = `cannot find the vertex coordinates index in a vertex in a 'f' line`
-                        return
-                    }
-                    // get the vertex coordinates index
-                    vc_indexes[i] = indexes[0]-1  /// indexes in the OBJ file start from 1, but every other index in the world starts at 0
-                
-                    // TODO: process the texture coordinates indexes after the / ......
-                
+
+                    // add the index to 'ovi'
+                    ovi.push( out_v_idx )
+                } 
+
+                // add 1 or 2 triangles to current's group output triangles
+                if ( ovi.length == 3 )
+                {
+                    curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[1], ovi[2] ]) ) 
+                }
+                else // ovi.length must be 4
+                {
+                    curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[1], ovi[2] ]) ) 
+                    curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[2], ovi[3] ]) ) 
                 }
 
-                // TODO: process the raw_faces table.....
-                if ( tokens.length == 4 )  // 3 indexes: add triangular face
-                {   curr_group.tris.push( vc_indexes )
-                    curr_group.num_tris ++
-                    this.total_num_tris ++
-                }
-                else // 4 indexes: found a rectangular face: add two triangles  
-                {   curr_group.tris.push( new Uint32Array( [ vc_indexes[0], vc_indexes[1], vc_indexes[2] ]) )
-                    curr_group.tris.push( new Uint32Array( [ vc_indexes[0], vc_indexes[2], vc_indexes[3] ]) )
-                    curr_group.num_tris += 2
-                    this.total_num_tris += 2
-                }
+                curr_group.group.in_num_faces ++
+
             }
-           
         }
         Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
         Log(`${fname} copying coordinates and triangles .....`)
@@ -210,38 +227,47 @@ class OBJParser
         // create  'coords_data' and 'triangles_data' for each group (and check indexes are in range)
         for ( let group of this.groups )
         {
-            Log(`${fname} group '${group.name}', num_verts == ${group.num_verts}, num_tris == ${group.num_tris}, num_tcc == ${group.num_tcc}`)
+            const onv = group.out_coords.length,
+                  ont = group.out_triangles.length 
+
+
+            Log(`${fname} group '${group.name}' input:  num.coo   == ${group.in_num_coords}, 
+                           num.tex.coo == ${group.in_num_texcoo}, num.faces = ${group.in_num_faces}`)
+            Log(`${fname} group '${group.name}' output: num.verts == ${onv}, num_tris == ${ont}`)
             
-            
-            // create and fill 'group.coords_data' from 'group.coords'
-            group.coords_data    = new Float32Array( group.num_verts*3 )
-            
-            for( let iv = 0 ; iv < group.num_verts ; iv ++ )
+             
+            // create and fill 'group.coords_data' from 'group.out_coords'
+            group.coords_data  = new Float32Array( onv*3 )
+            for( let iv = 0 ; iv < onv ; iv ++ )
                 for( let j = 0 ; j < 3 ; j++ )
-                    group.coords_data[ 3*iv+j ] = (group.coords[iv])[j]
+                    group.coords_data[ 3*iv+j ] = (group.out_coords[iv])[j]
+
+            // create and fill 'group.texcoo_data' from 'group.out_texcoo'
+            group.texcoo_data  = new Float32Array( onv*3 )
+            for( let iv = 0 ; iv < onv ; iv ++ )
+                for( let j = 0 ; j < 3 ; j++ )
+                    group.texcoo_data[ 3*iv+j ] = (group.out_texcoo[iv])[j]
             
             
             // create and fill 'group.triangles_data' from 'group.tris'
 
-            group.triangles_data = new Uint32Array( group.num_tris*3 )
-            
-            for( let it = 0 ; it < group.num_tris ; it ++ )
+            group.triangles_data = new Uint32Array( ont*3 )
+            for( let it = 0 ; it < ont ; it ++ )
             for( let j = 0 ; j < 3 ; j++ )
             {
-                const iv = (group.tris[it])[j] - group.first_vi
-                if ( iv < 0  || group.num_verts <= iv )
-                {   this.parse_message = `vertex index ${iv} is out of its group range (${group.first_vi} ... ${group.first_vi+group.num_verts-1}).`
+                const iv = (group.out_triangles[it])[j] 
+                if ( iv < 0  || ont <= iv )
+                {   this.parse_message = `vertex index ${iv} is out of its group range (0..${ont-1})`
                     return
                 }
                 group.triangles_data[ 3*it+j ] = iv 
             }
 
-            // create and fill 'group.texcoo_data' from 'group.tcc'
-            // TODO, not so easy ......
+            
             
             // remove no longer used arrays ( can be very large )
-            group.coords = null   
-            group.tris   = null   
+            //group.out_coords = null   
+            //group.out_triangles   = null   
         }
         
         // done

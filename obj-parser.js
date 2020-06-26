@@ -23,6 +23,10 @@ class OBJGroup
         this.in_num_texcoo  = 0
         this.in_num_faces   = 0
 
+        this.out_num_verts = 0
+        this.num_verts      = 0  // output number of vertexes  (out_coords.length)
+        this.num_tris       = 0  // output number of triangles (out_triangles.length)
+
          // vertex map: used to convert from input pairs to output vertex indexes
         //  - the keys are strings like '123/456' as found in 'f' lines (vertex index / text.coord. index)
         //  - the values are integer output vertexes indexes (generated sequencially, starting at 0 for each group )
@@ -165,7 +169,7 @@ class OBJParser
                     }
                     
                     // compute 'out_v_idx' 
-                    const out_v_idx = -1
+                    let out_v_idx = -1
                     if ( curr_group.v_map.has( index_pair_str ) )
                     {
                         // pair already seen in this group, get output vertex index
@@ -179,11 +183,11 @@ class OBJParser
                         curr_group.v_map.set( index_pair_str, out_v_idx )
 
                         // get and check the input vertex and tex.coo. indexes (in_vc_ind, in_tc_ind)
-                        const in_vcc_ind = parseInt( index_strings[0] ),
+                        let in_vcc_ind = parseInt( index_strings[0] ),
                               in_tcc_ind = parseInt( index_strings[1] )
               
                         if ( in_vcc_ind === NaN || in_vcc_ind <= 0 ||   // 0 is not allowed, as indexes start at 1 according to the standard
-                            in_tcc_ind === NaN || in_tcc_ind <= 0  )  
+                            in_tcc_ind === NaN  || in_tcc_ind <= 0  )  
                         {   
                             this.parse_message = `invalid integer value in 'f' line ('${index_strs[i+1]}')`
                             return
@@ -191,7 +195,7 @@ class OBJParser
                         in_vcc_ind --  /// indexes in the OBJ file start from 1, but our arrays indexes start from '0'
                         in_tcc_ind --  // idem
 
-                        if ( in_vcc_ind <= this.input_coords.length  || in_tcc_ind <= this.input_texcoo.length )
+                        if (  this.input_coords.length <= in_vcc_ind  ||  this.input_texcoo.length <= in_tcc_ind )
                         {
                             this.parse_message = `found forward reference to a still-not-seen input coords or tex.coords (in a 'f' line) ...`
                             return 
@@ -215,9 +219,10 @@ class OBJParser
                 {
                     curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[1], ovi[2] ]) ) 
                     curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[2], ovi[3] ]) ) 
+                    
                 }
 
-                curr_group.group.in_num_faces ++
+                curr_group.in_num_faces ++
 
             }
         }
@@ -230,24 +235,23 @@ class OBJParser
             const onv = group.out_coords.length,
                   ont = group.out_triangles.length 
 
+            group.num_verts = onv
+            group.num_tris  = ont 
 
-            Log(`${fname} group '${group.name}' input:  num.coo   == ${group.in_num_coords}, 
-                           num.tex.coo == ${group.in_num_texcoo}, num.faces = ${group.in_num_faces}`)
-            Log(`${fname} group '${group.name}' output: num.verts == ${onv}, num_tris == ${ont}`)
+            Log(`${fname} group '${group.name}' input:  coords = ${group.in_num_coords}, n.faces = ${group.in_num_faces}, num.tex.coo == ${group.in_num_texcoo}, `)
+            Log(`${fname} group '${group.name}' output: n.vert = ${onv}, n.tris  = ${ont}  (check n.t.cc=${group.out_texcoo.length})`)
             
              
             // create and fill 'group.coords_data' from 'group.out_coords'
             group.coords_data  = new Float32Array( onv*3 )
+            group.texcoo_data  = new Float32Array( onv*2 )
             for( let iv = 0 ; iv < onv ; iv ++ )
+            {
                 for( let j = 0 ; j < 3 ; j++ )
-                    group.coords_data[ 3*iv+j ] = (group.out_coords[iv])[j]
-
-            // create and fill 'group.texcoo_data' from 'group.out_texcoo'
-            group.texcoo_data  = new Float32Array( onv*3 )
-            for( let iv = 0 ; iv < onv ; iv ++ )
-                for( let j = 0 ; j < 3 ; j++ )
-                    group.texcoo_data[ 3*iv+j ] = (group.out_texcoo[iv])[j]
-            
+                   group.coords_data[ 3*iv+j ] = (group.out_coords[iv])[j]
+                for( let k = 0 ; k < 2 ; k++ )
+                    group.texcoo_data[ 3*iv+k ] = (group.out_texcoo[iv])[k]
+            }    
             
             // create and fill 'group.triangles_data' from 'group.tris'
 
@@ -256,18 +260,17 @@ class OBJParser
             for( let j = 0 ; j < 3 ; j++ )
             {
                 const iv = (group.out_triangles[it])[j] 
-                if ( iv < 0  || ont <= iv )
-                {   this.parse_message = `vertex index ${iv} is out of its group range (0..${ont-1})`
+                if ( iv < 0  || onv <= iv )
+                {   this.parse_message = `vertex index ${iv} is out of its group range (0..${onv-1})`
                     return
                 }
                 group.triangles_data[ 3*it+j ] = iv 
             }
 
-            
-            
             // remove no longer used arrays ( can be very large )
-            //group.out_coords = null   
-            //group.out_triangles   = null   
+            //delete group.out_coords
+            //delete group.out_texcoo 
+            //delete group.out_triangles
         }
         
         // done

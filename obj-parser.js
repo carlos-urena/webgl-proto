@@ -234,6 +234,9 @@ class OBJParser
         Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
         Log(`${fname} copying coordinates and triangles .....`)
 
+        
+        let bbox = null 
+
         // create  'coords_data' and 'triangles_data' for each group (and check indexes are in range)
         for ( let group of this.groups )
         {
@@ -272,11 +275,46 @@ class OBJParser
                 group.triangles_data[ 3*it+j ] = iv 
             }
 
+            bbox = ( bbox == null ) ? ComputeBBox( group.coords_data )
+                                    : MergeBBoxes( bbox, ComputeBBox( group.coords_data ))
+
             // remove no longer used arrays ( can be very large )
-            //delete group.out_coords
-            //delete group.out_texcoo 
-            //delete group.out_triangles
+            delete group.out_coords
+            delete group.out_texcoo 
+            delete group.out_triangle   
         }
+
+        // normalize 
+        let normalize = true 
+        if ( normalize )
+        {
+            const 
+                max_out_len = 2.0
+            const 
+                cx = 0.5*(bbox.xmax + bbox.xmin),
+                cy = 0.5*(bbox.ymax + bbox.ymin),
+                cz = 0.5*(bbox.zmax + bbox.zmin),
+                d  = Math.max(  bbox.xmax - bbox.xmin, 
+                                bbox.ymax - bbox.ymin, 
+                                bbox.zmax - bbox.zmin ),
+                s  = max_out_len/d 
+
+            for ( let group of this.groups )
+            {
+                const nv = group.num_verts
+                for( let iv = 0 ; iv < nv ; iv++ )
+                {
+                    const x = group.coords_data[ 3*iv+0 ],
+                          y = group.coords_data[ 3*iv+1 ],
+                          z = group.coords_data[ 3*iv+2 ]
+                    
+                    group.coords_data[ 3*iv+0 ] = s*(x-cx)
+                    group.coords_data[ 3*iv+1 ] = s*(y-cy)
+                    group.coords_data[ 3*iv+2 ] = s*(z-cz)
+                }
+            }
+        }
+
         
         // done
         this.parse_ok = true 

@@ -141,9 +141,7 @@ function Log( msg )
     }    
 }
 
-
-// ----
-
+// -------------------------------------------------------------------------------------------------
 /**
  *  Shows the log window or div on the page, if it is already shown, does nothing
  */
@@ -193,7 +191,8 @@ function CloseLogWin()
     document.body.removeChild( global_log_elem )
     global_log_elem = null 
 }
-// --------------------------
+// -------------------------------------------------------------------------------------------------
+
 function ResizeLogWin()
 {
     if ( global_log_elem == null )

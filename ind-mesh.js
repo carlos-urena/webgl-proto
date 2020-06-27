@@ -57,6 +57,25 @@ function ComputeBBox( coords_array )
 // -------------------------------------------------------------------------------------------------
 
 /**
+ * Compute the smallest AA bounding box which includes two bounding boxes
+ * @param  {object} bbox1 -- first bounding box (an object with 6 number properties, named 'xmin','xmax','ymin','ymax','zmin','zmax')
+ * @param  {object} bbox2 -- second bounding box (idem)
+ */
+function MergeBBoxes( bbox1, bbox2 )
+{
+    const fname = 'MergeBBoxes():'
+    
+    let bbox =
+        {   xmin: Math.min( bbox1.xmin, bbox2.xmin ), xmax: Math.max( bbox1.xmax, bbox2.xmax ),
+            ymin: Math.min( bbox1.ymin, bbox2.ymin ), ymax: Math.max( bbox1.ymax, bbox2.ymax ),
+            zmin: Math.min( bbox1.zmin, bbox2.zmin ), ymax: Math.max( bbox1.zmax, bbox2.zmax )
+        }
+    return bbox
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/**
  * Normalizes vertex coordinates
  * @param {Float32array} coords_data -- (x,y,z) coordintes data 
  */
@@ -493,14 +512,16 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
      */
     constructor( lines )
     {
-        let fname  = 'ObjectFromOBJLines.constructor():',
-            parser = new OBJParser( lines )
+        let fname  = 'ObjectFromOBJLines.constructor():'
 
         this.n_verts = 0  // total number of vertexes (0 means we can't use this object)
         this.n_tris  = 0
 
         this.has_texcoo = false 
         
+        // parse the lines
+        let parser = new OBJParser( lines )
+
         if ( ! parser.parse_ok )
         {   
             //super( null, null )  // empty mesh
@@ -523,8 +544,7 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
             Log(`${fname} creating mesh from group '${group.name}' ...`)
             let mesh = new IndexedTrianglesMesh( group.coords_data, group.triangles_data )
             if ( group.texcoo_data != null )
-            {
-                Log(`${fname} (group has tex coords)`)
+            {   Log(`${fname} (group has tex coords)`)
                 this.has_texcoo = true 
                 mesh.setTexCooData( group.texcoo_data )
             }

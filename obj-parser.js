@@ -127,7 +127,8 @@ class OBJParser
                 {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
                     return
                 }
-                this.input_coords.push( new Float32Array([ cx, cy, cz ]) )
+                //this.input_coords.push( new Float32Array([ cx, cy, cz ]) )
+                this.input_coords.push( new Float32Array([ cx, cz, -cy ]) )
                 curr_group.in_num_coords ++
             }
             else if ( tokens[0] == 'vt' )
@@ -226,9 +227,7 @@ class OBJParser
                     curr_group.out_triangles.push( new Uint32Array([ ovi[0], ovi[2], ovi[3] ]) ) 
                     
                 }
-
                 curr_group.in_num_faces ++
-
             }
         }
         Log(`${fname} lines processed: total num_verts == ${this.total_num_verts}, ${this.total_num_tris}`)
@@ -309,7 +308,7 @@ class OBJParser
                           z = group.coords_data[ 3*iv+2 ]
                     
                     group.coords_data[ 3*iv+0 ] = s*(x-cx)
-                    group.coords_data[ 3*iv+1 ] = s*(y-cy)
+                    group.coords_data[ 3*iv+1 ] = s*(y-bbox.ymin)
                     group.coords_data[ 3*iv+2 ] = s*(z-cz)
                 }
             }

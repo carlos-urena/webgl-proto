@@ -143,6 +143,10 @@ class OBJParser
                 {   this.parse_message = `cannot convert strings '${tokens[1]}' or '${tokens[2]}' in 'vt' line to non-zero positive floats` 
                     return
                 }
+                if ( s < 0.0 || 1.0 < s ||  t < 0.0 || 1.0 < t )
+                {   this.parse_message = `value ${s} or ${t} is not in [0..1] range in 'vt' line` 
+                    return
+                }
                 this.input_texcoo.push( new Float32Array([ s, 1-t ]) )
                 curr_group.in_num_texcoo ++
             }
@@ -153,7 +157,7 @@ class OBJParser
                 {   this.parse_message = `expected 3 or 4 vertexes in a 'f' line, but found  ${tokens.length-1}` 
                     return
                 }
-                let ovi = []   // array with 2 or 3 output vertex indexes, corresponding to this face
+                let ovi = []   // array with 3 or 4 output vertex indexes, corresponding to this face
 
                 // loop over each vertex in this face, the vertex is specified as a string ("123/456"), where: 
                 //  first number is an input vertex index, second number is an input text.coords. index
@@ -183,21 +187,22 @@ class OBJParser
                         curr_group.v_map.set( index_pair_str, out_v_idx )
 
                         // get and check the input vertex and tex.coo. indexes (in_vc_ind, in_tc_ind)
-                        let in_vcc_ind = parseInt( index_strings[0] ),
-                              in_tcc_ind = parseInt( index_strings[1] )
+                        const in_vcc_ind_1 = parseInt( index_strings[0] ),
+                              in_tcc_ind_1 = parseInt( index_strings[1] )
               
-                        if ( in_vcc_ind === NaN || in_vcc_ind <= 0 ||   // 0 is not allowed, as indexes start at 1 according to the standard
-                            in_tcc_ind === NaN  || in_tcc_ind <= 0  )  
-                        {   
-                            this.parse_message = `invalid integer value in 'f' line ('${index_strs[i+1]}')`
+                        if ( in_vcc_ind_1 === NaN || in_tcc_ind_1 === NaN )  
+                        {   this.parse_message = `string cannot be converted to integer value in 'f' line ('${index_pair_str}')`
                             return
                         }
-                        in_vcc_ind --  /// indexes in the OBJ file start from 1, but our arrays indexes start from '0'
-                        in_tcc_ind --  // idem
+                        if ( in_vcc_ind_1 <= 0 || in_tcc_ind_1 <= 0  )    // 0 is not allowed, as indexes start at 1 according to the standard
+                        {   this.parse_message = `invalid negative or cero integer value in 'f' line ('${index_pair_str}')`
+                            return
+                        }
+                        const in_vcc_ind = in_vcc_ind_1 -1,   /// indexes in the OBJ file start from 1, but our arrays indexes start from '0'
+                              in_tcc_ind = in_tcc_ind_1 -1  // idem
 
                         if (  this.input_coords.length <= in_vcc_ind  ||  this.input_texcoo.length <= in_tcc_ind )
-                        {
-                            this.parse_message = `found forward reference to a still-not-seen input coords or tex.coords (in a 'f' line) ...`
+                        {   this.parse_message = `found forward reference to a still-not-seen input coords or tex.coords (in a 'f' line) ...`
                             return 
                         }
 
@@ -250,7 +255,7 @@ class OBJParser
                 for( let j = 0 ; j < 3 ; j++ )
                    group.coords_data[ 3*iv+j ] = (group.out_coords[iv])[j]
                 for( let k = 0 ; k < 2 ; k++ )
-                    group.texcoo_data[ 3*iv+k ] = (group.out_texcoo[iv])[k]
+                    group.texcoo_data[ 2*iv+k ] = (group.out_texcoo[iv])[k]
             }    
             
             // create and fill 'group.triangles_data' from 'group.tris'

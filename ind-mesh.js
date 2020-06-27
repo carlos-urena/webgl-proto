@@ -498,6 +498,8 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
 
         this.n_verts = 0  // total number of vertexes (0 means we can't use this object)
         this.n_tris  = 0
+
+        this.has_texcoo = false 
         
         if ( ! parser.parse_ok )
         {   
@@ -520,6 +522,12 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
 
             Log(`${fname} creating mesh from group '${group.name}' ...`)
             let mesh = new IndexedTrianglesMesh( group.coords_data, group.triangles_data )
+            if ( group.texcoo_data != null )
+            {
+                Log(`${fname} (group has tex coords)`)
+                this.has_texcoo = true 
+                mesh.setTexCooData( group.texcoo_data )
+            }
             this.meshes.push( mesh )
         }
         Log(`${fname} END (multimesh created ok)`)
@@ -531,7 +539,7 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
     // -------------------------------------------------------------------------------------------------
     hasTextCoords()
     {
-        return false 
+        return this.has_texcoo
     }
     // -------------------------------------------------------------------------------------------------
     hasNormals()

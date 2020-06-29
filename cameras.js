@@ -61,6 +61,8 @@ class Camera
         vis_ctx.program.setViewMat( this.view_mat  )
         vis_ctx.program.setProjMat( this.proj_mat )
     }
+
+    // derived classes must implement: updateProjMat, 
 }
 
 

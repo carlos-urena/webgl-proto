@@ -952,6 +952,12 @@ class WebGLCanvas
         this.canvas_elem.width  = this.parent_elem.clientWidth
         this.canvas_elem.height = this.parent_elem.clientHeight
         this.getWebGLContext()
+
+        const gl = this.vis_ctx.getWglCtx(),
+              sx = gl.drawingBufferWidth, 
+              sy = gl.drawingBufferHeight 
+
+        this.vis_ctx.camera.setViewport( new Viewport(sx,sy) )
         this.drawFrame()
     }
 
@@ -1085,44 +1091,44 @@ class WebGLCanvas
 
     // -------------------------------------------------------------------------------------------------
     
-    setModelviewProjection( gl, sx, sy )
-    {
-        CheckGLError( gl )
+    // setModelviewProjection( gl, sx, sy )
+    // {
+    //     CheckGLError( gl )
         
-        const fname = 'setModelviewProjection():'
+    //     const fname = 'setModelviewProjection():'
 
-        if ( this.debug )
-        {
-            Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
-        }
+    //     if ( this.debug )
+    //     {
+    //         Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
+    //     }
         
-        // const 
-        //     fovy_deg       = 60.0,
-        //     ratio_vp       = sy/sx,
-        //     near           = 0.05,
-        //     far            = near+1000.0,
-        //     transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
-        //     rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
-        //     roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
-        //     rotation_mat   = rotx_mat.compose( roty_mat ),
-        //     modelview_mat  = transl_mat.compose( rotation_mat ),
-        //     projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
+    //     // const 
+    //     //     fovy_deg       = 60.0,
+    //     //     ratio_vp       = sy/sx,
+    //     //     near           = 0.05,
+    //     //     far            = near+1000.0,
+    //     //     transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
+    //     //     rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
+    //     //     roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
+    //     //     rotation_mat   = rotx_mat.compose( roty_mat ),
+    //     //     modelview_mat  = transl_mat.compose( rotation_mat ),
+    //     //     projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
 
-        // this.vis_ctx.program.setViewMat( modelview_mat  )
-        // this.vis_ctx.program.setProjMat( projection_mat )
-        // Log(`${fname} alpha, beta == ${this.cam_alpha_deg}, ${this.cam_beta_deg}`)
-        // Log(`${fname} old view == ${modelview_mat}`)
-        // Log(`${fname} old proj == ${projection_mat}`)
+    //     // this.vis_ctx.program.setViewMat( modelview_mat  )
+    //     // this.vis_ctx.program.setProjMat( projection_mat )
+    //     // Log(`${fname} alpha, beta == ${this.cam_alpha_deg}, ${this.cam_beta_deg}`)
+    //     // Log(`${fname} old view == ${modelview_mat}`)
+    //     // Log(`${fname} old proj == ${projection_mat}`)
 
-        this.vis_ctx.camera.setViewport( new Viewport( sx, sy ) )
+    //     //this.vis_ctx.camera.setViewport( new Viewport( sx, sy ) )
 
-        // Log(`${fname} alpha, beta == ${this.vis_ctx.camera.alpha_deg}, ${this.vis_ctx.camera.beta_deg}`)
-        // Log(`${fname} camera view == ${this.vis_ctx.camera.view_mat}`)
-        // Log(`${fname} camera proj == ${this.vis_ctx.camera.proj_mat}`)
-        this.vis_ctx.camera.activate( this.vis_ctx )
+    //     // Log(`${fname} alpha, beta == ${this.vis_ctx.camera.alpha_deg}, ${this.vis_ctx.camera.beta_deg}`)
+    //     // Log(`${fname} camera view == ${this.vis_ctx.camera.view_mat}`)
+    //     // Log(`${fname} camera proj == ${this.vis_ctx.camera.proj_mat}`)
         
-        CheckGLError( gl )
-    }
+        
+    //     CheckGLError( gl )
+    // }
     // -------------------------------------------------------------------------------------------------
 
     /**
@@ -1142,12 +1148,12 @@ class WebGLCanvas
 
         //Log(`WebGLCanvas.drawFrame: redraws_count == ${redraws_count}`)
 
-        // retrive context and size
+        // retrive webgl context, shader program, viewport size
         let gl  = this.vis_ctx.getWglCtx(),
             pr  = this.vis_ctx.getProgram()
 
-        const sx = gl.drawingBufferWidth, 
-              sy = gl.drawingBufferHeight 
+        const sx = this.vis_ctx.camera.viewport.width,
+              sy = this.vis_ctx.camera.viewport.height
 
         if ( this.debug )
             console.log(`${fname} sx == ${sx}, sy == ${sy} `)
@@ -1171,8 +1177,8 @@ class WebGLCanvas
         // set default color (attribute location 1)
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
 
-        // set projection and modelview matrixes 
-        this.setModelviewProjection( gl, sx, sy )
+        // activate the current camera (sets projection and modelview matrixes in the shader prog)
+        this.vis_ctx.camera.activate( this.vis_ctx )
 
         // draw axes and grid (axes allways hide grid ....)
         this.drawGridXZ()

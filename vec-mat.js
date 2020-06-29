@@ -127,7 +127,7 @@ class Mat4 extends Float32Array
         }
         else if ( (typeof obj) == 'number' )
         {   
-            super( 16 )
+            super( 16 )        // creates a 'Float32Array' with 16 zeros
             this.fill( obj )   // fills with a number
         }
         else if ( Is4x4Array( obj ) )
@@ -167,6 +167,7 @@ class Mat4 extends Float32Array
             for( let col = 0 ; col<4 ; col++ )
                 for( let k = 0 ; k<4 ; k++ )
                     res[row + col*4] += this[row + k*4] * m[k + col*4]
+                    // ==> res(row,col) += this(row,k) * m(k,col)
         
         // optimized version (does it works?)
         // for( let row = 0 ; row<4 ; row++ )
@@ -178,6 +179,26 @@ class Mat4 extends Float32Array
         //         k4 += 4 
         //     }
 
+        return res
+    }
+    // -----------------------------------------
+
+    
+    /**
+     *  apply this matrix to a Vec3 and a floating value 'w' (the W coordinate of the Vec3)
+     * returns the resulting Vec3 vector
+     * @param   {Vec3}   v  -- x,y,z coordinates of vector or point
+     * @param   {Number} w  -- 0 (if 'v' is a free vector) or 1 (when 'v' is a point)
+     * @returns {Vec3}      -- resulting vector, after aplying this matrix to (v;w)
+     */
+    apply_to( v, w )
+    {
+        let res = new Vec3([ 0.0, 0.0, 0.0 ])
+
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
+                res[ row ]  +=  this[ row + col*4 ] * 
+                                ( (col < 3) ? org[ col ] : w )
         return res
     }
 }
@@ -215,6 +236,22 @@ function Mat4_Scale( v )
         [ 0,    0,    v[2], 0 ],
         [ 0,    0,    0,    1 ]
     ])
+}
+
+// ------------------------------------------------------------------------------------------------
+/**
+ * Returns the transpose of a matrix
+ * @param {Mat4} m -- original matrix to transpose
+ */
+function Mat4_Transpose( m )
+{
+    let res = new Float32Array( 16 ) // creates a 'Float32Array' with 16 zeros
+
+    for( row = 0 ; row < 4 ; row++ )
+        for( col = 0 ; col < 4 ; col++ )
+            res[ row + 4*col ] = m[ col + 4*row ]
+    
+    return new Mat4( res )
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -923,7 +923,7 @@ class WebGLCanvas
             
             if ( wgl_ver == 1 )
             {
-                if ( this.context.getExtension('OES_element_index_uint') == null )
+                if ( gl.getExtension('OES_element_index_uint') == null )
                 {
                     Log( `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device` )
                     this.vis_ctx.has_32bits_indexes = false // adding a property to a library class object here .... does it works???

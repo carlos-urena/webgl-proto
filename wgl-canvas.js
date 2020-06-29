@@ -66,8 +66,9 @@ class WebGLCanvas
         this.innerHTML          = `Tu navegador u ordendor parece no soportar <code>&lt;canvas&gt;</code>.<br/>
                                    <i>It looks like your browser or computer does not support <code>&lt;canvas&gt;</code> element.</i>`
         
-        // GPU Program (= vertex shader + fragment shader)
-        this.program = null 
+        // visualization context, and program
+        this.vis_ctx = new VisContext()
+        
 
         // objects to be drawn: 3d mesh used to test 'IndexedTriangleMesh' class  and 'loaded_object'
         this.test_3d_mesh  = null 
@@ -105,10 +106,10 @@ class WebGLCanvas
         this.parent_elem.appendChild( this.canvas_elem )
 
         // Create the WebGL context for this canvas, if it is not possible, return.
-        this.getWebGLContext() // assigns to 'this.context' and 'this.webgl_version'
+        this.getWebGLContext() // assigns to 'this.vis_ctx.wgl_ctx' and 'this.vis_ctx.wgl_ver'
 
         // Create GPU Program (= vertex shader + fragment shader)
-        this.program = new SimpleGPUProgram( this.context )
+        this.vis_ctx.program = new SimpleGPUProgram( this.vis_ctx.wgl_ctx )
 
         /// ADD Various event handlers
 
@@ -695,7 +696,7 @@ class WebGLCanvas
     imageFileDecoded( evt, file_list, image_file_index )
     {
         const fname = 'WebGLCanvas.imageFileDecoded():'
-        let   gl    = this.context,
+        let   gl    = this.vis_ctx.wgl_ctx,
               image = evt.target 
         const file  = file_list.item( image_file_index ) 
         
@@ -711,8 +712,6 @@ class WebGLCanvas
             internalFmt = gl.RGBA,   
             srcFmt      = gl.RGBA,      
             srcType     = gl.UNSIGNED_BYTE
-
-            
 
         // create, bind and fill the texture
         const texture = gl.createTexture()
@@ -879,30 +878,37 @@ class WebGLCanvas
         if ( this.debug && first )
             Log(`${fname} first call`)
 
-        this.try_webgl2 = true // set this to 'false' to debug WebGL 1 code on a WebGL 1 & 2 capable desktop browser
-        this.context    = null
+        let try_webgl2       = true // set this to 'false' to debug WebGL 1 code on a WebGL 1 & 2 capable desktop browser
+        
+        let gl               = null
+        let wgl_ver          = 0
+        this.vis_ctx.wgl_ctx = gl
+        this.vis_ctx.wgl_ver = wgl_ver
 
-        if ( this.try_webgl2 )
+        
+        if ( try_webgl2 )
         {
-            this.context = this.canvas_elem.getContext('webgl2')
-            if ( this.context === null )
+            gl = this.canvas_elem.getContext('webgl2')
+            if ( gl === null )
                 Log(`cannot have a webgl 2 canvas, will try web gl 1`)
             else 
-                this.webgl_version = 2
+                wgl_ver = 2
         }
-        if ( this.context === null )
+        if ( gl === null )
         {
-            this.context = this.canvas_elem.getContext('webgl')
-            if ( this.context === null )
+            gl = this.canvas_elem.getContext('webgl')
+            if ( gl === null )
             {   
                 const str = `${fname} unable to properly create a WebGL canvas on this device`
-                this.webgl_version = 0
                 Log(str) 
                 throw RangeError(str)
             }
             else
-                this.webgl_version = 1
+                wgl_ver = 1
         }
+
+        this.vis_ctx.wgl_ctx = gl 
+        this.vis_ctx.wgl_ver = wgl_ver 
 
         // enable 32 bits unsigned ints extension
         if ( first )
@@ -912,21 +918,20 @@ class WebGLCanvas
 
             this.showGLVersionInfo()
             
-            if ( this.webgl_version == 1 )
+            if ( wgl_ver == 1 )
             {
                 if ( this.context.getExtension('OES_element_index_uint') == null )
                 {
                     Log( `${fname} WARNING: recommended extension 'OES_element_index_uint' is not supported in this device` )
-                    this.context.has_32bits_indexes = false // adding a property to a library class object here .... does it works???
+                    this.vis_ctx.has_32bits_indexes = false // adding a property to a library class object here .... does it works???
                 }
                 else 
                 {
                     Log( `${fname} extension 'OES_element_index_uint' is available` )
-                    this.context.has_32bits_indexes = true 
+                    this.vis_ctx.has_32bits_indexes = true 
                 }
             }
-            
-            if ( this.webgl_version == 0 )
+            else if ( wgl_ver == 0 )
             {
                 const msg = `${fname} Unable to create a webgl canvas, neither ver 1 nor ver 2`
                 Log( msg )
@@ -958,7 +963,7 @@ class WebGLCanvas
         if ( info_div === null )
             return
 
-        if ( this.webgl_version == 0 )
+        if ( this.vis_ctx.wgl_ver == 0 )
         {
             info_div.innerHTML = "Error: unable to initialize WebGL properly."
             return 
@@ -966,7 +971,7 @@ class WebGLCanvas
 
         // gather info
         let 
-            gl         = this.context, 
+            gl         = this.vis_ctx.wgl_ctx, 
             ctx_class  = gl.constructor.name,
             gl_vendor  = gl.getParameter(gl.VENDOR),
             gl_version = gl.getParameter(gl.VERSION)
@@ -1009,7 +1014,7 @@ class WebGLCanvas
     drawAxes()
     {
         const fname = 'WebGLCanvas.drawAxes():'
-        let gl      = this.context
+        let gl      = this.vis_ctx.wgl_ctx
         
         
        if ( x_axe == null )
@@ -1030,8 +1035,8 @@ class WebGLCanvas
     {
         this.debug  = false
         const fname = 'WebGLCanvas.drawGrid():'
-        let gl      = this.context
-        let p       = this.program
+        let gl      = this.vis_ctx.wgl_ctx
+        let pr      = this.vis_ctx.program
         
         
         // create the X parallel line and the Z parallel lines
@@ -1056,23 +1061,23 @@ class WebGLCanvas
 
         gl.vertexAttrib3f( 1,  0.5,0.5,0.5 )
 
-        p.pushMM()
-            p.compMM( t )
-            p.compMM( s )  
+        pr.pushMM()
+            pr.compMM( t )
+            pr.compMM( s )  
             for( let i = 0 ; i <= n ; i++)
             {   x_line.draw( gl, gl.LINES )
-                p.compMM( tz )
+                pr.compMM( tz )
             }
-        p.popMM()
+        pr.popMM()
         
-        p.pushMM()
-            p.compMM( t )
-            p.compMM( s )  
+        pr.pushMM()
+            pr.compMM( t )
+            pr.compMM( s )  
             for( let i = 0 ; i <= n ; i++)
             {   z_line.draw( gl, gl.LINES )
-                p.compMM( tx )
+                pr.compMM( tx )
             }
-        p.popMM()        
+        pr.popMM()        
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -1099,8 +1104,8 @@ class WebGLCanvas
             modelview_mat  = transl_mat.compose( rotation_mat ),
             projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
 
-        this.program.setViewMat( modelview_mat  )
-        this.program.setProjMat( projection_mat )
+        this.vis_ctx.program.setViewMat( modelview_mat  )
+        this.vis_ctx.program.setProjMat( projection_mat )
 
         CheckGLError( gl )
     }
@@ -1124,8 +1129,8 @@ class WebGLCanvas
         //Log(`WebGLCanvas.drawFrame: redraws_count == ${redraws_count}`)
 
         // retrive context and size
-        let gl   = this.context,
-            pr   = this.program
+        let gl  = this.vis_ctx.getWglCtx(),
+            pr  = this.vis_ctx.getProgram()
 
         const sx = gl.drawingBufferWidth, 
               sy = gl.drawingBufferHeight 
@@ -1200,7 +1205,7 @@ class WebGLCanvas
 
                 pr.pushMM()
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                    this.test_3d_mesh.draw( gl )
+                    this.test_3d_mesh.draw( this.vis_ctx )
                 pr.popMM()
             }
             else
@@ -1228,7 +1233,7 @@ class WebGLCanvas
                 pr.pushMM()
                     
                     pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                    this.loaded_object.draw( gl )
+                    this.loaded_object.draw( this.vis_ctx )
                 pr.popMM()
             }
 

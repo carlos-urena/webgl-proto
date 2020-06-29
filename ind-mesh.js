@@ -79,7 +79,7 @@ function MergeBBoxes( bbox1, bbox2 )
  * Normalizes vertex coordinates
  * @param {Float32array} coords_data -- (x,y,z) coordintes data 
  */
-function NormalizeCoords( coords_data )
+function NormalizeCoords( bbox, coords_data )
 {
     const fname = `NormalizeCoords():`
     CheckType( coords_data, 'Float32Array')
@@ -87,7 +87,7 @@ function NormalizeCoords( coords_data )
     Check( num_verts*3 === coords_data.length) 
 
     // normalize coordinates to -1 to +1 
-    let   bbox   = ComputeBBox( coords_data )
+    //let   bbox   = ComputeBBox( coords_data )
     const maxdim = Math.max( bbox.xmax-bbox.xmin, bbox.ymax-bbox.ymin, bbox.zmax-bbox.zmin ),
           center = [ 0.5*(bbox.xmax+bbox.xmin), 0.5*(bbox.ymax+bbox.ymin), 0.5*(bbox.zmax+bbox.zmin) ],
           scale  = 2.0/maxdim
@@ -112,7 +112,7 @@ function NormalizeCoords( coords_data )
  * A class for an indexed triangles mesh
  */
 
-class IndexedTrianglesMesh
+class IndexedTrianglesMesh extends DrawableObject
 {
     // ----------------------------------------------------------------------------------
 
@@ -122,9 +122,16 @@ class IndexedTrianglesMesh
      * @param {Float32Array} coords_data    -- vertex coordinates (length must be multiple of 3) 
      * @param {Uint32Data}   triangles_data -- vertex indexes for each triangle (length must be multiple of 3)
      */
-    constructor( coords_data, triangles_data )
+    constructor( coords_data, triangles_data, options )
     {
-        const fname = `Mesh.constructor():`
+        const fname = `IndexedTriangleMesh.constructor():`
+
+        super( { name: 'triangle mesh' } )
+
+        Log(`${fname} options == ${options}`)
+
+        if ( options != null && name in options )
+            this.setName( options.name )
 
         if ( coords_data == null && triangles_data == null )
         {
@@ -233,12 +240,22 @@ class IndexedTrianglesMesh
     }
     // ----------------------------------------------------------------------------------
 
-    draw( gl )
+    /**
+     * Draws this object using WebGL commands onto the webgl rendering context 'vis_ctx.wgl_ctx'
+     * @param {VisContext} vis_ctx 
+     */
+    draw( vis_ctx )
     {
         Check( this.n_verts >  0 )   // fails if this is an empty mesh...
+        const gl = vis_ctx.wgl_ctx
         this.vertex_array.draw( gl, gl.TRIANGLES )
     }
     // ----------------------------------------------------------------------------------
+    normalizeCoords( bbox )
+    {
+        // normalize coordinates to the bounding box
+        NormalizeCoords( bbox, this.coords_data )
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -474,6 +491,9 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
             Log(`${fname} including normals data in the mesh`)
         }
 
+        // normalize vertex positions
+        this.normalizeCoords( ComputeBBox( this.coords_data ) )
+
         if ( this.texcoo_data != null )
         {
             // create a vertex color pattern from texture coordinates, just to  debug texture coordinates
@@ -529,12 +549,15 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
             Log(`${fname} OBJ parse error`)
             Log(`${fname} ${parser.parse_message}`)
             Log(`${fname} ${parser.parse_message_line}`)
-            alert( `Parse error:\n ${parser.parse_message}\n Line: ${parser.parse_message_line}\n` )
+            alert( `Parse error:\n ${parser.parse_message}\n ${parser.parse_message_line}\n` )
             return
         }
         Log(`${fname} multimesh parsed ok, creating meshes ...`)
 
         this.meshes = []
+
+        let normalize = true 
+        let bbox      = null 
 
         for( let group of parser.groups )
         {
@@ -549,10 +572,17 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
                 mesh.setTexCooData( group.texcoo_data )
             }
             this.meshes.push( mesh )
+
+            if ( normalize )
+                bbox = ( bbox == null ) ? ComputeBBox( group.coords_data )
+                                        : MergeBBoxes( bbox, ComputeBBox( group.coords_data ))
         }
         Log(`${fname} END (multimesh created ok)`)
-        
 
+        if ( normalize )
+            for( let mesh of this.meshes )
+                mesh.normalizeCoords( bbox )
+        
         //super( parser.coords_data, parser.triangles_data )
         
     }

@@ -435,9 +435,6 @@ class PLYParser
         if ( ! this.parse_ok ) return
         this.parse_ok = false
 
-        // normalize coordinates between -1 and +1 (optional...)
-        NormalizeCoords( this.coords_data )
-
         // done
         this.parse_ok = true 
     }

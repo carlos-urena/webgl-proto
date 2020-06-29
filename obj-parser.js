@@ -274,8 +274,7 @@ class OBJParser
                 group.triangles_data[ 3*it+j ] = iv 
             }
 
-            bbox = ( bbox == null ) ? ComputeBBox( group.coords_data )
-                                    : MergeBBoxes( bbox, ComputeBBox( group.coords_data ))
+           
 
             // remove no longer used arrays ( can be very large )
             delete group.out_coords
@@ -284,7 +283,7 @@ class OBJParser
         }
 
         // normalize 
-        let normalize = true 
+        let normalize = false 
         if ( normalize )
         {
             const 

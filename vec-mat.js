@@ -198,7 +198,7 @@ class Mat4 extends Float32Array
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 4 ; col++ )
                 res[ row ]  +=  this[ row + col*4 ] * 
-                                ( (col < 3) ? org[ col ] : w )
+                                ( (col < 3) ? v[ col ] : w )
         return res
     }
 }

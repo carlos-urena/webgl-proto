@@ -1,18 +1,6 @@
 
 var redraws_count = 0
 
-// vertex sequences for the grid lines
-
-var x_line  = null,
-    z_line  = null
-
-// vertex sequences for the axes
-
-var x_axe   = null,
-    y_axe   = null, 
-    z_axe   = null 
-
-
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
 
@@ -112,6 +100,9 @@ class WebGLCanvas
         // Create the camera 
         this.vis_ctx.camera = new OrbitalCamera()
 
+        // set of rays for debugging
+        this.debug_rays = []
+
         /// ADD Various event handlers
 
         // prevent the context menu from appearing, typically after a right click
@@ -122,6 +113,8 @@ class WebGLCanvas
         this.canvas_elem.addEventListener( 'mouseup',   e => this.mouseUp(e), true )
         this.canvas_elem.addEventListener( 'mousemove', e => this.mouseMove(e), true )
         this.canvas_elem.addEventListener( 'wheel',     e => this.mouseWheel(e), true )
+
+        this.canvas_elem.addEventListener( 'click',     e => this.mouseClick(e), true )
 
         // for clog...
         this.clog_span = null
@@ -166,6 +159,37 @@ class WebGLCanvas
         if ( this.clog_span == null )
             return
         this.clog_span.innerHTML = msg
+    }
+    // -------------
+    addRay( ray )
+    {
+        const x0 = ray.org,
+              x1 = ray.org.plus( ray.dir )
+        
+        this.debug_rays.push( { start_pnt: x0, end_pnt: x1, vertex_arr: null })
+        this.drawFrame()
+        
+    }
+    drawRays()
+    {
+        let gl = this.vis_ctx.wgl_ctx,
+            pr = this.vis_ctx.program
+
+        gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+        pr.doShading( false )
+        pr.useTexture( null )
+        
+        for( let ray of this.debug_rays )
+        {
+            if ( ray.vertex_arr == null )
+            {
+                const a = ray.start_pnt,
+                      b = ray.end_pnt
+                ray.vertex_arr = new VertexArray( 0, 3, 
+                        new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
+            }
+            ray.vertex_arr.draw(gl, gl.LINES )
+        }
     }
     // -------------------------------------------------------------------------------------------------
     helpButtonClicked( evt )
@@ -242,6 +266,7 @@ class WebGLCanvas
         }
         return true
     }
+    
     // -------------------------------------------------------------------------------------------------
     /**
      * Called right after the mouse has moved through the canvas
@@ -287,6 +312,36 @@ class WebGLCanvas
         this.drawFrame()
         
         return false
+    }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * Called right after a click has been done over the canvas (left button)
+     * @param {MouseEvent} mevent -- mouse event created by the browser
+     */
+    mouseClick( mevent )
+    {
+        mevent.stopImmediatePropagation() // neccesary? improves performance?
+        mevent.preventDefault() // prevent default treatment of mouse up event
+
+        const fname = 'WebGLCanvas.mouseClick(): '
+        CheckType( mevent, 'MouseEvent' )
+        Log(`${fname} begins, button == ${mevent.button}`)
+        
+        const rect  = this.canvas_elem.getBoundingClientRect(),
+              siz_x = rect.right - rect.left,
+              siz_y = rect.bottom - rect.top,
+              pix_x = mevent.clientX - rect.left,
+              pix_y = Math.floor(mevent.clientY - rect.top),
+              gl = this.vis_ctx.getWglCtx(),
+              gl_sx = gl.drawingBufferWidth, 
+              gl_sy = gl.drawingBufferHeight 
+        
+        Log(`${fname} rect size x == ${siz_x}, size y == ${siz_y}`)
+        Log(`${fname} gl   size x == ${gl_sx}, size y == ${gl_sy}`)
+        Log(`${fname} pix  posi x == ${pix_x}, posi y == ${pix_y}`)
+
+        const ray = this.vis_ctx.camera.genRay( pix_x, pix_y )
+        this.addRay( ray )
     }
     // -------------------------------------------------------------------------------------------------
     /**
@@ -1126,6 +1181,9 @@ class WebGLCanvas
             }
 
         pr.popMM()
+
+        // debug
+        this.drawRays()
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

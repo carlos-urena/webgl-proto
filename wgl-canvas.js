@@ -111,6 +111,9 @@ class WebGLCanvas
         // Create GPU Program (= vertex shader + fragment shader)
         this.vis_ctx.program = new SimpleGPUProgram( this.vis_ctx.wgl_ctx )
 
+        // Create the camera 
+        this.vis_ctx.camera = new OrbitalCamera()
+
         /// ADD Various event handlers
 
         // prevent the context menu from appearing, typically after a right click

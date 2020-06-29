@@ -285,8 +285,10 @@ class WebGLCanvas
         }
         else
         {
-            this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
-            this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
+            this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -400, +400 )
+            this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -88,  +88  )
+
+            this.vis_ctx.camera.moveHV( dx, dy )
         
             if ( this.debug )
                 Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)

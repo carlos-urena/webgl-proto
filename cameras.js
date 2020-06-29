@@ -52,7 +52,12 @@ class Camera
         this.viewport = new_viewport
         this.updateProjMat()
     }
-
+    moveHV( dx, dy )
+    {
+        this.alpha_deg = Trunc( this.alpha_deg - dx*0.20, -400, +400 )
+        this.beta_deg  = Trunc( this.beta_deg  + dy*0.10, -88,  +88  )
+        this.updateViewMat()
+    }
     /**
      * Activate a camera in a visualization context
      * @param {VisContext} vct -- visualization context

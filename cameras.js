@@ -64,9 +64,8 @@ class Camera
      */
     activate( vis_ctx )
     {
-        vis_ctx.curr_camera = this
-
-
+        vis_ctx.program.setViewMat( this.view_mat  )
+        vis_ctx.program.setProjMat( this.proj_mat )
     }
 }
 

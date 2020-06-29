@@ -288,7 +288,7 @@ class WebGLCanvas
             this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -400, +400 )
             this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -88,  +88  )
 
-            this.vis_ctx.camera.moveHV( dx, dy )
+            this.vis_ctx.camera.moveXY( dx, dy )
         
             if ( this.debug )
                 Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
@@ -315,6 +315,8 @@ class WebGLCanvas
         
         const fac = 0.002
         this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
+        
+        this.vis_ctx.camera.moveZ( wevent.deltaY )
         
         // redraw:
         this.drawFrame()
@@ -1097,21 +1099,32 @@ class WebGLCanvas
         {
             Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
         }
-        const 
-            fovy_deg       = 60.0,
-            ratio_vp       = sy/sx,
-            near           = 0.05,
-            far            = near+1000.0,
-            transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
-            rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
-            roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
-            rotation_mat   = rotx_mat.compose( roty_mat ),
-            modelview_mat  = transl_mat.compose( rotation_mat ),
-            projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
+        
+        // const 
+        //     fovy_deg       = 60.0,
+        //     ratio_vp       = sy/sx,
+        //     near           = 0.05,
+        //     far            = near+1000.0,
+        //     transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
+        //     rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
+        //     roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
+        //     rotation_mat   = rotx_mat.compose( roty_mat ),
+        //     modelview_mat  = transl_mat.compose( rotation_mat ),
+        //     projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
 
-        this.vis_ctx.program.setViewMat( modelview_mat  )
-        this.vis_ctx.program.setProjMat( projection_mat )
+        // this.vis_ctx.program.setViewMat( modelview_mat  )
+        // this.vis_ctx.program.setProjMat( projection_mat )
+        // Log(`${fname} alpha, beta == ${this.cam_alpha_deg}, ${this.cam_beta_deg}`)
+        // Log(`${fname} old view == ${modelview_mat}`)
+        // Log(`${fname} old proj == ${projection_mat}`)
 
+        this.vis_ctx.camera.setViewport( new Viewport( sx, sy ) )
+
+        // Log(`${fname} alpha, beta == ${this.vis_ctx.camera.alpha_deg}, ${this.vis_ctx.camera.beta_deg}`)
+        // Log(`${fname} camera view == ${this.vis_ctx.camera.view_mat}`)
+        // Log(`${fname} camera proj == ${this.vis_ctx.camera.proj_mat}`)
+        this.vis_ctx.camera.activate( this.vis_ctx )
+        
         CheckGLError( gl )
     }
     // -------------------------------------------------------------------------------------------------

@@ -13,10 +13,9 @@
 // A class whose intances hold viewport dimensions
 class Viewport 
 {
-    constructor( opts )
+    constructor( initial_width, initial_height )
     {
-        if ( opts == null )
-            this.setDimensions( 256, 256 )
+        this.setDimensions( initial_width, initial_height )
     }
     
     setDimensions( new_width, new_height )
@@ -43,7 +42,7 @@ class Camera
         this.view_mat      = Mat4_Identity()
         this.view_mat_inv  = Mat4_Identity()
         this.proj_mat      = Mat4_Identity()
-        this.viewport      = new Viewport( null )
+        this.viewport      = new Viewport( 256, 256 )
     }
 
     setViewport( new_viewport )
@@ -52,12 +51,7 @@ class Camera
         this.viewport = new_viewport
         this.updateProjMat()
     }
-    moveHV( dx, dy )
-    {
-        this.alpha_deg = Trunc( this.alpha_deg - dx*0.20, -400, +400 )
-        this.beta_deg  = Trunc( this.beta_deg  + dy*0.10, -88,  +88  )
-        this.updateViewMat()
-    }
+    
     /**
      * Activate a camera in a visualization context
      * @param {VisContext} vct -- visualization context
@@ -102,12 +96,13 @@ class OrbitalCamera extends Camera
             rotx_mat         = Mat4_RotationXdeg( this.beta_deg ),
             roty_mat         = Mat4_RotationYdeg( -this.alpha_deg ),
             rot_mat          = rotx_mat.compose( roty_mat ),
-            transl_mat       = Mat4_Translate([0,0,-this.cam_dist]),
-
+            transl_mat       = Mat4_Translate([0,0,-this.dist])
+        
+        const 
             rotx_mat_inv     = Mat4_RotationXdeg( -this.beta_deg ),
             roty_mat_inv     = Mat4_RotationYdeg( this.alpha_deg ),
             rot_mat_inv      = roty_mat_inv.compose( rotx_mat_inv ),
-            transl_mat_inv   = Mat4_Translate([0,0, this.cam_dist])
+            transl_mat_inv   = Mat4_Translate([0,0, this.dist])
 
         this.view_mat     = transl_mat.compose( rot_mat )
         this.view_mat_inv = rot_mat_inv.compose( transl_mat_inv )
@@ -115,9 +110,20 @@ class OrbitalCamera extends Camera
 
     updateProjMat()
     {
-        const fname = 'OrbitalCamera.updateProjMat():'
-        Log(`${fname} ${this.fovy_deg} ${this.viewport.ratio_yx} ${this.near} ${this.far }`)
         this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
+    }
+
+    moveXY( dx, dy )
+    {
+        this.alpha_deg = Trunc( this.alpha_deg - dx*0.20, -400, +400 )
+        this.beta_deg  = Trunc( this.beta_deg  + dy*0.10, -88,  +88  )
+        this.updateViewMat()
+    }
+    moveZ ( dz )
+    {
+        const fac = 0.002
+        this.dist = Trunc( this.dist + fac*dz, 0.01, 50.0 )
+        this.updateViewMat()
     }
 }
 // -------------------------------------------------------------------------------------------------

@@ -380,7 +380,7 @@ class WebGLCanvas
         this.prev_touch_pos_y = tch.screenY
 
         msg = msg+`, DX = ${dx}, DY = ${dy} --> redraw`
-        //this.cLog(msg)
+        this.cLog(msg)
 
         // update camera params
         //this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )

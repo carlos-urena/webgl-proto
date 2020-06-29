@@ -87,12 +87,6 @@ class WebGLCanvas
         this.loaded_object  = null
         this.loading_object = false 
 
-        // initialize (alpha,beta) angles and 'dist' for interactive camera control
-        // (all this will be moved out to a proper 'Camera' class)
-        // this.cam_alpha_deg = 35.0
-        // this.cam_beta_deg  = 20.0
-        // this.cam_dist      = 2.0
-
         // initialize object angles and scale 
         this.scene_alpha_deg = 0.0
         this.scene_beta_deg  = 0.0
@@ -1089,46 +1083,6 @@ class WebGLCanvas
         pr.popMM()        
     }
 
-    // -------------------------------------------------------------------------------------------------
-    
-    // setModelviewProjection( gl, sx, sy )
-    // {
-    //     CheckGLError( gl )
-        
-    //     const fname = 'setModelviewProjection():'
-
-    //     if ( this.debug )
-    //     {
-    //         Log(`${fname} alpha ==${this.cam_alpha_deg}, beta == ${this.cam_beta_deg}`)
-    //     }
-        
-    //     // const 
-    //     //     fovy_deg       = 60.0,
-    //     //     ratio_vp       = sy/sx,
-    //     //     near           = 0.05,
-    //     //     far            = near+1000.0,
-    //     //     transl_mat     = Mat4_Translate([0,0,-this.cam_dist]),
-    //     //     rotx_mat       = Mat4_RotationXdeg( this.cam_beta_deg ),
-    //     //     roty_mat       = Mat4_RotationYdeg( -this.cam_alpha_deg ),
-    //     //     rotation_mat   = rotx_mat.compose( roty_mat ),
-    //     //     modelview_mat  = transl_mat.compose( rotation_mat ),
-    //     //     projection_mat = Mat4_Perspective( fovy_deg, ratio_vp, near, far )
-
-    //     // this.vis_ctx.program.setViewMat( modelview_mat  )
-    //     // this.vis_ctx.program.setProjMat( projection_mat )
-    //     // Log(`${fname} alpha, beta == ${this.cam_alpha_deg}, ${this.cam_beta_deg}`)
-    //     // Log(`${fname} old view == ${modelview_mat}`)
-    //     // Log(`${fname} old proj == ${projection_mat}`)
-
-    //     //this.vis_ctx.camera.setViewport( new Viewport( sx, sy ) )
-
-    //     // Log(`${fname} alpha, beta == ${this.vis_ctx.camera.alpha_deg}, ${this.vis_ctx.camera.beta_deg}`)
-    //     // Log(`${fname} camera view == ${this.vis_ctx.camera.view_mat}`)
-    //     // Log(`${fname} camera proj == ${this.vis_ctx.camera.proj_mat}`)
-        
-        
-    //     CheckGLError( gl )
-    // }
     // -------------------------------------------------------------------------------------------------
 
     /**

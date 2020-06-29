@@ -92,6 +92,10 @@ class WebGLCanvas
         this.scene_beta_deg  = 0.0
         this.scene_scale     = 1.0
 
+        // create the grid and axes drawable objects
+        this.gridXZ = new GridLinesXZ()
+        this.axes   = new Axes()
+
         // get canvas button elements
         this.help_button = BuscarElemId('help_button_id')
         this.log_button  = BuscarElemId('log_button_id')
@@ -995,96 +999,6 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
 
-    // /** handles an event
-    //  * 
-    //  */
-    // handleEvent( event )
-    // {
-    //     if ( event.constructor.name != 'MouseEvent' )
-    //         return 
-
-    //     if ( event.type != 'mousedown')
-    //         return
-
-    //     const fname = `WebGLCanvas.handleEvent():`
-    //     Log(`${fname} begins`)
-    //     Log(`${fname} event type  == ${event.type}`)
-    //     Log(`${fname} button      == ${event.button}`)
-    //     Log(`${fname} ends`)
-    // }
-    // -------------------------------------------------------------------------------------------------
-
-    drawAxes()
-    {
-        const fname = 'WebGLCanvas.drawAxes():'
-        let gl      = this.vis_ctx.wgl_ctx
-        
-        
-       if ( x_axe == null )
-       {
-           if ( this.debug )
-            Log(`${fname} creating axes`)
-            x_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 1,0,0 ]))
-            y_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
-            z_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
-       } 
-       gl.vertexAttrib3f( 1, 1.0, 0.1, 0.1 ) ; x_axe.draw( gl, gl.LINES )
-       gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; y_axe.draw( gl, gl.LINES )
-       gl.vertexAttrib3f( 1, 0.1, 0.8, 1.0 ) ; z_axe.draw( gl, gl.LINES )
-    }
-    // -------------------------------------------------------------------------------------------------
-
-    drawGridXZ()
-    {
-        this.debug  = false
-        const fname = 'WebGLCanvas.drawGrid():'
-        let gl      = this.vis_ctx.wgl_ctx
-        let pr      = this.vis_ctx.program
-        
-        
-        // create the X parallel line and the Z parallel lines
-        if ( x_line == null || z_line == null )
-        {
-            if ( this.debug )
-               Log(`${fname} creating lines`)
-            
-            const h = -0.003
-            x_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
-            z_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
-        } 
-
-        // draw the lines
-        const from = -2.0, // grid extension in X and Z: lower limit
-              to   = +2.0, // grid extension in X and Z: upper limit
-              n    = 40,
-              t    = Mat4_Translate([ from, 0, from ]),
-              s    = Mat4_Scale    ([ to-from, 1, to-from ]),
-              tz   = Mat4_Translate([ 0,   0, 1/n ]),
-              tx   = Mat4_Translate([ 1/n, 0, 0   ])
-
-        gl.vertexAttrib3f( 1,  0.5,0.5,0.5 )
-
-        pr.pushMM()
-            pr.compMM( t )
-            pr.compMM( s )  
-            for( let i = 0 ; i <= n ; i++)
-            {   x_line.draw( gl, gl.LINES )
-                pr.compMM( tz )
-            }
-        pr.popMM()
-        
-        pr.pushMM()
-            pr.compMM( t )
-            pr.compMM( s )  
-            for( let i = 0 ; i <= n ; i++)
-            {   z_line.draw( gl, gl.LINES )
-                pr.compMM( tx )
-            }
-        pr.popMM()        
-    }
-
-    // -------------------------------------------------------------------------------------------------
-
     /**
      * Draws a frame into the context and issues a 'gl.flush()' call at the end
      */
@@ -1135,8 +1049,8 @@ class WebGLCanvas
         this.vis_ctx.camera.activate( this.vis_ctx )
 
         // draw axes and grid (axes allways hide grid ....)
-        this.drawGridXZ()
-        this.drawAxes()
+        this.gridXZ.draw( this.vis_ctx )
+        this.axes.draw( this.vis_ctx )
 
         pr.pushMM()
 

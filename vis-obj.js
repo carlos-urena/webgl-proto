@@ -100,3 +100,91 @@ class DrawableObject
     }
 }
 // ---------------------------------------------------------------------------------------------
+
+class GridLinesXZ extends DrawableObject
+{
+    constructor()
+    {
+        super({ name: "grid lines" })
+        this.x_line = null 
+        this.z_line = null
+    }
+
+    draw( vis_ctx )
+    {
+        let gl = vis_ctx.wgl_ctx
+        let pr = vis_ctx.program
+        
+        // create the X parallel line and the Z parallel line
+        if ( this.x_line == null || this.z_line == null )
+        {
+            const h = -0.003
+            this.x_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 1,h,0 ]))
+            this.z_line = new VertexArray( 0, 3, new Float32Array([ 0,h,0, 0,h,1 ]))
+        } 
+
+        // draw the lines
+        const from = -2.0, // grid extension in X and Z: lower limit
+              to   = +2.0, // grid extension in X and Z: upper limit
+              n    = 40,
+              t    = Mat4_Translate([ from, 0, from ]),
+              s    = Mat4_Scale    ([ to-from, 1, to-from ]),
+              tz   = Mat4_Translate([ 0,   0, 1/n ]),
+              tx   = Mat4_Translate([ 1/n, 0, 0   ])
+
+        gl.vertexAttrib3f( 1,  0.5,0.5,0.5 )
+
+        pr.pushMM()
+            
+            pr.compMM( t )
+            pr.compMM( s )  
+            
+            pr.pushMM()      
+                for( let i = 0 ; i <= n ; i++)
+                {   this.x_line.draw( gl, gl.LINES )
+                    pr.compMM( tz )
+                }
+            pr.popMM()    
+            
+            pr.pushMM()  
+                for( let i = 0 ; i <= n ; i++)
+                {   this.z_line.draw( gl, gl.LINES )
+                    pr.compMM( tx )
+                }
+            pr.popMM()
+            
+        pr.popMM()        
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+
+class Axes extends DrawableObject
+{
+    constructor()
+    {
+        super({ name: "axes" })
+
+        this.x_axe = null 
+        this.y_axe = null 
+        this.z_axe = null 
+    }
+
+
+    draw( vis_ctx )
+    {
+        const fname = 'Axes.draw():'
+        let gl      = vis_ctx.wgl_ctx
+        
+        if ( this.x_axe == null )
+        {    
+            this.x_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 1,0,0 ]))
+            this.y_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,1,0 ]))
+            this.z_axe = new VertexArray( 0, 3, new Float32Array([ 0,0,0, 0,0,1 ]))
+        } 
+
+       gl.vertexAttrib3f( 1, 1.0, 0.1, 0.1 ) ; this.x_axe.draw( gl, gl.LINES )
+       gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; this.y_axe.draw( gl, gl.LINES )
+       gl.vertexAttrib3f( 1, 0.1, 0.8, 1.0 ) ; this.z_axe.draw( gl, gl.LINES )
+    }
+}

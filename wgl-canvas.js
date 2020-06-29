@@ -89,9 +89,9 @@ class WebGLCanvas
 
         // initialize (alpha,beta) angles and 'dist' for interactive camera control
         // (all this will be moved out to a proper 'Camera' class)
-        this.cam_alpha_deg = 35.0
-        this.cam_beta_deg  = 20.0
-        this.cam_dist      = 2.0
+        // this.cam_alpha_deg = 35.0
+        // this.cam_beta_deg  = 20.0
+        // this.cam_dist      = 2.0
 
         // initialize object angles and scale 
         this.scene_alpha_deg = 0.0
@@ -272,26 +272,18 @@ class WebGLCanvas
         this.drag_prev_pos_x = drag_cur_pos_x
         this.drag_prev_pos_y = drag_cur_pos_y
 
-        if ( this.debug )
-            Log(`${fname} dx,dy == (${dx},${dy})`)
-
         // update camera parameters
 
         if ( mevent.altKey )
         {
             this.scene_alpha_deg = Trunc( this.scene_alpha_deg - dx*0.20, -180, +180 )
             this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -85,  +85  )
-            //Log(`${fname} SCENE alpha,beta == (${this.scene_alpha_deg.toPrecision(5)},${this.scene_beta_deg.toPrecision(5)})`)
         }
         else
         {
-            this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -400, +400 )
-            this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -88,  +88  )
-
-            this.vis_ctx.camera.moveXY( dx, dy )
-        
-            if ( this.debug )
-                Log(`${fname} alpha,beta == (${this.cam_alpha_deg.toPrecision(5)},${this.cam_beta_deg.toPrecision(5)})`)
+            const facx = -0.2,
+                  facy = 0.1
+            this.vis_ctx.camera.moveXY( facx*dx, facy*dy )
         }
         // redraw:
         this.drawFrame()
@@ -313,10 +305,11 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.mouseWheel():'
         CheckType( wevent, 'WheelEvent' )
         
-        const fac = 0.002
-        this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
+        // const fac = 0.002
+        // this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
         
-        this.vis_ctx.camera.moveZ( wevent.deltaY )
+        const fac = 0.002
+        this.vis_ctx.camera.moveZ( fac*wevent.deltaY )
         
         // redraw:
         this.drawFrame()
@@ -390,8 +383,11 @@ class WebGLCanvas
         //this.cLog(msg)
 
         // update camera params
-        this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
-        this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
+        //this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
+        //this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
+        const facx = -0.2,
+              facy = 0.1
+        this.vis_ctx.camera.moveXY( facx*dx, facy*dy )
 
         // redraw:
         this.drawFrame()

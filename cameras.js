@@ -89,7 +89,6 @@ class OrbitalCamera extends Camera
         this.updateViewMat() // computes  x_axis, y_axis, z_axis, and...
         this.updateProjMat()
     }
-
     updateViewMat()
     {
         const 
@@ -107,22 +106,19 @@ class OrbitalCamera extends Camera
         this.view_mat     = transl_mat.compose( rot_mat )
         this.view_mat_inv = rot_mat_inv.compose( transl_mat_inv )
     }
-
     updateProjMat()
     {
         this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
     }
-
-    moveXY( dx, dy )
+    moveXY( dx_deg, dy_deg )
     {
-        this.alpha_deg = Trunc( this.alpha_deg - dx*0.20, -400, +400 )
-        this.beta_deg  = Trunc( this.beta_deg  + dy*0.10, -88,  +88  )
+        this.alpha_deg = Trunc( this.alpha_deg + dx_deg, -400, +400 )
+        this.beta_deg  = Trunc( this.beta_deg  + dy_deg, -88,  +88  )
         this.updateViewMat()
     }
     moveZ ( dz )
     {
-        const fac = 0.002
-        this.dist = Trunc( this.dist + fac*dz, 0.01, 50.0 )
+        this.dist = Trunc( this.dist + dz, 0.01, 50.0 )
         this.updateViewMat()
     }
 }

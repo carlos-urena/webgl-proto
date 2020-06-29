@@ -43,6 +43,12 @@ class Camera
         this.view_mat_inv  = Mat4_Identity()
         this.proj_mat      = Mat4_Identity()
         this.viewport      = new Viewport( 256, 256 )
+
+        this.near     = 0.05, 
+        this.far      = this.near+1000.0
+        this.fovy_deg = 60.0
+
+        this.updateProjMat()
     }
 
     setViewport( new_viewport )
@@ -62,7 +68,13 @@ class Camera
         vis_ctx.program.setProjMat( this.proj_mat )
     }
 
-    // derived classes must implement: updateProjMat, 
+    /**
+     * updates 'proj_mat' from 'fovy_deg', 'viewport', 'near', 'far'
+     */
+    updateProjMat()
+    {
+        this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
+    }
 }
 
 
@@ -79,9 +91,7 @@ class OrbitalCamera extends Camera
         this.look_at_pnt   = new Vec3([ 0, 0,  0 ])
         this.obs_pnt       = new Vec3([ 0, 0,  1 ])
 
-        this.near     = 0.05, 
-        this.far      = this.near+1000.0
-        this.fovy_deg = 60.0
+        
 
         this.view_vec     = (this.obs_pnt.minus( this.look_at_pnt )).normalized()
         this.alpha_deg    = 35.0
@@ -89,7 +99,7 @@ class OrbitalCamera extends Camera
         this.dist         = 2.0
         
         this.updateViewMat() // computes  x_axis, y_axis, z_axis, and...
-        this.updateProjMat()
+        
     }
     updateViewMat()
     {
@@ -108,10 +118,7 @@ class OrbitalCamera extends Camera
         this.view_mat     = transl_mat.compose( rot_mat )
         this.view_mat_inv = rot_mat_inv.compose( transl_mat_inv )
     }
-    updateProjMat()
-    {
-        this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
-    }
+    
     moveXY( dx_deg, dy_deg )
     {
         this.alpha_deg = Trunc( this.alpha_deg + dx_deg, -400, +400 )

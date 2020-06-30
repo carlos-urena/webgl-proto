@@ -103,7 +103,7 @@ function Is4x4Array( obj )
 /**
  * Class 'Mat4'
  * A 'Mat4' object is a 'Float32Array' object with 16 numbers, stored by using column-major order,
- * suited for WebGL apps.
+ * suited for WebGL apps. This means the value at row 'row' and column 'col' is at index 'col+4*row'
  */
 class Mat4 extends Float32Array 
 {
@@ -182,8 +182,6 @@ class Mat4 extends Float32Array
         return res
     }
     // -----------------------------------------
-
-    
     /**
      *  apply this matrix to a Vec3 and a floating value 'w' (the W coordinate of the Vec3)
      * returns the resulting Vec3 vector
@@ -200,6 +198,78 @@ class Mat4 extends Float32Array
                 res[ row ]  +=  this[ row + col*4 ] * 
                                 ( (col < 3) ? v[ col ] : w )
         return res
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * Returns the transpose of this matrix
+     * @returns {Mat4} -- transpose of this matrix
+     */
+    transposed(  )
+    {
+        let res = new Mat4( 0.0 ) // creates a 4x4 matrix, filled with zeros
+
+        for( row = 0 ; row < 4 ; row++ )
+            for( col = 0 ; col < 4 ; col++ )
+                res[ row + 4*col ] = this[ col + 4*row ]
+        
+        return res
+    }
+    // --------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the determinant of the upper left 3x3 submatrix (matrix without translation terms)
+     *  @returns {Number} -- determinant 
+     */
+    determinant3()
+    {
+        return  this[0]*this[5]*this[10] + this[1]*this[6]*this[8]  + this[2]*this[4]*this[9]
+              - this[2]*this[5]*this[8]  - this[1]*this[4]*this[10] - this[0]*this[6]*this[9]
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+
+    /**
+     * Returns a minor of the upper left 3x3 submatrix
+     * @param {number} row  -- row index (cell to exclude from the minor)   (0,1 or 2)
+     * @param {number} col   -- column index (for cell to exclude from the minor) (0,1 or 2) 
+     */
+    minor( row, col )
+    {
+        const
+            r1 = (row+1) % 3,
+            r2 = (row+2) % 3,
+            c1 = (col+1) % 3,
+            c2 = (col+2) % 3
+            
+        return this[ c1+4*r1 ]*this[ c2+4*r2 ] - this[ c1+4*r2 ]*this[ c2+4*r1 ] 
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns the inverse of this matrix (this matrix must have no projection terms, that is 
+     * last row must be [0,0,0,1])
+     * @returns {Mat4} -- inverse of this matrix 
+     */
+    inverse()
+    {
+        const 
+            d     = this.determinant3(),
+            abs_d = Math.abs( d )
+
+        if ( abs_d < 1e-15 )
+            throw new Error('unable to invert matrix, determinant is near zero')
+
+        const f   = 1.0/abs_d, 
+              itm = Mat4_Translate([ -this[12], -this[13], -this[14] ]), // inverse translation matrix
+        
+        let m3 = new Mat4( 0.0 )
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 3 ; col++ )
+                m3[ row + 4*col ] = f*this.minor( row, col )
+
+        return itm.compose( m3 )
+        
     }
 }
 // ------------------------------------------------------------------------------------------------
@@ -239,20 +309,20 @@ function Mat4_Scale( v )
 }
 
 // ------------------------------------------------------------------------------------------------
-/**
- * Returns the transpose of a matrix
- * @param {Mat4} m -- original matrix to transpose
- */
-function Mat4_Transpose( m )
-{
-    let res = new Float32Array( 16 ) // creates a 'Float32Array' with 16 zeros
+// /**
+//  * Returns the transpose of a matrix
+//  * @param {Mat4} m -- original matrix to transpose
+//  */
+// function Mat4_Transpose( m )
+// {
+//     let res = new Float32Array( 16 ) // creates a 'Float32Array' with 16 zeros
 
-    for( row = 0 ; row < 4 ; row++ )
-        for( col = 0 ; col < 4 ; col++ )
-            res[ row + 4*col ] = m[ col + 4*row ]
+//     for( row = 0 ; row < 4 ; row++ )
+//         for( col = 0 ; col < 4 ; col++ )
+//             res[ row + 4*col ] = m[ col + 4*row ]
     
-    return new Mat4( res )
-}
+//     return new Mat4( res )
+// }
 
 // ------------------------------------------------------------------------------------------------
 /**

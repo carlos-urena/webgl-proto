@@ -188,7 +188,7 @@ class OrbitalCamera extends PerspectiveCamera
             transl_mat       = Mat4_Translate([0,0,-this.dist])
         
         const 
-            rot_mat_inv      = Mat4_Transpose( rot_mat ),
+            rot_mat_inv      = rot_mat.transposed(),   // for rotation matrices, inverse is equivalent to transposed
             transl_mat_inv   = Mat4_Translate([0,0, this.dist])
 
         //Log( `view rot == ${rot_mat} view rot transposed == ${rot_mat_inv}`)

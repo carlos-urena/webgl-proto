@@ -1,9 +1,6 @@
 
 
-function Sign( row, col )
-{
-    return 1 - 2*( (row+col) % 2 )  
-}
+
 
 // ------------------------------------------------------------------------------------------------
 
@@ -241,15 +238,16 @@ class Mat4 extends Float32Array
      * @param {number} row  -- row index (cell to exclude from the minor)   (0,1 or 2)
      * @param {number} col   -- column index (for cell to exclude from the minor) (0,1 or 2) 
      */
-    minor( row, col )
+    cofactor( row, col )
     {
         const
             r1 = (row+1) % 3,
             r2 = (row+2) % 3,
             c1 = (col+1) % 3,
-            c2 = (col+2) % 3
+            c2 = (col+2) % 3,
+            sgn = 1 - 2*( (row+col) % 2 )  
             
-        return this[ c1+4*r1 ]*this[ c2+4*r2 ] - this[ c1+4*r2 ]*this[ c2+4*r1 ] 
+        return sgn*( this[ c1+4*r1 ]*this[ c2+4*r2 ] - this[ c1+4*r2 ]*this[ c2+4*r1 ] )
     }
     // --------------------------------------------------------------------------------------------
     /**
@@ -270,11 +268,11 @@ class Mat4 extends Float32Array
         // inverse of the 3x3 upper left sub-matrix
         let sm3_inv = new Mat4( 0.0 )  
 
-        // compute 'sm3_inv' using matrix of minors, cofactors
+        // compute 'sm3_inv' using matrix of cofactors
         sm3_inv[15] = 1.0 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                sm3_inv[ row + 4*col ] = ( Sign( row, col ) * this.minor( row, col ) )/det 
+                sm3_inv[ row + 4*col ] = this.cofactor( row, col ) /det 
                 // (assign to transposed element at 'row+4*col' instead of 'col+4*row')
 
         // result transform is: (1) inverse translation  and (2) inverse of 3x3 submatrix

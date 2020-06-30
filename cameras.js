@@ -112,13 +112,29 @@ class PerspectiveCamera extends Camera
      */ 
     genRay( pix_x, pix_y )
     {
-        CheckNat( pix_x )
-        CheckNat( pix_y )
+        const fname = 'PerspectiveCamera.genRay():'
+
+        //CheckNat( pix_x )
+        //CheckNat( pix_y )
         Check( 0 <= pix_x && pix_x < this.viewport.width )
         Check( 0 <= pix_y && pix_y < this.viewport.height )
 
         // generate the ray in eye coords (EC) from the viewport dimensions and ratio, and fovy
         // (compute 'dir_ec', 'org_ec')
+
+        // debug: view mat, view mat inverse, applying a matrix to a vector
+        // const ident_mat = this.view_mat.compose( this.view_mat_inv )
+        // Log(`${fname} test view mat * inv view mat == ${ident_mat}`)
+        // const ident_mat_2 = this.view_mat_inv.compose( this.view_mat )
+        // Log(`${fname} test view mat * inv view mat == ${ident_mat_2}`)
+        // const v = new Vec3([ 0.0, 0.0, 1.0 ])
+        // const M = Mat4_RotationZdeg( 90.0 ).compose( Mat4_RotationYdeg( 90.0 ) )
+        // const Mv = M.apply_to( v, 0.0 )
+        // Log(`${fname} ---------`)
+        // Log(`${fname} M == ${M}`)
+        // Log(`${fname} v == ${v}`)
+        // Log(`${fname} M·v == ${Mv}`)
+        // end debug
 
         const 
             r_yx   = this.viewport.ratio_yx,  // viewport ratio (height/width)

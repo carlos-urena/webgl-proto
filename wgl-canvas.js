@@ -331,7 +331,7 @@ class WebGLCanvas
               siz_x = rect.right - rect.left,
               siz_y = rect.bottom - rect.top,
               pix_x = mevent.clientX - rect.left,
-              pix_y = Math.floor(mevent.clientY - rect.top),
+              pix_y = mevent.clientY - rect.top,
               gl = this.vis_ctx.getWglCtx(),
               gl_sx = gl.drawingBufferWidth, 
               gl_sy = gl.drawingBufferHeight 
@@ -340,7 +340,7 @@ class WebGLCanvas
         Log(`${fname} gl   size x == ${gl_sx}, size y == ${gl_sy}`)
         Log(`${fname} pix  posi x == ${pix_x}, posi y == ${pix_y}`)
 
-        const ray = this.vis_ctx.camera.genRay( pix_x, pix_y )
+        const ray = this.vis_ctx.camera.genRay( pix_x, gl_sy - pix_y )
         this.addRay( ray )
     }
     // -------------------------------------------------------------------------------------------------

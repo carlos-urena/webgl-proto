@@ -84,6 +84,15 @@ class WebGLCanvas
         this.gridXZ = new GridLinesXZ()
         this.axes   = new Axes()
 
+        // creat  the peephole status object
+        this.peeph_st = 
+            {   draw   : false, // draw iif this is true
+                pix_x  : 0.0,   // position Y (in pixels)
+                pix_y  : 0.0,   // position X (in pixels)
+                dy_px  : 60,    // Delta y (in pixels)
+                varr   : null   // vertex array 
+            } 
+
         // get canvas button elements
         this.help_button = BuscarElemId('help_button_id')
         this.log_button  = BuscarElemId('log_button_id')
@@ -191,6 +200,96 @@ class WebGLCanvas
             ray.vertex_arr.draw(gl, gl.LINES )
         }
     }
+    drawPeephole()
+    {
+        if ( ! this.peeph_st.draw  )
+            return
+
+        const fname = 'WebGLCanvas.drawPeephole():'
+        let gl = this.vis_ctx.wgl_ctx
+
+        // generate the vertex array pnts, 
+        // coordinates are in pixels units, 2D (z=0), relative to cursor pos.
+
+        if ( this.peeph_st.varr == null )
+        {
+            // peeph_st.dy_px == vertical distance in pixels from cursor pos to circunference center)
+            const n  = 32,       // number of segments for the circunference
+                  nv = 2*(n+5),  // num of vertexes: n for circunference + 1 for vertical segm. + 4 radial segments
+                  r  = this.peeph_st.dy_px * 0.5,  // circunference radius 
+                  cy  = this.peeph_st.dy_px,    // Y-coord of circunference center
+                  p  = new Float32Array( 3*nv )
+
+            // generate points in circunference (2*n pnts)
+            for( let i = 0 ; i < n ; i++ )
+            {
+                const a0 = (i*2.0*Math.PI)/n,
+                      a1 = ((i+1)*2.0*Math.PI)/n,
+                      b  = 6*i
+
+                p[ b+0 ] = r*Math.cos( a0 )
+                p[ b+1 ] = r*Math.sin( a0 ) + cy
+                p[ b+2 ] = 0.0
+
+                p[ b+3 ] = r*Math.cos( a1 )
+                p[ b+4 ] = r*Math.sin( a1 ) + cy
+                p[ b+5 ] = 0.0
+            }
+            // generate the vertical segment
+            const b = 6*n 
+            p[ b+0 ] = 0.0 ; p[ b+1 ] = 0.0    ; p[ b+2 ] = 0.0 
+            p[ b+3 ] = 0.0 ; p[ b+4 ] = cy - r ; p[ b+5 ] = 0.0 
+
+            // generate the four radial segments
+            const rin = r*0.2 
+            let   k   = 0 
+
+            // east
+            k = 6*(n+1)
+            p[k+0] = rin ; p[k+1] = cy ; p[k+2] = 0.0
+            p[k+3] = r   ; p[k+4] = cy ; p[k+5] = 0.0
+
+            // west
+            k = 6*(n+2) 
+            p[k+0] = -rin  ; p[k+1] = cy ; p[k+2] = 0.0
+            p[k+3] = -r    ; p[k+4] = cy ; p[k+5] = 0.0
+
+            // north 
+            k = 6*(n+3) 
+            p[k+0] = 0.0  ; p[k+1] = cy+rin ; p[k+2] = 0.0
+            p[k+3] = 0.0  ; p[k+4] = cy+r   ; p[k+5] = 0.0
+
+            // south
+            k = 6*(n+4) 
+            p[k+0] = 0.0  ; p[k+1] = cy-rin ; p[k+2] = 0.0
+            p[k+3] = 0.0  ; p[k+4] = cy-r   ; p[k+5] = 0.0
+
+            // generate the vertex array 
+            this.peeph_st.varr = new VertexArray( 0, 3, p )
+        }
+
+        // get viewport size 
+
+        const sx    = this.vis_ctx.camera.viewport.width,
+              sy    = this.vis_ctx.camera.viewport.height,
+              cur_x = this.peeph_st.pix_x, 
+              cur_y = this.peeph_st.pix_y,
+              Ms    = Mat4_Scale([ 2.0/sx, 2.0/sy, 0.0 ]),
+              Mt    = Mat4_Translate([ -1.0, -1.0, 0.0 ]),
+              MV    = Mat4_Translate([ cur_x, cur_y, 0.0 ]),
+              PR    = Mt.compose( Ms )
+
+        //Log(`PEEPHOLE draw cur_x, cur_y  == ${cur_x}, ${cur_y}`)
+        // draw (we assume the 'viewport' call has already been done)
+        let pr = this.vis_ctx.program 
+        pr.doShading( false )
+        pr.useTexture( null )
+        gl.disable( gl.DEPTH_TEST )
+        pr.setViewMat( MV )
+        pr.setProjMat( PR )
+        this.peeph_st.varr.draw( gl, gl.LINES )
+    }
+
     // -------------------------------------------------------------------------------------------------
     helpButtonClicked( evt )
     {
@@ -220,14 +319,28 @@ class WebGLCanvas
 
         const fname = 'WebGLCanvas.mouseDown:'
         CheckType( mevent, 'MouseEvent' )
-        if ( this.debug )
+        //if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
         if ( mevent.button != 0 && mevent.button != 2 )
             return true 
 
         if ( mevent.button === 0 )
-            this.is_mouse_left_down = true
+        {    this.is_mouse_left_down = true
+             // update peephole status 
+            
+            const rect  = this.canvas_elem.getBoundingClientRect(),
+                  h     = rect.bottom - rect.top 
+            
+            Log(`${fname} h == ${h}`)
+
+            this.peeph_st.draw = true 
+            this.peeph_st.pix_x = mevent.clientX - rect.left
+            this.peeph_st.pix_y = h - (mevent.clientY - rect.top)
+            
+            this.drawFrame()
+            return
+        }
         else if ( mevent.button === 2 )
             this.is_mouse_right_down = true
 
@@ -252,11 +365,12 @@ class WebGLCanvas
 
         const fname = 'WebGLCanvas.mouseUp'
         CheckType( mevent, 'MouseEvent' )
-        if ( this.debug )
+        //if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
         if ( mevent.button === 0 )
         {   this.is_mouse_left_down = false
+            this.peeph_st.draw = false
             return false
         }
         else if ( mevent.button === 2 )
@@ -277,12 +391,25 @@ class WebGLCanvas
         mevent.stopImmediatePropagation() // neccesary? improves performance?
         mevent.preventDefault() // prevent default treatment of mouse moves 
 
-        if ( ! this.is_mouse_right_down )
-            return true
-
         const fname = 'WebGLCanvas.mouseMove (right/left drag):'
         CheckType( mevent, 'MouseEvent' )
 
+        if ( this.peeph_st.draw )
+        {    
+            const rect  = this.canvas_elem.getBoundingClientRect(),
+                   h    = rect.bottom - rect.top 
+
+            this.peeph_st.pix_x = mevent.clientX - rect.left
+            this.peeph_st.pix_y = h - (mevent.clientY - rect.top)
+            
+            this.drawFrame()
+            return true
+        }
+
+        if ( ! this.is_mouse_right_down )
+            return true 
+
+        
         // compute displacement from the original position ( where mouse button was pressed down)
 
         const drag_cur_pos_x = mevent.clientX ,
@@ -340,7 +467,8 @@ class WebGLCanvas
         Log(`${fname} gl   size x == ${gl_sx}, size y == ${gl_sy}`)
         Log(`${fname} pix  posi x == ${pix_x}, posi y == ${pix_y}`)
 
-        const ray = this.vis_ctx.camera.genRay( pix_x, gl_sy - pix_y )
+        const cy = this.peeph_st.dy_px
+        const ray = this.vis_ctx.camera.genRay( pix_x, gl_sy - pix_y + cy )
         this.addRay( ray )
     }
     // -------------------------------------------------------------------------------------------------
@@ -1097,6 +1225,9 @@ class WebGLCanvas
         pr.doShading( false )
         pr.useTexture( null )
 
+        // enable depth test (just in case)
+        gl.enable( gl.DEPTH_TEST )
+
         // set default color (attribute location 1)
         gl.vertexAttrib3f( 1, 0.9, 0.9, 0.9 )
 
@@ -1184,6 +1315,9 @@ class WebGLCanvas
 
         // debug
         this.drawRays()
+
+        // draw the peep hole, if neccesary (this trashes pipeline status, must be done at the end)
+        this.drawPeephole()
 
         // see: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
         gl.flush()

@@ -75,10 +75,12 @@ class WebGLCanvas
         this.loaded_object  = null
         this.loading_object = false 
 
-        // initialize object angles and scale 
-        this.scene_alpha_deg = 0.0
-        this.scene_beta_deg  = 0.0
-        this.scene_scale     = 1.0
+        // initialize scene object angles and scale 
+        this.scene_alpha_deg  = 0.0              // scene rotation angles (alpha)
+        this.scene_beta_deg   = 0.0              // scene rotation angles (beta)
+        this.scene_scale      = 1.0              // scene scale 
+        this.scene_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
+        this.scene_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
         // create the grid and axes drawable objects
         this.gridXZ = new GridLinesXZ()
@@ -169,16 +171,22 @@ class WebGLCanvas
             return
         this.clog_span.innerHTML = msg
     }
-    // -------------
+    // -------------------------------------------------------------------------------
+    /**
+     * Adds a ray to the scene (it is transformed by the inverse scene matrix)
+     * @param {Ray} ray 
+     */
     addRay( ray )
     {
-        const x0 = ray.org,
-              x1 = ray.org.plus( ray.dir )
-        
-        this.debug_rays.push( { start_pnt: x0, end_pnt: x1, vertex_arr: null })
+        const x0_org = ray.org,
+              x1_org = ray.org.plus( ray.dir ),
+              x0     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
+              x1     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
+
+        this.debug_rays.push( { start_pnt: x0, end_pnt: x1, vertex_arr: null } )
         this.drawFrame()
-        
     }
+    // -------------------------------------------------------------------------------
     drawRays()
     {
         let gl = this.vis_ctx.wgl_ctx,
@@ -200,6 +208,7 @@ class WebGLCanvas
             ray.vertex_arr.draw(gl, gl.LINES )
         }
     }
+    // -------------------------------------------------------------------------------
     drawPeephole()
     {
         if ( ! this.peeph_st.draw  )
@@ -428,6 +437,7 @@ class WebGLCanvas
         {
             this.scene_alpha_deg = Trunc( this.scene_alpha_deg - dx*0.20, -180, +180 )
             this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -85,  +85  )
+            this.updateSceneTransformMat()
         }
         else
         {
@@ -489,9 +499,17 @@ class WebGLCanvas
         // const fac = 0.002
         // this.cam_dist = Trunc( this.cam_dist + fac*wevent.deltaY, 0.1, 20.0 )
         
-        const fac = 0.002
-        this.vis_ctx.camera.moveZ( fac*wevent.deltaY )
-        
+        if ( wevent.altKey )
+        {
+            const fac = 0.005
+            this.scene_scale = ( this.scene_scale + fac*wevent.deltaY )
+            this.updateSceneTransformMat()
+        }
+        else
+        {
+            const fac = 0.002
+            this.vis_ctx.camera.moveZ( fac*wevent.deltaY )
+        }
         // redraw:
         this.drawFrame()
         
@@ -1183,6 +1201,25 @@ class WebGLCanvas
     // -------------------------------------------------------------------------------------------------
 
     /**
+     * Updates 'this.scene_transform_mat' 
+     * (from 'this.scene_alpha_deg' and 'this.scene_beta_deg' and 'this.scene_scale')
+     */
+    updateSceneTransformMat()
+    {
+        const 
+            rotx_mat  = Mat4_RotationXdeg( this.scene_beta_deg ),
+            roty_mat  = Mat4_RotationYdeg( -this.scene_alpha_deg ),
+            scale_mat = Mat4_Scale([ this.scene_scale, this.scene_scale, this.scene_scale ])
+        
+        this.scene_tr_mat     = scale_mat.compose( rotx_mat ).compose( roty_mat )
+        this.scene_tr_mat_inv = this.scene_tr_mat.inverse()
+
+        //let ident = this.scene_tr_mat.compose( this.scene_tr_mat_inv )
+        //Log(`ident == ${ident}`)
+    }
+    // -------------------------------------------------------------------------------------------------
+
+    /**
      * Draws a frame into the context and issues a 'gl.flush()' call at the end
      */
     drawFrame()
@@ -1239,13 +1276,8 @@ class WebGLCanvas
         this.axes.draw( this.vis_ctx )
 
         pr.pushMM()
-
-            const 
-                rotx_mat       = Mat4_RotationXdeg( this.scene_beta_deg ),
-                roty_mat       = Mat4_RotationYdeg( -this.scene_alpha_deg ),
-                rotation_mat   = rotx_mat.compose( roty_mat )
-        
-            pr.compMM( rotation_mat )
+  
+            pr.compMM( this.scene_tr_mat )
 
             // actually draw something.....(test)
             if ( this.loaded_object == null )
@@ -1311,10 +1343,10 @@ class WebGLCanvas
                 pr.popMM()
             }
 
-        pr.popMM()
+            // debug
+            this.drawRays()    
 
-        // debug
-        this.drawRays()
+        pr.popMM()
 
         // draw the peep hole, if neccesary (this trashes pipeline status, must be done at the end)
         this.drawPeephole()

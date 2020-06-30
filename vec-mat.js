@@ -219,7 +219,6 @@ class Mat4 extends Float32Array
         return res
     }
     // --------------------------------------------------------------------------------------------
-
     /**
      * Returns the determinant of the upper left 3x3 submatrix (matrix without translation terms)
      *  @returns {Number} -- determinant 
@@ -231,8 +230,6 @@ class Mat4 extends Float32Array
     }
 
     // --------------------------------------------------------------------------------------------
-
-
     /**
      * Returns a minor of the upper left 3x3 submatrix
      * @param {number} row  -- row index (cell to exclude from the minor)   (0,1 or 2)

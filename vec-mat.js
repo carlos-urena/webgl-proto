@@ -106,7 +106,7 @@ function Is4x4Array( obj )
 /**
  * Class 'Mat4'
  * A 'Mat4' object is a 'Float32Array' object with 16 numbers, stored by using column-major order,
- * suited for WebGL apps. This means the value at row 'row' and column 'col' is at index 'col+4*row'
+ * suited for WebGL apps. This means the value at row 'row' and column 'col' is at index 'row+4*col'
  */
 class Mat4 extends Float32Array 
 {
@@ -243,11 +243,10 @@ class Mat4 extends Float32Array
         const
             r1 = (row+1) % 3,
             r2 = (row+2) % 3,
-            c1 = (col+1) % 3,
-            c2 = (col+2) % 3,
-            sgn = 1 - 2*( (row+col) % 2 )  
+            c1 = 4*( (col+1) % 3 ),
+            c2 = 4*( (col+2) % 3 ) 
             
-        return sgn*( this[ c1+4*r1 ]*this[ c2+4*r2 ] - this[ c1+4*r2 ]*this[ c2+4*r1 ] )
+        return this[ r1+c1 ]*this[ r2+c2 ] - this[ r1+c2 ]*this[ r2+c1 ] 
     }
     // --------------------------------------------------------------------------------------------
     /**
@@ -272,8 +271,8 @@ class Mat4 extends Float32Array
         sm3_inv[15] = 1.0 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                sm3_inv[ row + 4*col ] = this.cofactor( row, col ) /det 
-                // (assign to transposed element at 'row+4*col' instead of 'col+4*row')
+                sm3_inv[ col + 4*row ] = this.cofactor( row, col ) /det 
+                // (assignement to transposed element at 'col+4*row' instead of 'row+4*col')
 
         // result transform is: (1) inverse translation  and (2) inverse of 3x3 submatrix
         return sm3_inv.compose( tr_inv )
@@ -550,12 +549,17 @@ function TestMat4()
 
     Log(`${fname} ----- test for INVERSE matrix`)
 
-    const m12 = Mat4_Translate([1, 2, 3]),
-          m13 = (m5.compose( m6 )),
-          m14 = m13.inverse(),
-          m15 = m13.compose( m14 )
-
-    Log(`${fname} m15 (ident?) == ${m15}`)
+    const 
+        m12 = Mat4_Translate([1, 2, 3]),
+        m13 = Mat4_Scale([ -0.5, 1.2, -1.8 ]),
+        m14 = Mat4_RotationYdeg( 35 ),
+        m15 = Mat4_RotationZdeg( 127 ),
+        m16 = m15.compose( m14 ).compose( m13 ).compose( m12 ),
+        m17 = m16.inverse(),
+        m18 = m17.compose( m16 ),
+        m19 = m16.compose( m17 )
+    Log(`${fname} m18 (ident?) == ${m18}`)
+    Log(`${fname} m19 (ident?) == ${m19}`)
 
     Log(`${fname} ends`)
 

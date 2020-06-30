@@ -256,6 +256,42 @@ class IndexedTrianglesMesh extends DrawableObject
         // normalize coordinates to the bounding box
         NormalizeCoords( bbox, this.coords_data )
     }
+    // ----------------------------------------------------------------------------------
+    /**
+     * Intersects this mesh with a ray  (brute-force, used for selection)
+     * @param   {Ray} ray 
+     * @return  {object} -- object with: with: 'hit' (true/false), if it is 'true' also: 
+     *                                        'dist' (number>0), 'it' (natural number) 
+     */
+    intersectRay( ray )
+    {
+        const nt = this.n_tris 
+        if ( nt == 0 )
+            throw new Error("method 'interectRay' for empty triangle mesh" )
+
+        let vc       = this.coords_data,
+            b        = 0,
+            min_dist = -1.0
+            hit_data = { hit: false, dist: 0, it: 0 }
+
+        for( let it = 0 ; it < nt ; it++ )
+        {
+            const 
+                i0   = 3*this.triangles_data[ b+0 ],
+                i1   = 3*this.triangles_data[ b+1 ],
+                i2   = 3*this.triangles_data[ b+2 ],
+                v0   = new Vec3([ vc[i0+0], vc[i0+1], vc[i0+2] ]),
+                v1   = new Vec3([ vc[i1+0], vc[i1+1], vc[i1+2] ]),
+                v2   = new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ]),
+                tri = { v0:v0, v1:v1, v2:v2, it:it }
+
+            RayTriangleInt( ray, tri, hit_data )
+            b += 3
+        }
+        return hit_data
+
+
+    }
 }
 
 // -------------------------------------------------------------------------------------------------

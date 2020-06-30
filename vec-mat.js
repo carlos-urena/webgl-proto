@@ -416,7 +416,7 @@ function Mat4_UndProj2D( sx, sy )
  * @param {number} t -- top (Y upper limit at z=n)
  * @param {number} n -- near (distance to Z limit, nearest to viewer)
  * @param {number} f -- far  (distance to Z limit, farthest to viewer)
- * @returns {number} a Mat4 object with the entries corresponding to glFrustum call.
+ * @returns {Mat4}   -- a matrix with the entries corresponding to glFrustum call.
  */
 function Mat4_Frustum( l, r, b, t, n, f )
 {

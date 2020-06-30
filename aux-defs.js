@@ -259,3 +259,20 @@ function isPowerOf2(value)
 {
     return (value & (value - 1)) == 0;
 }
+
+// -----------------------------------------------------------------------------------------------
+
+/**
+ * Ray-triangle intersection test
+ * @param {Ray}    ray       -- input ray
+ * @param {object} tri       -- input object with: 'v0','v1','v2' (Vec3) and 'it' (natural number, >=0) 
+ * @param {*}      hit_data  -- input/output object with: 'hit' (true/false), if it is 'true' also: 
+ *                                                        'dist' (number>0), 'it' (natural number) 
+ */
+function RayTriangleInt( ray, tri, hit_data )
+{
+    const 
+        e1 = tri.v1.minus( tri.v0 ),
+        e2 = tri.v2.minus( tri.v0 )
+    
+}

@@ -57,6 +57,8 @@ function OnDOMLoaded()
     //ShowLogWin()
     ResizePageElements()
 
+    TestMat4()
+
 
     let fname = 'OnDocumentLoad() :'
     if ( main_debug )

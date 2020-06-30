@@ -1,4 +1,10 @@
 
+
+function Sign( row, col )
+{
+    return 1 - 2*( (row+col) % 2 )  
+}
+
 // ------------------------------------------------------------------------------------------------
 
 
@@ -209,8 +215,8 @@ class Mat4 extends Float32Array
     {
         let res = new Mat4( 0.0 ) // creates a 4x4 matrix, filled with zeros
 
-        for( row = 0 ; row < 4 ; row++ )
-            for( col = 0 ; col < 4 ; col++ )
+        for( let row = 0 ; row < 4 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
                 res[ row + 4*col ] = this[ col + 4*row ]
         
         return res
@@ -223,8 +229,8 @@ class Mat4 extends Float32Array
      */
     determinant3()
     {
-        return  this[0]*this[5]*this[10] + this[1]*this[6]*this[8]  + this[2]*this[4]*this[9]
-              - this[2]*this[5]*this[8]  - this[1]*this[4]*this[10] - this[0]*this[6]*this[9]
+        return    this[0]*this[5]*this[10] + this[1]*this[6]*this[8]  + this[2]*this[4]*this[9]
+                - this[2]*this[5]*this[8]  - this[1]*this[4]*this[10] - this[0]*this[6]*this[9]
     }
 
     // --------------------------------------------------------------------------------------------
@@ -253,22 +259,26 @@ class Mat4 extends Float32Array
      */
     inverse()
     {
-        const 
-            d     = this.determinant3(),
-            abs_d = Math.abs( d )
-
-        if ( abs_d < 1e-15 )
+        const det = this.determinant3()
+            
+        if ( Math.abs( det ) < 1e-15 )
             throw new Error('unable to invert matrix, determinant is near zero')
 
-        const f   = 1.0/abs_d, 
-              itm = Mat4_Translate([ -this[12], -this[13], -this[14] ]), // inverse translation matrix
+        // inverse translation matrix
+        const tr_inv = Mat4_Translate([ -this[12], -this[13], -this[14] ])
         
-        let m3 = new Mat4( 0.0 )
+        // inverse of the 3x3 upper left sub-matrix
+        let sm3_inv = new Mat4( 0.0 )  
+
+        // compute 'sm3_inv' using matrix of minors, cofactors
+        sm3_inv[15] = 1.0 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                m3[ row + 4*col ] = f*this.minor( row, col )
+                sm3_inv[ row + 4*col ] = ( Sign( row, col ) * this.minor( row, col ) )/det 
+                // (assign to transposed element at 'row+4*col' instead of 'col+4*row')
 
-        return itm.compose( m3 )
+        // result transform is: (1) inverse translation  and (2) inverse of 3x3 submatrix
+        return sm3_inv.compose( tr_inv )
         
     }
 }
@@ -531,14 +541,23 @@ function TestMat4()
     const mpersp = Mat4_Perspective( 90, 1.2, 0.1, 5.0 )
     Log(`${fname} perspective: mpersp == ${mpersp}`)
 
-    Log('----------- test for the COPY constructor:')
+    Log(`${fname} ----------- test for the COPY constructor:`)
 
     const m10 = Mat4_Translate([1, 2, 3])
     const m11 = new Mat4( m10 )
 
     Log(`${fname} m10, original (translate) == ${m10}`)
     Log(`${fname} m11, copy     (equal?) == ${m11}`)
-    
+
+
+    Log(`${fname} ----- test for INVERSE matrix`)
+
+    const m12 = Mat4_Translate([1, 2, 3]),
+          m13 = (m5.compose( m6 )),
+          m14 = m13.inverse(),
+          m15 = m13.compose( m14 )
+
+    Log(`${fname} m15 (ident?) == ${m15}`)
 
     Log(`${fname} ends`)
 

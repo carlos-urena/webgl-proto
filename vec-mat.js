@@ -706,12 +706,12 @@ class Mat3 extends Float32Array
             return
         
         // 'obj' must be an 'Array' with 3 'Vec3' (or an array with three numbers)  
-        // (each array one is a row of the matrix)
+        // (each array one is a column of the matrix)
         // we initialize this Float32Array by using  column-major order (as webGL expects)
     
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                this[row + col*3] = (obj[row])[col]
+                this[row + col*3] = (obj[col])[row]
             
     }
     // --------------------------------------------------------------------------------------------
@@ -829,7 +829,7 @@ function RayTriangleInt( ray, tri, hit_data )
     ray_tri_int_count ++ 
 
     const 
-        m   = new Mat3([ tri.v1.minus(tri.v0), tri.v2.minus(tri.v0), ray.dir ]),
+        m   = (new Mat3([ tri.v1.minus(tri.v0), tri.v2.minus(tri.v0), ray.dir.scale(-1.0) ])),
         det = m.determinant()
 
     if ( Math.abs( det ) <  1e-10 )
@@ -842,11 +842,34 @@ function RayTriangleInt( ray, tri, hit_data )
         m_inv = m.inverse( det ),
         uvt   = m_inv.apply_to( ray.org.minus( tri.v0 ) )
 
-    if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) return false                 // u out of [0..1]
-    if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) return false                 // v out of [0..1]
-    if ( uvt[0]+uvt[1] < 0.0 || 1.0 < uvt[0]+uvt[1] ) return false   // u+v out of [0..1]
-    if ( uvt[2] < 0.0 ) return false                                 // negative 't' value
-    if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) return false  // hit found but farther than previous
+    if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) 
+    {   
+        Log("- A - ")
+        return false                 // u out of [0..1]
+    }
+
+    if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) 
+    {   
+        Log("- B - ")
+        return false                 // v out of [0..1]
+    }
+
+    if ( 1.0 < uvt[0]+uvt[1] ) 
+    {   
+        Log("- C - ")
+        return false   // u+v out of [0..1]
+    }
+    if ( uvt[2] < 0.0 ) 
+    {   
+        Log("- D - ")
+        return false                                 // negative 't' value
+    }
+    if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) 
+    {   
+        Log("- E - ")
+        return false  // hit found but farther than previous
+    }
+    Log('HIT')
 
     hit_data.hit  = true 
     hit_data.it   = tri.it

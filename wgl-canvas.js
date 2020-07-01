@@ -203,6 +203,10 @@ class WebGLCanvas
         Log('END ray-tri code.')
         Log(` total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
         Log(` int found ? == ${hit_data.hit ? "yes" : "nope"}`)
+        if ( hit_data.hit )
+        {
+            Log(`HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
+        }
         
         this.drawFrame()
 

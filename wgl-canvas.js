@@ -492,13 +492,20 @@ class WebGLCanvas
               pix_y = mevent.clientY - rect.top,
               gl = this.vis_ctx.getWglCtx(),
               gl_sx = gl.drawingBufferWidth, 
-              gl_sy = gl.drawingBufferHeight 
+              gl_sy = gl.drawingBufferHeight,
+              cy    = this.peeph_st.dy_px
         
         Log(`${fname} rect size x == ${siz_x}, size y == ${siz_y}`)
         Log(`${fname} gl   size x == ${gl_sx}, size y == ${gl_sy}`)
         Log(`${fname} pix  posi x == ${pix_x}, posi y == ${pix_y}`)
 
-        const cy = this.peeph_st.dy_px
+        if ( gl_sx <= pix_x  || pix_y <= cy || gl_sy <= pix_y   )
+        {
+            Log('click is out of canvas')
+            return
+        }
+
+        
         const ray = this.vis_ctx.camera.genRay( pix_x, gl_sy - pix_y + cy )
         this.addRay( ray )
     }
@@ -1305,7 +1312,7 @@ class WebGLCanvas
             {
                 if ( this.test_3d_mesh == null )
                 {
-                    const ns = 10, nt = 10
+                    const ns = 4, nt = 4
                     this.test_3d_mesh = new SphereMesh( ns, nt )
                     //this.test_3d_mesh = new CylinderMesh( ns, nt )
                     //this.test_3d_mesh = new ConeMesh( ns, nt )

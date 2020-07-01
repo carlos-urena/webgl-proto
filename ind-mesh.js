@@ -284,8 +284,10 @@ class IndexedTrianglesMesh extends DrawableObject
                 v2   = new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ]),
                 tri = { v0:v0, v1:v1, v2:v2, it:it }
 
-            Log(` tri = ${i0/3}, ${i1/3}, ${i2/3}`)
-            Log(` v0  = ${tri.v0}, v1 = ${tri.v1}, v2 = ${tri.v2}\n`)
+            Log(`----`)
+            Log(`tri ind = ${i0/3   }, ${i1/3}, ${i2/3}`)
+            Log(`    v0  = ${tri.v0 }, v1  = ${tri.v1}, v2 = ${tri.v2}`)
+            Log(`ray org = ${ray.org}, dir = ${ray.dir}`)
 
             if ( RayTriangleInt( ray, tri, hit_data ) )
                 res = true 

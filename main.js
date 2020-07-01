@@ -55,7 +55,7 @@ function ResizePageElements()
 function OnDOMLoaded()
 {
     //ShowLogWin()
-    ResizePageElements()
+    ResizePageElements() // this is done so elements are shown on startup (check it?)
 
     TestMatrices()
 

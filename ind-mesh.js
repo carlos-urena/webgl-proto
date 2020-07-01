@@ -259,21 +259,20 @@ class IndexedTrianglesMesh extends DrawableObject
     // ----------------------------------------------------------------------------------
     /**
      * Intersects this mesh with a ray  (brute-force, used for selection)
-     * @param   {Ray} ray 
-     * @return  {object} -- object with: with: 'hit' (true/false), if it is 'true' also: 
-     *                                        'dist' (number>0), 'it' (natural number) 
+     * @param   {hit_data} ray triangle hit data object (see 'RayTriangleInt' function)
+     * 
      */
-    intersectRay( ray )
+    intersectRay( ray, hit_data )
     {
+        const fname = 'IndexedTriangleMesh.intersectRay():'
         const nt = this.n_tris 
         if ( nt == 0 )
             throw new Error("method 'interectRay' for empty triangle mesh" )
 
-        let vc       = this.coords_data,
-            b        = 0,
-            min_dist = -1.0
-            hit_data = { hit: false, dist: 0, it: 0 }
-
+        let vc  = this.coords_data,
+            b   = 0,
+            res = false
+           
         for( let it = 0 ; it < nt ; it++ )
         {
             const 
@@ -285,12 +284,14 @@ class IndexedTrianglesMesh extends DrawableObject
                 v2   = new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ]),
                 tri = { v0:v0, v1:v1, v2:v2, it:it }
 
-            RayTriangleInt( ray, tri, hit_data )
+            Log(` v0 = ${tri.v0}\n v1 = ${tri.v1}\n v2 = ${tri.v2}\n`)
+
+            if ( RayTriangleInt( ray, tri, hit_data ) )
+                res = true 
             b += 3
         }
-        return hit_data
-
-
+        Log(`Inters.ray: mesh.nt == ${this.n_tris}, triangles data length /3 == ${this.triangles_data.length/3}`)
+        return res
     }
 }
 
@@ -602,6 +603,8 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
 
             Log(`${fname} creating mesh from group '${group.name}' ...`)
             let mesh = new IndexedTrianglesMesh( group.coords_data, group.triangles_data )
+            mesh.name = group.name
+
             if ( group.texcoo_data != null )
             {   Log(`${fname} (group has tex coords)`)
                 this.has_texcoo = true 
@@ -640,6 +643,27 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
             //Log(`Multimesh draw, class name = '${mesh.constructor.name}'`)
             mesh.draw( wgl_ctx )
         }
+    }
+    // ----------------------------------------------------------------------------------
+    /**
+     * Intersects this mesh with a ray  (brute-force, used for selection)
+     * @param   {hit_data} ray triangle hit data object (see 'RayTriangleInt' function)
+     * 
+     */
+    intersectRay( ray, hit_data )
+    {
+        const fname = 'MultiMeshFromOBJLines.intersectRay():'
+        let res = false 
+        Log(`${fname} begins`)
+
+        for( let mesh of this.meshes )
+        {
+            Log(`${fname}     mesh == ${mesh.name}`)
+            if ( mesh.intersectRay( ray, hit_data ) )
+                res = true 
+        }
+        Log(`${fname} ends`)
+        return res
     }
 }
 // -------------------------------------------------------------------------------------------------

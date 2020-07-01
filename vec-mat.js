@@ -23,7 +23,7 @@ class Vec3 extends Float32Array
             throw Error(`Vec3.constructor: the length is not 3 but ${this.length}`)
     }
 
-    toString() { return `(${this[0]},${this[1]},${this[2]})` }
+    toString() { return `(${N2S(this[0])},${N2S(this[1])},${N2S(this[2])})` }
 
     plus ( v ) { return new Vec3([ this[0]+v[0], this[1]+v[1], this[2]+v[2] ]) }
     minus( v ) { return new Vec3([ this[0]-v[0], this[1]-v[1], this[2]-v[2] ]) }
@@ -760,14 +760,15 @@ class Mat3 extends Float32Array
     /**
      * Returns the inverse of this matrix (this matrix must have no projection terms, that is 
      * last row must be [0,0,0,1])
+     * @param   {number} det -- this matrix determinant, must be != 0  (not checked)
      * @returns {Mat4} -- inverse of this matrix 
      */
-    inverse()
+    inverse( det )
     {
-        const det = this.determinant()
+        //const det = this.determinant()
             
-        if ( Math.abs( det ) < 1e-15 )
-            throw new Error('unable to invert 3x3 matrix, determinant is near zero')
+        //if ( Math.abs( det ) < 1e-12 )
+        //    throw new Error('unable to invert 3x3 matrix, determinant is near zero')
 
         let inv_m = new Mat4d( 0.0 )  
 
@@ -805,6 +806,9 @@ class Mat3 extends Float32Array
 
 // -----------------------------------------------------------------------------------------------
 
+var zero_det_count    = 0,
+    ray_tri_int_count = 0 
+
 /**
  * Ray-triangle intersection test
  * @param {Ray}    ray       -- input ray
@@ -822,20 +826,39 @@ class Mat3 extends Float32Array
  */
 function RayTriangleInt( ray, tri, hit_data )
 {
+    ray_tri_int_count ++ 
+
     const 
         m   = new Mat3([ tri.v1.minus(tri.v0), tri.v2.minus(tri.v0), ray.dir ]),
-        uvt = m.inverse().apply_to( ray.org.minus( tri.v0 ) )
+        det = m.determinant()
 
-    if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) return false
-    if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) return false  
-    if ( uvt[0]+uvt[1] < 0.0 || 1.0 < uvt[0]+uvt[1] ) return false  
-    if ( uvt[2] < 0.0 ) return false 
-    if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) return false 
+    if ( Math.abs( det ) <  1e-10 )
+    {   
+        zero_det_count ++
+        return false 
+    }
+
+    const 
+        m_inv = m.inverse( det ),
+        uvt   = m_inv.apply_to( ray.org.minus( tri.v0 ) )
+
+    if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) return false                 // u out of [0..1]
+    if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) return false                 // v out of [0..1]
+    if ( uvt[0]+uvt[1] < 0.0 || 1.0 < uvt[0]+uvt[1] ) return false   // u+v out of [0..1]
+    if ( uvt[2] < 0.0 ) return false                                 // negative 't' value
+    if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) return false  // hit found but farther than previous
 
     hit_data.hit  = true 
     hit_data.it   = tri.it
     hit_data.dist = uvt[2]
+    Log(`RayTriangleInt(): better hit found: it == ${hit_data.it}, dist == ${hit_data.dist}`)
     return true
+}
+// --------------------
+
+function TestRayTriInt()
+{
+
 }
 
 // ------------------------------------------------------------------------------------------------

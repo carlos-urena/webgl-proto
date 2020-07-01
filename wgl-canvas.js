@@ -180,11 +180,32 @@ class WebGLCanvas
     {
         const x0_org = ray.org,
               x1_org = ray.org.plus( ray.dir ),
-              x0     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
-              x1     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
+              x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
+              x1_wc     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
 
-        this.debug_rays.push( { start_pnt: x0, end_pnt: x1, vertex_arr: null } )
+        this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc, vertex_arr: null } )
+
+        // test: intersect ray with scene  
+        let ray_wc = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
+        let obj = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
+        let hit_data = { hit: false, dist: -1, it: -1 }
+
+        this.cLog('STARTS intersection')
+        Log('STARTS intersection .....')
         this.drawFrame()
+
+        zero_det_count     = 0
+        ray_tri_int_count  = 0 
+
+        obj.intersectRay( ray_wc, hit_data )
+
+        this.cLog('END ray-tri code.')
+        Log('END ray-tri code.')
+        Log(` total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
+        Log(` int found ? == ${hit_data.hit ? "yes" : "nope"}`)
+        
+        this.drawFrame()
+
     }
     // -------------------------------------------------------------------------------
     drawRays()
@@ -452,7 +473,7 @@ class WebGLCanvas
     }
     // -------------------------------------------------------------------------------------------------
     /**
-     * Called right after a click has been done over the canvas (left button)
+     * Called right after a click has been done over the canvas (left mouse button has been raised)
      * @param {MouseEvent} mevent -- mouse event created by the browser
      */
     mouseClick( mevent )
@@ -1284,7 +1305,7 @@ class WebGLCanvas
             {
                 if ( this.test_3d_mesh == null )
                 {
-                    const ns = 100, nt = 100
+                    const ns = 10, nt = 10
                     this.test_3d_mesh = new SphereMesh( ns, nt )
                     //this.test_3d_mesh = new CylinderMesh( ns, nt )
                     //this.test_3d_mesh = new ConeMesh( ns, nt )

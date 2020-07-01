@@ -284,13 +284,15 @@ class IndexedTrianglesMesh extends DrawableObject
                 v2   = new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ]),
                 tri = { v0:v0, v1:v1, v2:v2, it:it }
 
-            Log(` v0 = ${tri.v0}\n v1 = ${tri.v1}\n v2 = ${tri.v2}\n`)
+            Log(` tri = ${i0/3}, ${i1/3}, ${i2/3}`)
+            Log(` v0  = ${tri.v0}, v1 = ${tri.v1}, v2 = ${tri.v2}\n`)
 
             if ( RayTriangleInt( ray, tri, hit_data ) )
                 res = true 
             b += 3
         }
-        Log(`Inters.ray: mesh.nt == ${this.n_tris}, triangles data length /3 == ${this.triangles_data.length/3}`)
+        Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
+        Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
         return res
     }
 }

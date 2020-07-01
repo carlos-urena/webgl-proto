@@ -706,7 +706,7 @@ class Mat3 extends Float32Array
             return
         
         // 'obj' must be an 'Array' with 3 'Vec3' (or an array with three numbers)  
-        // (each array one is a column of the matrix)
+        // (each array is a column of the matrix)
         // we initialize this Float32Array by using  column-major order (as webGL expects)
     
         for( let row = 0 ; row < 3 ; row++ )
@@ -828,9 +828,17 @@ function RayTriangleInt( ray, tri, hit_data )
 {
     ray_tri_int_count ++ 
 
+    const debug = false
+
     const 
         m   = (new Mat3([ tri.v1.minus(tri.v0), tri.v2.minus(tri.v0), ray.dir.scale(-1.0) ])),
         det = m.determinant()
+
+    if ( debug )
+    { 
+        Log(`m == ${m}`)
+        Log(`det == ${det}`)
+    }
 
     if ( Math.abs( det ) <  1e-10 )
     {   
@@ -844,37 +852,37 @@ function RayTriangleInt( ray, tri, hit_data )
 
     if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) 
     {   
-        Log("- A - ")
+        if ( debug ) Log("- A - ")
         return false                 // u out of [0..1]
     }
 
     if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) 
     {   
-        Log("- B - ")
+        if ( debug ) Log("- B - ")
         return false                 // v out of [0..1]
     }
 
     if ( 1.0 < uvt[0]+uvt[1] ) 
     {   
-        Log("- C - ")
+        if ( debug ) Log("- C - ")
         return false   // u+v out of [0..1]
     }
     if ( uvt[2] < 0.0 ) 
     {   
-        Log("- D - ")
+        if ( debug ) Log("- D - ")
         return false                                 // negative 't' value
     }
     if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) 
     {   
-        Log("- E - ")
+        if ( debug ) Log("- E - ")
         return false  // hit found but farther than previous
     }
-    Log('HIT')
+    if ( debug ) Log('HIT')
 
     hit_data.hit  = true 
     hit_data.it   = tri.it
     hit_data.dist = uvt[2]
-    Log(`RayTriangleInt(): better hit found: it == ${hit_data.it}, dist == ${hit_data.dist}`)
+    if ( debug ) Log(`RayTriangleInt(): better hit found: it == ${hit_data.it}, dist == ${hit_data.dist}`)
     return true
 }
 // --------------------

@@ -39,18 +39,14 @@ function ComputeBBox( coords_array )
         miny = Math.min( miny, v[i+1] ) ; maxy = Math.max( maxy, v[i+1] ) 
         minz = Math.min( minz, v[i+2] ) ; maxz = Math.max( maxz, v[i+2] ) 
     }
-    if ( debug_mesh )
+    if ( true  )
     {
         Log(`${fname} num verts == ${nv}`)
         Log(`${fname} bbox min  == (${minx},${miny},${minz})`)
         Log(`${fname} bbox max  == (${maxx},${maxy},${maxz})`)
     }
 
-    let bbox = 
-        {   xmin: minx, xmax: maxx, 
-            ymin: miny, ymax: maxy,
-            zmin: minz, zmax: maxz 
-        }
+    let bbox = {   xmin: minx, xmax: maxx,  ymin: miny, ymax: maxy, zmin: minz, zmax: maxz }
     return bbox
 }
 

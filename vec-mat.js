@@ -1,7 +1,4 @@
 
-
-
-
 // ------------------------------------------------------------------------------------------------
 
 
@@ -13,7 +10,8 @@ function N2S( x )
     return str
 }
 // ------------------------------------------------------------------------------------------------
-// Class for tuples with 3 real numbers, simple precission 
+// Class for tuples with 3 real numbers, simple precission storage (but doubl precision operations, 
+// as every floating point number operation in javascript ??)
 
 class Vec3 extends Float32Array
 {
@@ -50,7 +48,7 @@ class Vec3 extends Float32Array
     b() { return this[2] }
 }
 // ------------------------------------------------------------------------------------------------
-// Class for tuples with 3 reals numbers, double precision 
+// Class for tuples with 3 reals numbers, double precision storage
 
 class Vec3d extends Float64Array
 {
@@ -506,7 +504,7 @@ function Mat4_Perspective( fovy_deg, asp_rat, n, f )
 // ------------------------------------------------------------------------------------------------
 
 /**
- * Class 'Mat4'
+ * Class 'Mat4d'  (similar to Mat4 but with double precission storage)
  * A 'Mat4' object is a 'Float64Array' object with 16 numbers, stored by using column-major order,
  * suited for WebGL apps. This means the value at row 'row' and column 'col' is at index 'row+4*col'
  */
@@ -679,6 +677,167 @@ class Mat4d extends Float64Array
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Class for rays ( a 'ray' is a half-line, defined by origin and direction vector, plus some other 
+// auxiliary values used to accelerate computations
+
+class Ray
+{
+    constructor( org, dir )
+    {
+        CheckType( org, 'Vec3')
+        CheckType( dir, 'Vec3' )
+        this.org = org 
+        this.dir = dir
+        this.oxd = this.org.cross( this.dir )
+    }
+}
+
+// -----------------------------------------------------------------------------------------------
+// A 3x3 matrix with single-precision floating point values:
+
+
+class Mat3 extends Float32Array
+{
+    constructor( obj )
+    {
+        super(9)  // 9 zeros
+        if ( obj === null )
+            return
+        
+        // 'obj' must be an 'Array' with 3 'Vec3' (or an array with three numbers)  
+        // (each array one is a row of the matrix)
+        // we initialize this Float32Array by using  column-major order (as webGL expects)
+    
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 3 ; col++ )
+                this[row + col*4] = (obj[row])[col]
+            
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns the determinant of the upper left 3x3 submatrix (matrix without translation terms)
+     *  @returns {Number} -- determinant 
+     */
+    determinant()
+    {
+        return    this[0]*this[4]*this[8] +  this[1]*this[5]*this[6] + this[2]*this[3]*this[7]
+                - this[2]*this[4]*this[6]  - this[0]*this[5]*this[7] - this[1]*this[3]*this[8]
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns a cofactor 
+     * @param {number} row  -- row index (cell to exclude from the minor)   (0,1 or 2)
+     * @param {number} col   -- column index (for cell to exclude from the minor) (0,1 or 2) 
+     */
+    cofactor( row, col )
+    {
+        const
+            r1 = (row+1) % 3,
+            r2 = (row+2) % 3,
+            c1 = 4*( (col+1) % 3 ),
+            c2 = 4*( (col+2) % 3 ) 
+            
+        return this[ r1+c1 ]*this[ r2+c2 ] - this[ r1+c2 ]*this[ r2+c1 ] 
+    }
+    // -----------------------------------------
+    /**
+     * Apply this matrix to a Vec3, returns the resulting Vec3 vector
+     * @param   {Vec3}   v  -- x,y,z coordinates of vector or point
+     * @returns {Vec3}      -- resulting vector, after aplying this matrix to (v;w)
+     */
+    apply_to( v )
+    {
+        let res_v = new Vec3([ 0.0, 0.0, 0.0 ])
+
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 3 ; col++ )
+                res_v[ row ]  +=  this[ row + col*4 ] * v[ col ]
+
+        return res_v
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns the inverse of this matrix (this matrix must have no projection terms, that is 
+     * last row must be [0,0,0,1])
+     * @returns {Mat4} -- inverse of this matrix 
+     */
+    inverse()
+    {
+        const det = this.determinant()
+            
+        if ( Math.abs( det ) < 1e-15 )
+            throw new Error('unable to invert 3x3 matrix, determinant is near zero')
+
+        let inv_m = new Mat4d( 0.0 )  
+
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 3 ; col++ )
+                inv_m[ col + 4*row ] = this.cofactor( row, col ) /det 
+                // (assignement to transposed element at 'col+4*row' instead of 'row+4*col')
+
+        // done
+        return inv_m
+    }
+    // -----------------------------------------
+    toString() 
+    {
+        let str = '\n'
+        for( let row = 0 ; row<3 ; row++ )
+            str = str + `   | ${N2S(this[row+0])}, ${N2S(this[row+3])}, ${N2S(this[row+6])} |\n`
+        return str    
+    }
+    // -----------------------------------------
+
+    compose( m )
+    {
+        let res = new Mat3( null ) // 3x3 matrix, filled with zeros
+        
+        for( let row = 0 ; row<3 ; row++ )
+            for( let col = 0 ; col<3 ; col++ )
+                for( let k = 0 ; k<3 ; k++ )
+                    res[row + col*3] += this[row + k*3] * m[k + col*3]
+                    // ==> res(row,col) += this(row,k) * m(k,col)
+        return res
+    }
+    
+}
+
+// -----------------------------------------------------------------------------------------------
+
+/**
+ * Ray-triangle intersection test
+ * @param {Ray}    ray       -- input ray
+ * @param {object} tri       -- input object with: 'v0','v1','v2' (Vec3) and 'it' (natural number, >=0) 
+ * @param {object} hit_data  -- input/output object with: 'hit' (true/false), if it is 'true' it means an intersection has already been found
+ *                                                        'dist' (number>0), 'it' (natural number) 
+ *                              this object is written iif the return value is true
+ * 
+ * @returns {bool}   -- true if an intersection has been found and: it is the first or is nearer than the one in 'hit_data' 
+ *
+ * See the plucker-coordinates-based algorithm description here:
+ *   Ray-Triangle Intersection Algorithm for Modern CPU Architectures
+ *   M. Shevtsov, A. Soupikov and A. Kapustin, GraphiCon' 2007
+ *   http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.189.5084&rep=rep1&type=pdf
+ */
+function RayTriangleInt( ray, tri, hit_data )
+{
+    const 
+        m   = new Mat3([ tri.v1.minus(tri.v0), tri.v2.minus(tri.v0), ray.dir ]),
+        uvt = m.inverse().apply_to( ray.org.minus( tri.v0 ) )
+
+    if ( uvt[0] < 0.0 || 1.0 < uvt[0] ) return false
+    if ( uvt[1] < 0.0 || 1.0 < uvt[1] ) return false  
+    if ( uvt[0]+uvt[1] < 0.0 || 1.0 < uvt[0]+uvt[1] ) return false  
+    if ( uvt[2] < 0.0 ) return false 
+    if ( hit_data.hit )  if ( hit_data.dist < uvt[2] ) return false 
+
+    hit_data.hit  = true 
+    hit_data.it   = tri.it
+    hit_data.dist = uvt[2]
+    return true
+}
+
 // ------------------------------------------------------------------------------------------------
 
 function TestVec3()
@@ -710,7 +869,10 @@ function TestVec3()
 }
 // ------------------------------------------------------------------------------------------------
 
-function TestMat4()
+/**
+ * Does several test for 4x4 and 3x3 matrices in simple precision
+ */
+function TestMatrices()
 {
     const fname = `TestMat4():`
     Log(`${fname} begins`)
@@ -773,7 +935,26 @@ function TestMat4()
     Log(`${fname} m18 (ident?) == ${m18}`)
     Log(`${fname} m19 (ident?) == ${m19}`)
 
+    
+
+    Log(`${fname} ----- tests for Mat3f INVERSE `)
+
+    const 
+        m20 = new Mat3
+            ([  [  1.5, 2.8, -3.5 ],
+                [  1.5, 0.5, -3.5 ],
+                [ -1.7, 2.8, -3.5 ]
+            ]),
+        m21 = m20.inverse(),
+        m22 = m21.compose( m20 ),
+        m23 = m20.compose( m21 )
+
+        Log(`${fname} m22 (ident?) == ${m18}`)
+        Log(`${fname} m23 (ident?) == ${m19}`)
+
+    
     Log(`${fname} ends`)
+
 
 }
 

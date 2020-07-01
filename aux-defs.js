@@ -260,34 +260,4 @@ function isPowerOf2(value)
     return (value & (value - 1)) == 0;
 }
 
-// -----------------------------------------------------------------------------------------------
 
-/**
- * Ray-triangle intersection test
- * @param {Ray}    ray       -- input ray
- * @param {object} tri       -- input object with: 'v0','v1','v2' (Vec3) and 'it' (natural number, >=0) 
- * @param {*}      hit_data  -- input/output object with: 'hit' (true/false), if it is 'true' also: 
- *                                                        'dist' (number>0), 'it' (natural number) 
- * @returns {bool}   -- true if an intersection has been found with this triangle, false otherwise
- *
- * see Moller-Trumbore and variants ....
- */
-function RayTriangleInt( ray, tri, hit_data )
-{
-    const 
-        e1 = tri.v1.minus( tri.v0 ),
-        e2 = tri.v2.minus( tri.v0 )
-        e1_dot_e2 = e1.dot( e2 )
-
-    //if ( fabs(e1_dot_e2 ) < 1e-15 )
-    //    return false 
-
-    const 
-        e1_perp = e1.minus( e2.scale( e1_dot_e2 )),        // component of e1 perpendicular to e2  ( == e1 - (e1 comp. par to e2))
-        e2_perp = e2.minus( e1.scale( e1_dot_e2 )),        // component of e2 perpendicular to e1
-        e1_dual = e1_perp.scale( 1.0/e1_perp.dot( e1 ) ),  // computed so that e1·e1_dual = 1, and e2·e1_dual = 0
-        e2_dual = e2_perp.scale( 1.0/e2_perp.dot( e1 ) )   
-
-    
-    
-}

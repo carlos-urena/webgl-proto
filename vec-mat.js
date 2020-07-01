@@ -13,6 +13,7 @@ function N2S( x )
     return str
 }
 // ------------------------------------------------------------------------------------------------
+// Class for tuples with 3 real numbers, simple precission 
 
 class Vec3 extends Float32Array
 {
@@ -34,6 +35,43 @@ class Vec3 extends Float32Array
     cross( v ) { return new Vec3([  this[1]*v[2]-this[2]*v[1], 
                                     this[2]*v[0]-this[0]*v[2], 
                                     this[0]*v[1]-this[1]*v[0] ]) }
+
+    normalized() 
+    {   const lsq = this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
+        return lsq != 0 ? this.scale(1/Math.sqrt(lsq)) : this ;
+    }
+     
+    x() { return this[0] }
+    y() { return this[1] }
+    z() { return this[2] }
+    
+    r() { return this[0] }
+    g() { return this[1] }
+    b() { return this[2] }
+}
+// ------------------------------------------------------------------------------------------------
+// Class for tuples with 3 reals numbers, double precision 
+
+class Vec3d extends Float64Array
+{
+    constructor( obj )
+    {
+        super( obj )
+
+        if ( this.length != 3 )
+            throw Error(`Vec3d.constructor(): the length is not 3 but ${this.length}`)
+    }
+
+    toString() { return `(${this[0]},${this[1]},${this[2]})` }
+
+    plus ( v ) { return new Vec3d([ this[0]+v[0], this[1]+v[1], this[2]+v[2] ]) }
+    minus( v ) { return new Vec3d([ this[0]-v[0], this[1]-v[1], this[2]-v[2] ]) }
+    scale( a ) { return new Vec3d([ a*this[0],    a*this[1],     a*this[2]   ]) }
+    dot  ( v ) { return this[0]*v[0] + this[1]*v[1] + this[2]*v[2] }
+
+    cross( v ) { return new Vec3d([  this[1]*v[2]-this[2]*v[1], 
+                                     this[2]*v[0]-this[0]*v[2], 
+                                     this[0]*v[1]-this[1]*v[0] ]) }
 
     normalized() 
     {   const lsq = this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
@@ -462,6 +500,183 @@ function Mat4_Perspective( fovy_deg, asp_rat, n, f )
       l = -r 
 
    return Mat4_Frustum( l, r, b, t, n, f )
+}
+
+
+// ------------------------------------------------------------------------------------------------
+
+/**
+ * Class 'Mat4'
+ * A 'Mat4' object is a 'Float64Array' object with 16 numbers, stored by using column-major order,
+ * suited for WebGL apps. This means the value at row 'row' and column 'col' is at index 'row+4*col'
+ */
+class Mat4d extends Float64Array 
+{
+    /**
+     * Builds a 'Mat4' (that is, a 'Float32Array') by using object 'obj'
+     * 'obj' can be 'null', can be a 'number', an array of arrays of numbers (row-major),
+     * or anything which is valid as a parameter for 'Float32Array' class constructor.
+     * @param {*} obj 
+     */
+    constructor( obj ) 
+    {
+        if ( obj == null ) // if 'null' is received, then the identity matrix is built
+        {    
+            super( 16 )   // creates a 'Float32Array' with 16 zeros
+
+            // set to 1 the values in the diagonal
+            this[0]  = 1.0
+            this[5]  = 1.0
+            this[10] = 1.0
+            this[15] = 1.0
+        }
+        else if ( (typeof obj) == 'number' )
+        {   
+            super( 16 )        // creates a 'Float64Array' with 16 zeros
+            this.fill( obj )   // fills with a number
+        }
+        else if ( Is4x4Array( obj ) )
+        {
+            // we assume 'obj' is an array with four rows, where each row is an array with 4 numbers
+            // we initialize this Float32Array by using  column-major order (as webGL expects)
+            super(16)
+            for( let row = 0 ; row < 4 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
+                this[row + col*4] = (obj[row])[col]
+        }
+        else
+            super( obj ) // uses 'obj' whatever it is (in particular, it can be another 'Mat4', but also a 'Float32Array'
+       
+        // check the object was correctly build (we don't chek the contents are numbers, only check the length)
+        if ( this.length != 16 )
+            throw Error(`Mat4d.constructor: invalid 'obj' type or length. The resulting matrix length is not 16 but ${this.length}`)
+    }
+    // -----------------------------------------
+    toString() 
+    {
+        let str = '\n'
+        const n = 3
+
+        for( let row = 0 ; row<4 ; row++ )
+        {   const b = 
+            str = str + `   | ${N2S(this[row+0])}, ${N2S(this[row+4])}, ${N2S(this[row+8])}, ${N2S(this[row+12])} |\n`
+        }    
+        return str    
+    }
+    // -----------------------------------------
+    compose( m )
+    {
+        let res = new Mat4d(0) // 4x4 matrix, filled with zeros
+        
+        for( let row = 0 ; row<4 ; row++ )
+            for( let col = 0 ; col<4 ; col++ )
+                for( let k = 0 ; k<4 ; k++ )
+                    res[row + col*4] += this[row + k*4] * m[k + col*4]
+                    // ==> res(row,col) += this(row,k) * m(k,col)
+        
+        // optimized version (does it works?)
+        // for( let row = 0 ; row<4 ; row++ )
+        //     for( let col4 = 0 ; col4<16 ; col4 += 4 )
+        //     {
+        //         let k4 = 0
+        //         for( let k = 0 ; k<4 ; k++ )
+        //             res[row+col4] += this[row+k4] * m[k+col4]
+        //         k4 += 4 
+        //     }
+
+        return res
+    }
+    // -----------------------------------------
+    /**
+     *  apply this matrix to a Vec3 and a floating value 'w' (the W coordinate of the Vec3)
+     * returns the resulting Vec3 vector
+     * @param   {Vec3d}   v  -- x,y,z coordinates of vector or point
+     * @param   {Number} w  -- 0 (if 'v' is a free vector) or 1 (when 'v' is a point)
+     * @returns {Vec3d}      -- resulting vector, after aplying this matrix to (v;w)
+     */
+    apply_to( v, w )
+    {
+        let res = new Vec3d([ 0.0, 0.0, 0.0 ])
+
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
+                res[ row ]  +=  this[ row + col*4 ] * 
+                                ( (col < 3) ? v[ col ] : w )
+        return res
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    /**
+     * Returns the transpose of this matrix
+     * @returns {Mat4d} -- transpose of this matrix
+     */
+    transposed(  )
+    {
+        let res = new Mat4d( 0.0 ) // creates a 4x4 matrix, filled with zeros
+
+        for( let row = 0 ; row < 4 ; row++ )
+            for( let col = 0 ; col < 4 ; col++ )
+                res[ row + 4*col ] = this[ col + 4*row ]
+        
+        return res
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns the determinant of the upper left 3x3 submatrix (matrix without translation terms)
+     *  @returns {Number} -- determinant 
+     */
+    determinant3()
+    {
+        return    this[0]*this[5]*this[10] + this[1]*this[6]*this[8]  + this[2]*this[4]*this[9]
+                - this[2]*this[5]*this[8]  - this[1]*this[4]*this[10] - this[0]*this[6]*this[9]
+    }
+
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns a minor of the upper left 3x3 submatrix
+     * @param {number} row  -- row index (cell to exclude from the minor)   (0,1 or 2)
+     * @param {number} col   -- column index (for cell to exclude from the minor) (0,1 or 2) 
+     */
+    cofactor( row, col )
+    {
+        const
+            r1 = (row+1) % 3,
+            r2 = (row+2) % 3,
+            c1 = 4*( (col+1) % 3 ),
+            c2 = 4*( (col+2) % 3 ) 
+            
+        return this[ r1+c1 ]*this[ r2+c2 ] - this[ r1+c2 ]*this[ r2+c1 ] 
+    }
+    // --------------------------------------------------------------------------------------------
+    /**
+     * Returns the inverse of this matrix (this matrix must have no projection terms, that is 
+     * last row must be [0,0,0,1])
+     * @returns {Mat4} -- inverse of this matrix 
+     */
+    inverse()
+    {
+        const det = this.determinant3()
+            
+        if ( Math.abs( det ) < 1e-15 )
+            throw new Error('unable to invert matrix, determinant is near zero')
+
+        // inverse translation matrix
+        const tr_inv = Mat4_Translate([ -this[12], -this[13], -this[14] ])
+        
+        // inverse of the 3x3 upper left sub-matrix
+        let sm3_inv = new Mat4d( 0.0 )  
+
+        // compute 'sm3_inv' using matrix of cofactors
+        sm3_inv[15] = 1.0 
+        for( let row = 0 ; row < 3 ; row++ )
+            for( let col = 0 ; col < 3 ; col++ )
+                sm3_inv[ col + 4*row ] = this.cofactor( row, col ) /det 
+                // (assignement to transposed element at 'col+4*row' instead of 'row+4*col')
+
+        // result transform is: (1) inverse translation  and (2) inverse of 3x3 submatrix
+        return sm3_inv.compose( tr_inv )
+        
+    }
 }
 
 // ------------------------------------------------------------------------------------------------

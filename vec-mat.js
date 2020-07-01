@@ -711,7 +711,7 @@ class Mat3 extends Float32Array
     
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                this[row + col*4] = (obj[row])[col]
+                this[row + col*3] = (obj[row])[col]
             
     }
     // --------------------------------------------------------------------------------------------
@@ -735,8 +735,8 @@ class Mat3 extends Float32Array
         const
             r1 = (row+1) % 3,
             r2 = (row+2) % 3,
-            c1 = 4*( (col+1) % 3 ),
-            c2 = 4*( (col+2) % 3 ) 
+            c1 = 3*( (col+1) % 3 ),
+            c2 = 3*( (col+2) % 3 ) 
             
         return this[ r1+c1 ]*this[ r2+c2 ] - this[ r1+c2 ]*this[ r2+c1 ] 
     }
@@ -752,7 +752,7 @@ class Mat3 extends Float32Array
 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                res_v[ row ]  +=  this[ row + col*4 ] * v[ col ]
+                res_v[ row ]  +=  this[ row + col*3 ] * v[ col ]
 
         return res_v
     }
@@ -774,7 +774,7 @@ class Mat3 extends Float32Array
 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
-                inv_m[ col + 4*row ] = this.cofactor( row, col ) /det 
+                inv_m[ col + 3*row ] = this.cofactor( row, col ) /det 
                 // (assignement to transposed element at 'col+4*row' instead of 'row+4*col')
 
         // done

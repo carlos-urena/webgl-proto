@@ -770,7 +770,7 @@ class Mat3 extends Float32Array
         //if ( Math.abs( det ) < 1e-12 )
         //    throw new Error('unable to invert 3x3 matrix, determinant is near zero')
 
-        let inv_m = new Mat4d( 0.0 )  
+        let inv_m = new Mat3( null )  
 
         for( let row = 0 ; row < 3 ; row++ )
             for( let col = 0 ; col < 3 ; col++ )
@@ -960,7 +960,7 @@ function TestMatrices()
 
     
 
-    Log(`${fname} ----- tests for Mat3f INVERSE `)
+    Log(`${fname} ----- tests for Mat3  INVERSE `)
 
     const 
         m20 = new Mat3
@@ -968,12 +968,14 @@ function TestMatrices()
                 [  1.5, 0.5, -3.5 ],
                 [ -1.7, 2.8, -3.5 ]
             ]),
-        m21 = m20.inverse(),
+        det = m20.determinant(),
+        m21 = m20.inverse( det ),
         m22 = m21.compose( m20 ),
         m23 = m20.compose( m21 )
 
-        Log(`${fname} m22 (ident?) == ${m18}`)
-        Log(`${fname} m23 (ident?) == ${m19}`)
+    Log(`${fname} m20 == ${m20}`)
+    Log(`${fname} m22 (ident?) == ${m22}`)
+    Log(`${fname} m23 (ident?) == ${m23}`)
 
     
     Log(`${fname} ends`)

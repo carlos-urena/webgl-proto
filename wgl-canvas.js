@@ -366,6 +366,7 @@ class WebGLCanvas
         let pr = this.vis_ctx.program 
         pr.doShading( false )
         pr.useTexture( null )
+        gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
         gl.disable( gl.DEPTH_TEST )
         pr.setViewMat( MV )
         pr.setProjMat( PR )

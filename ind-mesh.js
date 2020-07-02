@@ -64,7 +64,7 @@ function MergeBBoxes( bbox1, bbox2 )
     let bbox =
         {   xmin: Math.min( bbox1.xmin, bbox2.xmin ), xmax: Math.max( bbox1.xmax, bbox2.xmax ),
             ymin: Math.min( bbox1.ymin, bbox2.ymin ), ymax: Math.max( bbox1.ymax, bbox2.ymax ),
-            zmin: Math.min( bbox1.zmin, bbox2.zmin ), ymax: Math.max( bbox1.zmax, bbox2.zmax )
+            zmin: Math.min( bbox1.zmin, bbox2.zmin ), zmax: Math.max( bbox1.zmax, bbox2.zmax )
         }
     return bbox
 }
@@ -164,6 +164,89 @@ class IndexedTrianglesMesh extends DrawableObject
 
         this.vertex_array = new VertexArray ( num_attrs, vec_len, coords_data )  
         this.vertex_array.setIndexesData( triangles_data )
+
+        this.triangle_duals = null 
+        this.computeTriangleDuals()
+
+        let totb = 0
+        totb += 4*this.coords_data.length 
+        totb += 4*this.triangles_data.length 
+        if ( this.texcoo_data != null )    totb += 4*this.texcoo_data.length 
+        if ( this.triangle_duals != null ) totb += 4*this.triangle_duals.length 
+
+        Log(`${fname} mesh created, size == ${totb/1024} MB`)
+
+    }
+    // ----------------------------------------------------------------------------------
+    getTriangleVertexes( it )
+    {
+        if ( it < 0 || this.triangles_data.length <= 3*it )
+            throw new Error("it out of range")
+
+        const 
+            vc = this.coords_data, 
+            b  = it*3,
+            i0 = 3*this.triangles_data[ b+0 ],
+            i1 = 3*this.triangles_data[ b+1 ],
+            i2 = 3*this.triangles_data[ b+2 ]
+
+        const vv = [  new Vec3([ vc[i0+0], vc[i0+1], vc[i0+2] ]),
+                      new Vec3([ vc[i1+0], vc[i1+1], vc[i1+2] ]), 
+                      new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ])
+                   ]
+        return vv 
+    }
+    // ----------------------------------------------------------------------------------
+    // (see: https://lsi.ugr.es/curena/varios/rtint/)
+    computeTriangleDuals()
+    {
+        const fname = 'IndexedTriangleMesh.computeTriangleDuals():'
+
+        Log( `${fname} begins`)
+        let td = new Float32Array( 13*this.n_tris )
+
+        for( let it = 0 ; it < this.n_tris ; it++ )
+        {
+            const
+                b   = 13*it, 
+                vv  = this.getTriangleVertexes( it ),
+                e1  = vv[1].minus( vv[0] ),
+                e2  = vv[2].minus( vv[0] ),
+                d11 = e1.dot( e1 ),
+                d22 = e2.dot( e2 ),
+                d12 = e1.dot( e2 ),
+                s_inv = d11*d22 - d12*d12 
+
+            // Log(`vv type is '${vv.constructor.name}', vv[1] type is '${(vv[1]).constructor.name}'`)
+            // Log(`vv[1][1] type is '${(vv[1])[1].constructor.name}', vv[1][1] == ${vv[1][1]}`)
+            
+            if ( Math.abs(s_inv) < 1e-12 )
+            {  td[ b+12 ] = 0.0
+                Log(`CTD:: ### s_inv == ${s_inv}`)
+               continue 
+            }
+            td[ b+12 ] = 1.0 
+
+            const 
+                s    = 1.0/s_inv, 
+                e1d  = (e1.scale( d22 ).minus( e2.scale( d12 ) )).scale( s ),
+                e2d  = (e2.scale( d11 ).minus( e1.scale( d12 ) )).scale( s ),
+                n    = e1.cross( e2 ).normalized(),
+                k    = new Vec3( [ vv[0].dot( e1d ), vv[0].dot( e2d ), vv[0].dot( n )] )
+
+            Log(` CTD:: vv[0] == ${vv[0]}, n == ${n}, n length == ${n.len_sq()}, n dot e1 = ${n.dot(e1)} `)
+
+            for( let i = 0  ; i < 3 ; i++ )  td[b+i] = e1d[i-0]
+            for( let i = 3  ; i < 6 ; i++ )  td[b+i] = e2d[i-3]
+            for( let i = 6  ; i < 9 ; i++ )  td[b+i] = n[i-6]
+            for( let i = 9  ; i < 12 ; i++ ) td[b+i] = k[i-9]
+
+            Log( `CTD:: e1d=${e1d}, e2d=${e2d}, n=${n}, k=${k}`)
+
+        }
+        Log(`${fname} ends`)
+        this.triangle_duals = td 
+
     }
     // ----------------------------------------------------------------------------------
     hasTextCoords()
@@ -268,27 +351,52 @@ class IndexedTrianglesMesh extends DrawableObject
         let vc  = this.coords_data,
             b   = 0,
             res = false
-           
-        for( let it = 0 ; it < nt ; it++ )
+        
+        if ( this.triangle_duals == null )
         {
-            const 
-                i0   = 3*this.triangles_data[ b+0 ],
-                i1   = 3*this.triangles_data[ b+1 ],
-                i2   = 3*this.triangles_data[ b+2 ],
-                v0   = new Vec3([ vc[i0+0], vc[i0+1], vc[i0+2] ]),
-                v1   = new Vec3([ vc[i1+0], vc[i1+1], vc[i1+2] ]),
-                v2   = new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ]),
-                tri = { v0:v0, v1:v1, v2:v2, it:it }
+            for( let it = 0 ; it < nt ; it++ )
+            {
+                const 
+                    vv = this.getTriangleVertexes( it ),
+                    tri = { v0: vv[0], v1: vv[1], v2: vv[2], it: it }
 
-            // Log(`----`)
-            // Log(`tri ind = ${i0/3   }, ${i1/3}, ${i2/3}`)
-            // Log(`    v0  = ${tri.v0 }, v1  = ${tri.v1}, v2 = ${tri.v2}`)
-            // Log(`ray org = ${ray.org}, dir = ${ray.dir}`)
+                // Log(`----`)
+                // Log(`tri ind = ${i0/3   }, ${i1/3}, ${i2/3}`)
+                // Log(`    v0  = ${tri.v0 }, v1  = ${tri.v1}, v2 = ${tri.v2}`)
+                // Log(`ray org = ${ray.org}, dir = ${ray.dir}`)
 
-            if ( RayTriangleInt( ray, tri, hit_data ) )
-                res = true 
-            b += 3
+                if ( RayTriangleInt( ray, tri, hit_data ) )
+                    res = true 
+                b += 3
+            }
         }
+        else
+        {
+            Check( this.triangle_duals.length == this.n_tris*13 )
+            
+            let tri_dual = { td: this.triangle_duals, it: -1 }
+
+            Check( tri_dual.td.length == this.n_tris*13 )
+            Log( `td type is  ${tri_dual.td.constructor.name}` )
+
+            for( let i = 0 ; i < rtdc_len ; i++ )
+                rtdc[i] = 0
+
+            for( let it = 0 ; it < nt ; it++ )
+            {
+                tri_dual.it = it
+
+                if ( RayTriDualInt( ray, tri_dual, hit_data ) )
+                    res = true 
+                
+            }
+
+            for( let i = 0 ; i < rtdc_len ; i++ )
+            {
+                Log(`*** rtdc[${i}] = ${rtdc[i]}`)
+            }
+        }
+
         Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
         Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
         return res

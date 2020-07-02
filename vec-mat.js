@@ -17,26 +17,35 @@ class Vec3 extends Float32Array
 {
     constructor( obj )
     {
-        super( obj )
+        if ( obj.constructor.name == 'Float32Array' )
+            super( [ obj[0], obj[1], obj[2] ])
+        else
+            super( obj )
 
         if ( this.length != 3 )
             throw Error(`Vec3.constructor: the length is not 3 but ${this.length}`)
     }
 
-    toString() { return `(${N2S(this[0])},${N2S(this[1])},${N2S(this[2])})` }
+    toString()  { return `(${N2S(this[0])},${N2S(this[1])},${N2S(this[2])})` }
 
-    plus ( v ) { return new Vec3([ this[0]+v[0], this[1]+v[1], this[2]+v[2] ]) }
-    minus( v ) { return new Vec3([ this[0]-v[0], this[1]-v[1], this[2]-v[2] ]) }
-    scale( a ) { return new Vec3([ a*this[0],    a*this[1],     a*this[2]   ]) }
-    dot  ( v ) { return this[0]*v[0] + this[1]*v[1] + this[2]*v[2] }
+    plus ( v )  { return new Vec3([ this[0]+v[0], this[1]+v[1], this[2]+v[2] ]) }
+    minus( v )  { return new Vec3([ this[0]-v[0], this[1]-v[1], this[2]-v[2] ]) }
+    scale( a )  { return new Vec3([ a*this[0],    a*this[1],     a*this[2]   ]) }
+    dot  ( v )  { return this[0]*v[0] + this[1]*v[1] + this[2]*v[2] }
 
-    cross( v ) { return new Vec3([  this[1]*v[2]-this[2]*v[1], 
-                                    this[2]*v[0]-this[0]*v[2], 
-                                    this[0]*v[1]-this[1]*v[0] ]) }
+    cross( v )  { return new Vec3([  this[1]*v[2]-this[2]*v[1], 
+                                     this[2]*v[0]-this[0]*v[2], 
+                                     this[0]*v[1]-this[1]*v[0] 
+                                 ]) 
+                }
 
     normalized() 
-    {   const lsq = this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
+    {   const lsq = this.len_sq()
         return lsq != 0 ? this.scale(1/Math.sqrt(lsq)) : this ;
+    }
+    len_sq()
+    {
+        return this[0]*this[0] + this[1]*this[1] + this[2]*this[2] 
     }
      
     x() { return this[0] }
@@ -886,6 +895,91 @@ function RayTriangleInt( ray, tri, hit_data )
     return true
 }
 // --------------------
+// -----------------------------------------------------------------------------------------------
+
+var zero_det_count    = 0,
+    ray_tri_int_count = 0 
+
+/**
+ * Ray-triangle intersection test, using the dual triangle representation
+ * @param {Ray}    ray       -- input ray
+ * @param {object} tri       -- input triangle in dual form (object with 'td' (Float32Array), 'it' (integer))
+ * @param {object} hit_data  -- input/output object with: 'hit' (true/false), if it is 'true' it means an intersection has already been found
+ *                                                        'dist' (number>0), 'it' (natural number) 
+ *                              this object is written iif the return value is true
+ * 
+ * @returns {bool}   -- true if an intersection has been found and: it is the first or is nearer than the one in 'hit_data' 
+ *
+ 
+ */
+
+ const rtdc_len = 8
+ var rtdc = new Uint32Array( rtdc_len )
+
+function RayTriDualInt( ray, tri_dual, hit_data )
+{
+    ray_tri_int_count ++ 
+
+    const debug = false
+
+    // early termination algorithm 
+    // see: https://lsi.ugr.es/curena/varios/rtint/
+
+    // offset into 
+    const  b   = 13*tri_dual.it,
+           s   = b+12,
+           td  = tri_dual.td 
+    
+    if ( td[s] == 0.0 ) // degenerate triangle, done 
+    {
+        zero_det_count ++ 
+        rtdc[0]++ 
+        return false 
+    }
+    const e1d = b+0,
+          e2d = b+3,
+          n   = b+6,
+          k   = b+9,
+          d   = ray.dir,
+          a   = -d[0]*td[n+0] - d[1]*td[n+1] - d[2]*td[n+2]
+        
+    if ( Math.abs( a ) < 1e-12 ) { rtdc[1]++ ; return false }
+    
+    const
+        o  = ray.org, 
+        on = o[0]*td[n+0] + o[1]*td[n+1]+ o[2]*td[n+2], 
+        t  = (on - td[k+2])/a
+
+   
+    Log(`it == ${b/13}, d == ${d}, on = ${on} a == ${a}, t == ${t}`)
+    
+    if ( t < 0.0 ) { rtdc[2]++ ; return false }
+
+    if ( hit_data.hit )  if ( hit_data.dist < t ) { rtdc[3]++ ; return false } // hit found but farther than previous
+    
+    const p = [ o[0]+t*d[0], o[1]+t*d[1], o[2]+t*d[2] ],
+          u = p[0]*td[e1d+0] + p[1]*td[e1d+1]+ p[2]*td[e1d+2]- td[k+0]
+    
+    if ( u < 0.0 || 1.0 < u) { rtdc[4]++ ;return false }
+
+    const v = p[0]*td[e2d+0] + p[1]*td[e2d+1]+ p[2]*td[e2d+2]- td[k+1]
+    
+    if ( v < 0.0 || 1.0 < v) { rtdc[5]++ ;return false }
+
+    const upv = u+v 
+
+    if ( 1.0 < upv ) { rtdc[6]++ ;return false }
+
+    hit_data.hit = true 
+    hit_data.dist = t 
+    hit_data.it   = tri_dual.it
+    rtdc[7]++ ;
+    return true
+    
+}
+
+
+// ----
 
 function TestRayTriInt()
 {

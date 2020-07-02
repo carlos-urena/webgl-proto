@@ -188,7 +188,7 @@ class WebGLCanvas
         // test: intersect ray with scene  
         let ray_wc = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
         let obj = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
-        let hit_data = { hit: false, dist: -1, it: -1 }
+        let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
 
         Log('STARTS intersection .....')
         
@@ -1318,9 +1318,9 @@ class WebGLCanvas
                 if ( this.test_3d_mesh == null )
                 {
                     const ns = 1000, nt = 1000
-                    this.test_3d_mesh = new SphereMesh( ns, nt )
+                    //this.test_3d_mesh = new SphereMesh( ns, nt )
                     //this.test_3d_mesh = new CylinderMesh( ns, nt )
-                    //this.test_3d_mesh = new ConeMesh( ns, nt )
+                    this.test_3d_mesh = new ConeMesh( ns, nt )
                 }
                 
 

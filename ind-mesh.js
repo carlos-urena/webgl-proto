@@ -174,7 +174,8 @@ class IndexedTrianglesMesh extends DrawableObject
         if ( this.texcoo_data != null )    totb += 4*this.texcoo_data.length 
         if ( this.triangle_duals != null ) totb += 4*this.triangle_duals.length 
 
-        Log(`${fname} mesh created, size == ${totb/1024} MB`)
+        Log(`${fname} mesh created, size == ${N2S(totb/1024)} MB`)
+        Log(`${fname} -------------- ends -----------------`)
 
     }
     // ----------------------------------------------------------------------------------
@@ -349,8 +350,7 @@ class IndexedTrianglesMesh extends DrawableObject
             throw new Error("method 'interectRay' for empty triangle mesh" )
 
         let vc  = this.coords_data,
-            b   = 0,
-            res = false
+            b   = 0
         
         if ( this.triangle_duals == null )
         {
@@ -365,9 +365,7 @@ class IndexedTrianglesMesh extends DrawableObject
                 // Log(`    v0  = ${tri.v0 }, v1  = ${tri.v1}, v2 = ${tri.v2}`)
                 // Log(`ray org = ${ray.org}, dir = ${ray.dir}`)
 
-                if ( RayTriangleInt( ray, tri, hit_data ) )
-                    res = true 
-                b += 3
+                RayTriangleInt( ray, tri, hit_data ) 
             }
         }
         else
@@ -385,10 +383,7 @@ class IndexedTrianglesMesh extends DrawableObject
             for( let it = 0 ; it < nt ; it++ )
             {
                 tri_dual.it = it
-
-                if ( RayTriDualInt( ray, tri_dual, hit_data ) )
-                    res = true 
-                
+                RayTriDualInt( ray, tri_dual, hit_data ) 
             }
 
             for( let i = 0 ; i < rtdc_len ; i++ )
@@ -399,7 +394,6 @@ class IndexedTrianglesMesh extends DrawableObject
 
         Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
         Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
-        return res
     }
 }
 
@@ -761,17 +755,14 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
     intersectRay( ray, hit_data )
     {
         const fname = 'MultiMeshFromOBJLines.intersectRay():'
-        let res = false 
         Log(`${fname} begins`)
 
         for( let mesh of this.meshes )
         {
             Log(`${fname}     mesh == ${mesh.name}`)
-            if ( mesh.intersectRay( ray, hit_data ) )
-                res = true 
+            intersectRay( ray, hit_data ) )
         }
-        Log(`${fname} ends`)
-        return res
+        Log(`${fname} ------------------ends ----------------------`)
     }
 }
 // -------------------------------------------------------------------------------------------------

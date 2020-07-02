@@ -75,6 +75,9 @@ class WebGLCanvas
         this.loaded_object  = null
         this.loading_object = false 
 
+        // hit object which is drawn on eahc hit point
+        this.hit_object = null 
+
         // initialize scene object angles and scale 
         this.scene_alpha_deg  = 0.0              // scene rotation angles (alpha)
         this.scene_beta_deg   = 0.0              // scene rotation angles (beta)
@@ -96,8 +99,9 @@ class WebGLCanvas
             } 
 
         // get canvas button elements
-        this.help_button = BuscarElemId('help_button_id')
-        this.log_button  = BuscarElemId('log_button_id')
+        this.help_button       = BuscarElemId('help_button_id')
+        this.log_button        = BuscarElemId('log_button_id')
+        this.clear_pnts_button = BuscarElemId('clear_pnts_button_id')
         
         // add the canvas element to the page
         this.parent_elem.appendChild( this.canvas_elem )
@@ -145,10 +149,14 @@ class WebGLCanvas
         // add button click event handlers
 
         if ( this.help_button != null )
-            //this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
+            this.help_button.addEventListener( 'click', e => this.helpButtonClicked(e) )
+        
         if ( this.log_button != null )
             //this.log_button.addEventListener( 'click', e => ShowLogWin() )
             this.log_button.onclick = e => ShowLogWin()
+
+        if ( this.clear_pnts_button != null )
+            this.clear_pnts_button.addEventListener( 'click', e => this.clearPnts(e) )
 
         // call 'this.dragDrop' when the user drops some files on this canvas element
         this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
@@ -159,6 +167,13 @@ class WebGLCanvas
 
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
+    }
+    // ----
+    clearPnts()
+    {
+        this.setStatus('Hits points cleared')
+        this.debug_rays = []
+        this.drawFrame()
     }
     // -------------------------------------------------------------------------------------------------
     // log to a fixed element.....
@@ -183,7 +198,6 @@ class WebGLCanvas
               x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
               x1_wc     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
 
-        
 
         // test: intersect ray with scene  
         let ray_wc = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
@@ -192,7 +206,6 @@ class WebGLCanvas
 
         Log('STARTS intersection .....')
         
-
         zero_det_count     = 0
         ray_tri_int_count  = 0 
 
@@ -205,16 +218,17 @@ class WebGLCanvas
         if ( hit_data.hit )
         {
             Log(`HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
-            this.cLog('Found intersection')
+            
             let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
             this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
             let audio = document.getElementById('audio_ok_id')
+            this.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
             if ( audio !== null )
                 audio.play()
         }
         else
         {
-            this.cLog('Intersection not found')
+            this.setStatus('Intersection not found')
             let audio = document.getElementById('audio_error_id')
             if ( audio !== null )
                 audio.play()
@@ -223,17 +237,23 @@ class WebGLCanvas
 
     }
     // -------------------------------------------------------------------------------
-    drawRays()
+    /**
+     * Draw all the rays and of the hit point in this.debug_rays
+     */
+    drawHitPnts()
     {
         let gl = this.vis_ctx.wgl_ctx,
             pr = this.vis_ctx.program
 
-        gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
-        pr.doShading( false )
+        
+        const rb = 0.005
+
         pr.useTexture( null )
         
         for( let ray of this.debug_rays )
         {
+            // draw ray segment 
+
             if ( ray.vertex_arr == null )
             {
                 const a = ray.start_pnt,
@@ -241,7 +261,24 @@ class WebGLCanvas
                 ray.vertex_arr = new VertexArray( 0, 3, 
                         new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
             }
+
+            gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+            pr.doShading( false )
             ray.vertex_arr.draw(gl, gl.LINES )
+
+            // draw sphere at ray end
+            if ( this.hit_object == null )
+            {   
+                this.hit_object = new SphereMesh( 32, 32 )
+            }
+            gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
+            pr.doShading( false )
+
+            pr.pushMM()
+                pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
+                pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
+                this.hit_object.draw( this.vis_ctx )
+            pr.popMM()
         }
     }
     // -------------------------------------------------------------------------------
@@ -1387,7 +1424,7 @@ class WebGLCanvas
             }
 
             // debug
-            this.drawRays()    
+            this.drawHitPnts()    
 
         pr.popMM()
 

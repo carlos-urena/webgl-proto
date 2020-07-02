@@ -517,7 +517,7 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
         }
         // initialize the base Mesh instance
         super( coords, triangles )
-        this.setColorsData( colors )
+        //this.setColorsData( colors )
         this.setTexCooData( texcoords )
         this.setNormalsData( normals )
 

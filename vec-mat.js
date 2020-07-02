@@ -951,7 +951,7 @@ function RayTriDualInt( ray, tri_dual, hit_data )
         t  = (on - td[k+2])/a
 
    
-    Log(`it == ${b/13}, d == ${d}, on = ${on} a == ${a}, t == ${t}`)
+    //Log(`it == ${b/13}, d == ${d}, on = ${on} a == ${a}, t == ${t}`)
     
     if ( t < 0.0 ) { rtdc[2]++ ; return false }
 

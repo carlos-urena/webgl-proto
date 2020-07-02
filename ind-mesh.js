@@ -222,7 +222,7 @@ class IndexedTrianglesMesh extends DrawableObject
             
             if ( Math.abs(s_inv) < 1e-12 )
             {  td[ b+12 ] = 0.0
-                Log(`CTD:: ### s_inv == ${s_inv}`)
+                //Log(`CTD:: ### s_inv == ${s_inv}`)
                continue 
             }
             td[ b+12 ] = 1.0 
@@ -234,14 +234,14 @@ class IndexedTrianglesMesh extends DrawableObject
                 n    = e1.cross( e2 ).normalized(),
                 k    = new Vec3( [ vv[0].dot( e1d ), vv[0].dot( e2d ), vv[0].dot( n )] )
 
-            Log(` CTD:: vv[0] == ${vv[0]}, n == ${n}, n length == ${n.len_sq()}, n dot e1 = ${n.dot(e1)} `)
+            //Log(` CTD:: vv[0] == ${vv[0]}, n == ${n}, n length == ${n.len_sq()}, n dot e1 = ${n.dot(e1)} `)
 
             for( let i = 0  ; i < 3 ; i++ )  td[b+i] = e1d[i-0]
             for( let i = 3  ; i < 6 ; i++ )  td[b+i] = e2d[i-3]
             for( let i = 6  ; i < 9 ; i++ )  td[b+i] = n[i-6]
             for( let i = 9  ; i < 12 ; i++ ) td[b+i] = k[i-9]
 
-            Log( `CTD:: e1d=${e1d}, e2d=${e2d}, n=${n}, k=${k}`)
+            //Log( `CTD:: e1d=${e1d}, e2d=${e2d}, n=${n}, k=${k}`)
 
         }
         Log(`${fname} ends`)

@@ -349,11 +349,12 @@ class IndexedTrianglesMesh extends DrawableObject
         if ( nt == 0 )
             throw new Error("method 'interectRay' for empty triangle mesh" )
 
-        let vc  = this.coords_data,
-            b   = 0
-        
+        Log(`${fname} --------- begins ---------------------------`)
+        Log(`${fname} hit_data.hit = ${hit_data.hit}`)
+
         if ( this.triangle_duals == null )
         {
+            Log(`${fname} using slow inters. function`)
             for( let it = 0 ; it < nt ; it++ )
             {
                 const 
@@ -370,6 +371,7 @@ class IndexedTrianglesMesh extends DrawableObject
         }
         else
         {
+            Log(`${fname} using fast dual triangle inters. function`)
             Check( this.triangle_duals.length == this.n_tris*13 )
             
             let tri_dual = { td: this.triangle_duals, it: -1 }
@@ -392,8 +394,10 @@ class IndexedTrianglesMesh extends DrawableObject
             }
         }
 
-        Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
-        Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
+        //Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
+        //Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
+        Log(`${fname} hit_data.hit = ${hit_data.hit}`)
+        Log(`${fname} --------- ends ---------------------------`)
     }
 }
 
@@ -755,12 +759,12 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
     intersectRay( ray, hit_data )
     {
         const fname = 'MultiMeshFromOBJLines.intersectRay():'
-        Log(`${fname} begins`)
+        Log(`${fname} --------- begins ---------------------------`)
 
         for( let mesh of this.meshes )
         {
             Log(`${fname}     mesh == ${mesh.name}`)
-            intersectRay( ray, hit_data ) )
+            mesh.intersectRay( ray, hit_data ) 
         }
         Log(`${fname} ------------------ends ----------------------`)
     }

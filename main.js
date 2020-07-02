@@ -57,7 +57,7 @@ function OnDOMLoaded()
     //ShowLogWin()
     ResizePageElements() // this is done so elements are shown on startup (check it?)
 
-    TestMatrices()
+    //TestMatrices()
 
 
     let fname = 'OnDocumentLoad() :'

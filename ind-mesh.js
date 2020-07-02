@@ -520,6 +520,9 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
         this.setColorsData( colors )
         this.setTexCooData( texcoords )
         this.setNormalsData( normals )
+
+        // compute triangle duals for intersections
+        this.computeTriangleDuals()
     }
 }
 

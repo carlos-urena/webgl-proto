@@ -205,10 +205,20 @@ class WebGLCanvas
         if ( hit_data.hit )
         {
             Log(`HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
+            this.cLog('Found intersection')
             let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
             this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
+            let audio = document.getElementById('audio_ok_id')
+            if ( audio !== null )
+                audio.play()
         }
-        
+        else
+        {
+            this.cLog('Intersection not found')
+            let audio = document.getElementById('audio_error_id')
+            if ( audio !== null )
+                audio.play()
+        }
         this.drawFrame()
 
     }
@@ -1317,7 +1327,7 @@ class WebGLCanvas
             {
                 if ( this.test_3d_mesh == null )
                 {
-                    const ns = 1000, nt = 1000
+                    const ns = 100, nt = 100
                     //this.test_3d_mesh = new SphereMesh( ns, nt )
                     //this.test_3d_mesh = new CylinderMesh( ns, nt )
                     this.test_3d_mesh = new ConeMesh( ns, nt )

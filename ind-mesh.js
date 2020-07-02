@@ -166,7 +166,7 @@ class IndexedTrianglesMesh extends DrawableObject
         this.vertex_array.setIndexesData( triangles_data )
 
         this.triangle_duals = null 
-        this.computeTriangleDuals()
+        //this.computeTriangleDuals() // do this after normalization!!
 
         let totb = 0
         totb += 4*this.coords_data.length 
@@ -659,6 +659,9 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
             }
             this.setColorsData( colors_data )
         }
+
+        // compute triangle duals 
+        this.computeTriangleDuals()
         
     }
 }
@@ -727,6 +730,9 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
         if ( normalize )
             for( let mesh of this.meshes )
                 mesh.normalizeCoords( bbox )
+
+        for( let mesh of this.meshes )
+            mesh.computeTriangleDuals()
         
         //super( parser.coords_data, parser.triangles_data )
         

@@ -1317,7 +1317,7 @@ class WebGLCanvas
             {
                 if ( this.test_3d_mesh == null )
                 {
-                    const ns = 4, nt = 4
+                    const ns = 1000, nt = 1000
                     this.test_3d_mesh = new SphereMesh( ns, nt )
                     //this.test_3d_mesh = new CylinderMesh( ns, nt )
                     //this.test_3d_mesh = new ConeMesh( ns, nt )

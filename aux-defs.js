@@ -119,7 +119,7 @@ function LogLines( title, source )
 // -------------------------------------------------------------------------------------------------
 /**
  * Logs a message both in the console and in the web page (when a div with id 'log_div_id' exists)
- * @param {string} msg -- message to log. 
+ * @param {string} msg -- message to log (can have multiple lines)
  */
 
  var global_log_count = 0
@@ -129,15 +129,16 @@ function LogLines( title, source )
 function Log( msg )
 {    
     global_log_count++ 
-    console.log( msg )
-    global_log_lines.push( msg )
-    if ( global_log_elem != null )
+    const lines    = msg.split('\n')
+    let lines_elem = document.getElementById('log_lines_id')
+
+    for ( let line of lines )
     {
-        let lines_elem = document.getElementById('log_lines_id')
+        console.log( line )
+        global_log_lines.push( line )
+        if ( global_log_elem != null )
         if ( lines_elem != null )
-        {
             lines_elem.innerHTML += `${global_log_count}: ${msg}<br/>`
-        }
     }    
 }
 

@@ -21,17 +21,39 @@ var canvas = null
 function ResizePageElements()
 {
     const fname = 'ResizePageElements():'
-    let canvas_container_elem = BuscarElemId('canvas_container_id')
+    let canvas_container_elem = BuscarElemId('canvas_container_id'),
+        right_panel_elem      = BuscarElemId('right_panel_id'),
+        low_cont_elem         = BuscarElemId('lower_container_id'),
+        upp_cont_elem         = BuscarElemId('upper_container_id')
+
+    const rightp_min_width_px = 200
 
     // compute and set new canvas sizes (nx,ny) from window size
-    let border  = Trunc( window.innerWidth*0.05, 10, 30 ),
-        canv_nx = Math.floor(window.innerWidth - border),
-        canv_ny = Math.floor(window.innerHeight*0.7)
+    let 
+        //border  = Trunc( window.innerWidth*0.05, 10, 30 ),
+        border    = 4,
+        canv_nx   = Math.floor( 0.75*window.innerWidth - border ),  // 75% of available space for the canvas
+        rightp_nx = window.innerWidth - border - canv_nx,         // the remaining space for the right panel
+        canv_ny   = Math.ceil( window.innerHeight - low_cont_elem.offsetHeight - upp_cont_elem.offsetHeight*1.6 )
+        //Math.floor( window.innerHeight*0.7 )
 
-    canvas_container_elem.style.width   = canv_nx.toString() + "px"
-    canvas_container_elem.style.height  = canv_ny.toString() + "px"
+    if ( rightp_nx <= rightp_min_width_px )
+    {
+        rightp_nx = rightp_min_width_px
+        canv_nx = ( window.innerWidth - border - rightp_nx )
+    }
 
-    Log(`${fname} nx == ${canv_nx}, ny == ${canv_ny}`)
+    const 
+        sx_str = canv_nx.toString() + "px",
+        sy_str = canv_ny.toString() + "px"
+
+    canvas_container_elem.style.width   = sx_str
+    canvas_container_elem.style.height  = sy_str 
+    right_panel_elem.style.width        = rightp_nx.toString() + "px"
+    right_panel_elem.style.height       = sy_str
+
+
+    //Log(`${fname} convas container style dimensions set to  ${sx_str} x ${sy_str}`)
 
     // compute and set the new width (cont_nx) for the header and footer containers 
     let cont_upp    = BuscarElemId( 'upper_container_id' ),

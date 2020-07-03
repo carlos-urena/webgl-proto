@@ -261,4 +261,52 @@ function isPowerOf2(value)
     return (value & (value - 1)) == 0;
 }
 
+// ----------------------------------------------------------------------------
+// audio beep functions 
+// https://odino.org/emit-a-beeping-sound-with-javascript/
+
+// reuse this audio context
+var audio_ctx = new AudioContext() 
+
+// ----------------------------------------------------------------------------
+function Beep( vol, fd_array  )
+{
+    for( fd of fd_array )
+    {
+        fd.v = audio_ctx.createOscillator()
+        fd.u = audio_ctx.createGain()
+            
+        fd.v.connect( fd.u )
+        fd.v.frequency.value = fd.freq
+        fd.v.type = "square"
+        fd.u.connect( audio_ctx.destination )
+        fd.u.gain.value = vol
+    }
+    let t = audio_ctx.currentTime
+    for ( let fd of fd_array )
+    {
+        fd.v.start( t )
+        fd.v.stop( t+fd.secs )
+        t += fd.secs
+    }
+}
+// ----------------------------------------------------------------------------
+
+function HitBeep()
+{
+    Beep( 1, [ { freq:600, secs:0.1 },
+               { freq:800, secs:0.07 } ] )
+}
+// ----------------------------------------------------------------------------
+function NohitBeep()
+{
+    Beep( 1, [ { freq:100, secs: 0.1 },
+               { freq:50,  secs: 0.07 } ] )
+}
+// ----------------------------------------------------------------------------
+
+
+
+
+
 

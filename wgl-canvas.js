@@ -193,6 +193,7 @@ class WebGLCanvas
      */
     addRay( ray )
     {
+        const fname = 'WebGLCanvas.addRay():'
         const x0_org = ray.org,
               x1_org = ray.org.plus( ray.dir ),
               x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
@@ -200,38 +201,40 @@ class WebGLCanvas
 
 
         // test: intersect ray with scene  
-        let ray_wc = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
-        let obj = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
+        let ray_wc   = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
+        let obj      = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
         let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
 
-        Log('STARTS intersection .....')
+        Log(`${fname} STARTS intersection .....`)
         
         zero_det_count     = 0
         ray_tri_int_count  = 0 
 
         obj.intersectRay( ray_wc, hit_data )
 
-        this.cLog('END ray-tri code.')
-        Log('END ray-tri code.')
-        Log(` total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
-        Log(` hit_data.hit == #### ${hit_data.hit} ####`)
+        Log(`${fname} END ray-tri code.`)
+        Log(`${fname} total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
+        Log(`${fname} hit_data.hit == #### ${hit_data.hit} ####`)
+        
         if ( hit_data.hit )
         {
-            Log(`HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
+            Log(`${fname} HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
             
             let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
             this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
-            let audio = document.getElementById('audio_ok_id')
+            //let audio = document.getElementById('audio_ok_id')
             this.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
-            if ( audio !== null )
-                audio.play()
+            //if ( audio !== null )
+            //    audio.play()
+            HitBeep()
         }
         else
         {
             this.setStatus('Intersection not found')
-            let audio = document.getElementById('audio_error_id')
-            if ( audio !== null )
-                audio.play()
+            // let audio = document.getElementById('audio_error_id')
+            // if ( audio !== null )
+            //     audio.play()
+            NohitBeep()
         }
         this.drawFrame()
 

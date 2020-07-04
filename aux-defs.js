@@ -263,45 +263,72 @@ function isPowerOf2(value)
 
 // ----------------------------------------------------------------------------
 // audio beep functions 
-// https://odino.org/emit-a-beeping-sound-with-javascript/
+// Adapted from: https://odino.org/emit-a-beeping-sound-with-javascript/
+// Notes frequencies at: https://pages.mtu.edu/~suits/notefreqs.html
 
-// reuse this audio context
-var audio_ctx = new AudioContext() 
+// some notes frequencies
+
+const f_A2 = 110.00,
+      f_B2 = 123.47,
+      f_C3 = 261.63,
+      f_A4 = 440.00,
+      f_B4 = 493.88,
+      f_C5 = 523.25,
+      f_A5 = 880.00,
+      f_B5 = 987.77,
+      f_C6 = 1046.50
+
 
 // ----------------------------------------------------------------------------
-function Beep( vol, fd_array  )
+
+// audio context for beeps
+var audio_ctx = null
+
+// ----------------------------------------------------------------------------
+function Beep( vol, notes_array  )
 {
-    for( fd of fd_array )
+    // create the audio context the first time this is called (after user gestures)
+    // (avoids warning: https://developers.google.com/web/updates/2017/09/autoplay-policy-changes#webaudio)
+    if ( audio_ctx == null )
+        audio_ctx = new AudioContext()
+    
+    // create sequence of nodes
+    for( note of notes_array )
     {
-        fd.v = audio_ctx.createOscillator()
-        fd.u = audio_ctx.createGain()
+        note.src  = audio_ctx.createOscillator()
+        note.gain = audio_ctx.createGain()
             
-        fd.v.connect( fd.u )
-        fd.v.frequency.value = fd.freq
-        fd.v.type = "square"
-        fd.u.connect( audio_ctx.destination )
-        fd.u.gain.value = vol
+        note.src.connect( note.gain )
+        note.src.frequency.value = note.freq
+        note.src.type = "sine"   // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
+        note.gain.connect( audio_ctx.destination )
+        note.gain.gain.value = vol
     }
+    // play sequence of nodes
     let t = audio_ctx.currentTime
-    for ( let fd of fd_array )
+    for ( let note of notes_array )
     {
-        fd.v.start( t )
-        fd.v.stop( t+fd.secs )
-        t += fd.secs
+        note.src.start( t )
+        note.src.stop( t+note.secs )
+        t += note.secs
     }
 }
 // ----------------------------------------------------------------------------
 
 function HitBeep()
 {
-    Beep( 1, [ { freq:600, secs:0.1 },
-               { freq:800, secs:0.07 } ] )
+    const dur_s = 0.12
+    Beep( 0.3, [ { freq:f_A5, secs: dur_s     },
+                 { freq:f_B5, secs: dur_s*0.6 },
+                 { freq:f_C6, secs: dur_s*0.4 } ] )
 }
 // ----------------------------------------------------------------------------
 function NohitBeep()
 {
-    Beep( 1, [ { freq:100, secs: 0.1 },
-               { freq:50,  secs: 0.07 } ] )
+    const dur_s = 0.12
+    Beep( 0.3, [ { freq:f_C3, secs: dur_s     },
+                 { freq:f_B2, secs: dur_s*0.6 },
+                 { freq:f_A2, secs: dur_s*0.4 } ] )
 }
 // ----------------------------------------------------------------------------
 

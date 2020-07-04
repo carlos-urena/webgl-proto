@@ -104,6 +104,8 @@ function OnDOMLoaded()
     // resize canvas container, canvas, and redraw frame
     ResizePageElements()
 
+    
+
     if ( main_debug )
         Log("OnDocumentLoad: ends")
 }

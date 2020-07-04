@@ -25,6 +25,8 @@ h3
 {  font-size : 14pt ;
 }
 
+
+
 a
 {
    text-decoration     : none ;
@@ -120,6 +122,18 @@ a
    border-color     : rgb(50%,50%,50%);
    border-radius    : 4px ;
    overflow-y       : auto ;
+}
+
+.panel_sect_class 
+{
+   margin-left   : 5px ;
+   margin-right  : 5px ;
+   border-left   : 0px ;
+   border-right  : 0px ;
+   border-top    : 0px ;
+   border-bottom : 1px ;
+   border-style  : solid ;
+   border-color  : rgb( 60%, 60%, 60% );
 }
 
 #log_div_id, #clog_span_id

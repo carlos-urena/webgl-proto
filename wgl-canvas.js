@@ -87,6 +87,9 @@ class WebGLCanvas
         this.scene_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
         this.scene_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
+        // create the panel sections list 
+        this.panel_sects  = new PanelSectionsList()
+
         // create the grid and axes drawable objects
         this.gridXZ = new GridLinesXZ()
         this.axes   = new Axes()
@@ -1169,6 +1172,11 @@ class WebGLCanvas
             this.setStatus( msg )
             Log( msg )
         }
+
+        /// test: add panel section for this object
+        this.panel_sects.addObjectSection( this.loaded_object )
+
+        /// load remaining files, if any
         this.loadFilesInList( file_list, model_file_index+1 )
         
        
@@ -1473,6 +1481,89 @@ class WebGLCanvas
             Log(`WebGLCanvas.drawFrame: ends`)
             Log(`---------------------------------------------------------`)
         }
+    }
+}
+
+// (// see geometric shapes: https://en.wikipedia.org/wiki/Geometric_Shapes)
+const right_triangle_html = '&#9654;',
+      down_triangle_html  = '&#9654;'
+
+
+// -------------------------------------------------------------------------------------------------
+class PanelSection 
+{
+    constructor( name, number )
+    {
+        this.name            = name
+        this.panel_number    = number
+        this.ident           = 'panel_sect_'+this.panel_number.toString()
+
+        // create head span 
+        this.head_elem           = document.createElement('span')
+        this.head_elem_id        = this.ident+'_head_id'
+        this.head_elem.innerHTML = 
+        `<span class='triangle_class' id='${this.ident}_head_id'></span>${right_triangle_html}&nbsp;`
+        +   `<b>${this.name}</b>`
+        this.head_elem.onclick   =  'this.headClick()' 
+
+        // create content div 
+        this.content_elem           = document.createElement('div')
+        this.content_elem.id        = this.ident + '_content_id'
+        this.content_elem.innerHTML = 'Loren ipsum content<br/>More Lorem Ipsum<br/>'
+
+        // create section div
+        this.div_elem            = document.createElement('div')
+        this.div_elem.id         = this.ident+'_id'
+        this.div_elem.className  = 'panel_sect_class'
+
+        // add head and content to section div
+        this.div_elem.appendChild( this.head_elem )
+        this.div_elem.appendChild( this.content_elem )
+    }
+
+    headClick()
+    {
+        Log('head click')
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+class ObjectPanelSection extends PanelSection
+{
+    constructor( base_object, number )
+    {
+        super( base_object.hasOwnProperty('name')  ? base_object.name : 'unk. name', number )
+        
+        this.do_shading      = false 
+        this.do_texture      = true
+        this.gl_texture      = null 
+
+        this.content_elem.innerHTML += '(this is an object section)<br/>'
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+
+class PanelSectionsList
+{
+    constructor()
+    {
+        this.panel_elem = BuscarElemId('right_panel_id')
+        this.sections    = []
+    }
+    /**
+     * Add a section to the panel
+     * @param {PanelSection} section  -- class 'PanelSection' or derived 
+     */
+    addObjectSection( obj )
+    {
+        Check( obj != null )
+
+        let section = new ObjectPanelSection( obj, this.sections.length )
+        this.sections.push( section )
+        this.panel_elem.appendChild( section.div_elem )
+
+
     }
 }
 

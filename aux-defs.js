@@ -317,10 +317,10 @@ function Beep( vol, notes_array  )
 
 function HitBeep()
 {
-    const dur_s = 0.12
-    Beep( 0.3, [ { freq:f_A5, secs: dur_s     },
-                 { freq:f_B5, secs: dur_s*0.6 },
-                 { freq:f_C6, secs: dur_s*0.4 } ] )
+    const dur_s = 0.5
+    Beep( 0.3, [ { freq:f_A5, secs: dur_s*0.1 },
+                 { freq:f_B5, secs: dur_s*0.15 },
+                 { freq:f_C6, secs: dur_s*0.2 } ] )
 }
 // ----------------------------------------------------------------------------
 function NohitBeep()

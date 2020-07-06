@@ -671,7 +671,7 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
 // -------------------------------------------------------------------------------------------------
 
 
-class MultiMeshFromOBJLines  /// extends CompositeObject ???
+class MultiMeshFromOBJLines  extends DrawableObject
 {
     /**
      * Buids an indexed mesh from a strings array with the lines from an OBJ  file.
@@ -679,9 +679,12 @@ class MultiMeshFromOBJLines  /// extends CompositeObject ???
      * 
      * @param {Array<string>} lines -- input strings array with lines
      */
-    constructor( lines )
+    constructor( lines, file_name )
     {
         let fname  = 'ObjectFromOBJLines.constructor():'
+
+        Log(`${fname} file name == ${file_name}`)
+        super( {name: file_name} )
 
         this.n_verts = 0  // total number of vertexes (0 means we can't use this object)
         this.n_tris  = 0

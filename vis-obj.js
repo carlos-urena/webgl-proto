@@ -64,7 +64,7 @@ class DrawableObject
         if ( 'center_pnt' in options )
             this.center = new Vec3( options.center_pnt )
         if ( 'name' in options )
-            this.name = options 
+            this.name = options.name 
     }
     // ---------------------------------------------------------------------------------------------
     /**
@@ -223,8 +223,8 @@ class TIObject extends DrawableObject
     }
     // ------------------------------------------------------
     /**
-     * 
-     * @param {*} new_matrix 
+     * Set the instantation matrix for the object
+     * @param {Mat4} new_matrix 
      */
     setInstMat( new_matrix )
     {

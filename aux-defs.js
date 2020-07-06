@@ -20,6 +20,16 @@ function Trunc( x, min, max )
 
 // -------------------------------------------------------------------------------------------------
 
+function PeriodicGlobal()
+{
+    Log(`### periodic global. canvas.loading_file_list == ${canvas.is_loading_files}`)
+    if ( ! canvas.is_loading_files )
+        window.clearInterval( window_timer )
+    document.body.style.cursor = 'progress'
+}
+
+// -------------------------------------------------------------------------------------------------
+
 function BuscarElemId( id )
 {
     let node = document.getElementById( id )

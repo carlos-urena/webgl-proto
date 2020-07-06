@@ -14,6 +14,8 @@ var main_debug = false
 // variable which holds the single WebGLCanvas class instance 
 var canvas = null 
 
+var window_timer = null 
+
 // -------------------------------------------------------------------------------------------------
 
 /** Adapts the page containers divs to window size

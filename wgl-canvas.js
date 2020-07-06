@@ -72,7 +72,7 @@ class WebGLCanvas
 
         // we already have not started loading any 3d model
         this.loaded_object  = null
-        this.loading_object = false 
+        this.is_loading_files = false 
 
         // hit object which is drawn on eahc hit point
         this.hit_object = null 
@@ -137,6 +137,10 @@ class WebGLCanvas
 
         this.canvas_elem.addEventListener( 'click',     e => this.mouseClick(e), true )
 
+        // body events ...
+        document.body.addEventListener( 'mouseleave', e => this.bodyMouseLeave(e), true )
+        document.body.addEventListener( 'mouseover',  e => this.bodyMouseOver(e), true ) 
+
         // for clog...
         this.clog_span = null
 
@@ -151,6 +155,7 @@ class WebGLCanvas
         document.addEventListener( 'dragleave',  e => this.documentDragLeave(e), true )
         document.addEventListener( 'drop',       e => this.documentDragDrop(e), true )
         document.addEventListener( 'dragover',   e => this.documentDragOver(e), true )
+       
 
         // add button click event handlers
 
@@ -414,6 +419,9 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
+        if ( this.is_loading_files )
+            return
+
         if ( mevent.button != 0 && mevent.button != 2 )
             return true 
 
@@ -435,7 +443,7 @@ class WebGLCanvas
         }
         else if ( mevent.button === 2 )
         {   
-            this.canvas_elem.style.cursor = 'move'
+            this.parent_elem.style.cursor = 'move'
             this.is_mouse_right_down = true
         }
         if ( mevent.button === 2 )
@@ -462,6 +470,9 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
+        if ( this.is_loading_files )
+            return
+
         if ( mevent.button === 0 )
         {   this.is_mouse_left_down = false
             this.peeph_st.draw = false
@@ -470,7 +481,7 @@ class WebGLCanvas
         else if ( mevent.button === 2 )
         {
             this.is_mouse_right_down = false
-            this.canvas_elem.style.cursor = 'auto'
+            this.parent_elem.style.cursor = 'auto'
             return false
         }
         return true
@@ -620,15 +631,21 @@ class WebGLCanvas
     mouseOver( mevent )
     {
         const fname = 'WebGLCanvas.mouseOver():'
-        //Log(`${fname}: begins buttons == ${mevent.buttons}`)
+        Log(`${fname}: begins buttons == ${mevent.buttons}, is loading == ${this.is_loading_files}`)
+        if ( this.is_loading_files )
+        {
+            this.parent_elem.style.cursor = 'progress'
+            document.body.style.cursor = 'progress'
+            return 
+        }
+
+        // if the mouse enters the canvas but button 2 is released, set cursor to normal
         if ( (mevent.buttons & 2) == 0 )
         {
-            //Log('entered with mouse right UP')
             this.is_mouse_right_down = false 
-            this.canvas_elem.style.cursor = 'auto'
+            this.parent_elem.style.cursor = 'auto'
         }
-        //else
-            //Log('entered with mouse right DOWN')
+        
     }
     
     // -------------------------------------------------------------------------------------------------
@@ -799,6 +816,38 @@ class WebGLCanvas
             devent.preventDefault() // prevent default treatment of drag drop
         }
     }
+
+    /**
+     * Called when the mouse enters the page
+     * (used to restore mouse pointer)
+     * @param {DragEvent} devent -- drag event created by the browser
+     */
+    bodyMouseOver( mevent )
+    {
+        const fname = 'WebGLCanvas.bodyMouseOver():'
+        CheckType( mevent, 'MouseEvent' )
+        //if ( this.debug )
+            Log(`${fname} begins, is loading files == ${this.is_loading_files}`)
+
+        if ( this.is_loading_files )
+        {
+            this.parent_elem.style.cursor = 'progress'
+            document.body.style.cursor = 'progress'
+        }
+    }
+    bodyMouseLeave( mevent )
+    {
+        const fname = 'WebGLCanvas.bodyMouseLeave():'
+        CheckType( mevent, 'MouseEvent' )
+        //if ( this.debug )
+            Log(`${fname} begins, is loading files == ${this.is_loading_files}`)
+
+        mevent.preventDefault()
+        mevent.stopImmediatePropagation()
+        mevent.stopPropagation()
+    }
+
+
     // -------------------------------------------------------------------------------------------------
     /**
      * Called for a 'drop' event specifically on this canvas element
@@ -806,7 +855,6 @@ class WebGLCanvas
      */
     dragDrop( devent )
     {
-        
         devent.stopImmediatePropagation() // neccesary? improves performance?
         devent.preventDefault() // prevent default treatment of drag drop event
 
@@ -815,15 +863,14 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} begins`)
 
-        if ( this.loading_file_list )
+        this.parent_elem.style.borderColor = 'rgb(50%,50%,50%)'
+
+        if ( this.is_loading_files )
         {
             alert(`Sorry, already loading files, wait the load to end`)
             return
         }
     
-        //const def_border_color = 'rgb(50%,50%,50%)',
-        //      err_border_color = 'rgb(100%,40%,10%)'
-
         let file_list = devent.dataTransfer.files
         Log(`${fname} file list length == ${file_list.length}, file list class == ${file_list.constructor.name}`);
         
@@ -833,52 +880,22 @@ class WebGLCanvas
         // load all the files in the list, from the first one on
         this.loadFilesInList( file_list, 0 )
 
-        // if ( file_list.length != 2 )
-        // {   
-        //     this.parent_elem.style.borderColor = err_border_color
-        //     alert(`Sorry, you must drop 2 files, but you're trying to drop ${file_list.length}`)
-        //     this.parent_elem.style.borderColor = def_border_color
-        //     return
-        // }
-
-        // /// get the ply_file_blob, and possibly the jpeg_file_blob
-
-        // let exts = [  ]  // list of files extensions
-        // for( let i = 0 ; i < file_list.length ; i++ )
-        //     exts.push( file_list.item(i).name.split('.').pop().toLowerCase() )
-
-        // let iply = 0, 
-        //     ijpg = 1
+    }
+    periodic()
+    {
         
-        // if ( exts[iply] != 'ply' || exts[ijpg] != 'jpg' )
-        // {   
-        //     iply = 1
-        //     ijpg = 0
-        // }
-        // if ( exts[iply] != 'ply' || exts[ijpg] != 'jpg' )
-        // {
-        //     this.parent_elem.style.borderColor = err_border_color
-        //     alert(`Sorry, you must drop a '.ply' file and a '.jpg' file, but extensions are: '.${exts[0]}' and '.${exts[1]}'`)
-        //     this.parent_elem.style.borderColor = def_border_color
-        //     return
-        // }
-
-        // const ply_file_blob = file_list.item( iply ),  // https://developer.mozilla.org/en-US/docs/Web/API/File
-        //       jpg_file_blob = file_list.item( ijpg )
-          
-        // if ( ply_file_blob == null || jpg_file_blob == null )  // should not happen ....
-        //     throw new Error(`${fname} internal error: a file blob is 'null'`)
-
-        // this.parent_elem.style.borderColor = err_border_color
-        // this.plyFileDropped( ply_file_blob, jpg_file_blob )
-        // this.parent_elem.style.borderColor = def_border_color
-
+        if ( ! this.is_loading_files )
+        {    window.clearInterval()
+            return
+        }
+        Log('### PERIODIC ...')
+        
     }
     // -------------------------------------------------------------------------------------------------
     /**
      * Loads files in a file list, from a position in the list to the end 
      * (this is done asynchronously, that is, control is returned to the event loop before load ends)
-     *  'this.loading_file_list' must be true before calling this
+     *  
      *  
      * @param {FileList} file_list   -- FileList object with a sequence of file blobs, names, etc.. 
      * @param {number}   file_index  -- number of the file to process on the file list (starting at 0)
@@ -893,10 +910,24 @@ class WebGLCanvas
         // if we have ended processing all files, redraw the frame to reflect changes 
         if ( file_list.length == file_index )
         {
+            document.body.style.cursor = 'auto'
+            this.parent_elem.style.cursor = 'auto'
+            
             Log(`${fname} ended processing file list`)
-            this.loading_file_list = false 
+            this.is_loading_files = false 
             this.drawFrame()
+           
             return
+        }
+        if ( file_index == 0 )
+        {
+            document.body.style.cursor = 'progress'
+            this.parent_elem.style.cursor = 'progress'
+
+            this.is_loading_files = true 
+            //window_timer = window.setInterval( 'PeriodicGlobal()', 10 )
+            //this.drawFrame()
+
         }
 
         const file       = file_list.item( file_index ),
@@ -1086,42 +1117,7 @@ class WebGLCanvas
         // load remaining files, if any
         this.loadFilesInList( file_list, curr_file_index+1 )
     }
-    // -------------------------------------------------------------------------------------------------
-    // /**
-    //  * Process a new ply file which has been just dropped onto the canvas
-    //  * @param {File} ply_file -- ply file blob to parse
-    //  * @param {File} jpg_file -- jpg file blob to parse (load will be started after ply parsing ends)
-    //  */
-    // plyFileDropped( ply_file, jpg_file )
-    // {
-    //     CheckType( ply_file, 'File' )
-    //     const fname = `WebGLCanvas.plyFileDropped():`
-
-    //     if ( this.loading_object )
-    //     {
-    //         alert('Sorry, cannot load 3D model file, alreading loading another file.')
-    //         return
-    //     }
-    //     this.ply_file_name = ply_file.name
-
-    //     if ( this.debug )
-    //     {
-    //         Log(`${fname} first file name == '${this.ply_file_name}'`)
-    //         Log(`${fname} first file path == ${ply_file.size.toLocaleString('EN')} bytes`)
-    //         Log(`${fname} ## LOADING ###  .....`)
-    //     }
-        
-    //     const mb = Math.floor( 100.0*ply_file.size/1024.0 )/ 100.0
-    //     this.setStatus(`Loading ${this.ply_file_name} (${mb.toLocaleString('EN')} MB) .....`)
-
-    //     let  reader = new FileReader()
-    //     this.loading_object = true
-
-    //     reader.onload  = e => this.plyFileLoaded( e, jpg_file )  // or it should be 'onloadend' ??
-    //     reader.onerror = e => this.fileLoadError( e, 'plyFileDropped', ply_file.name )
-
-    //     reader.readAsText( ply_file )// , "UTF-8" )
-    // }
+    
     
     // -------------------------------------------------------------------------------------------------
     /**
@@ -1138,7 +1134,7 @@ class WebGLCanvas
         CheckNat( model_file_index )
 
         const file = file_list.item( model_file_index ),
-              ext = file.name.split('.').pop().toLowerCase()
+              ext  = file.name.split('.').pop().toLowerCase()
 
         // if ( ext == 'obj' )
         // {
@@ -1152,13 +1148,14 @@ class WebGLCanvas
             Log(`${fname} result class == ${evt.target.result.constructor.name}`) 
             Log(`${fname} splitting lines ....` )
         }
-        const lines         = evt.target.result.split('\n')
-        let   loaded_object = null 
+        const lines          = evt.target.result.split('\n'),
+              file_base_name = file.name
+        let   loaded_object  = null 
 
         if ( ext == 'ply' )
             loaded_object = new TriMeshFromPLYLines( lines )   
         else if ( ext == 'obj' )
-            loaded_object = new MultiMeshFromOBJLines( lines )
+            loaded_object = new MultiMeshFromOBJLines( lines, file_base_name )
         else 
             throw new Error(`${fname}: unexpected file extension (shouldn't happen)`)
         
@@ -1517,7 +1514,7 @@ class PanelSection
         // create content div 
         this.content_elem           = document.createElement('div')
         this.content_elem.id        = this.ident + '_content_id'
-        this.content_elem.innerHTML = 'Loren ipsum content<br/>More Lorem Ipsum<br/>'
+        this.content_elem.innerHTML = this.getContentHTML()
 
         // create section div
         this.div_elem            = document.createElement('div')
@@ -1552,13 +1549,18 @@ class ObjectPanelSection extends PanelSection
 {
     constructor( base_object, number )
     {
-        super( base_object.hasOwnProperty('name')  ? base_object.name : 'unk. name', number )
+        super( 'name' in base_object  ? base_object.name : 'unknown name', number )
         
         this.do_shading      = false 
         this.do_texture      = true
         this.gl_texture      = null 
 
-        this.content_elem.innerHTML += '(this is an object section)<br/>'
+        //this.content_elem.innerHTML += 
+    }
+
+    getContentHTML()
+    {
+        return '(this is an object section)<br/>'
     }
 }
 // -------------------------------------------------------------------------------------------------

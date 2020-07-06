@@ -130,6 +130,7 @@ class WebGLCanvas
         this.canvas_elem.addEventListener( 'mouseup',   e => this.mouseUp(e), true )
         this.canvas_elem.addEventListener( 'mousemove', e => this.mouseMove(e), true )
         this.canvas_elem.addEventListener( 'wheel',     e => this.mouseWheel(e), true )
+        this.canvas_elem.addEventListener( 'mouseover', e => this.mouseOver(e), true )
 
         this.canvas_elem.addEventListener( 'click',     e => this.mouseClick(e), true )
 
@@ -430,8 +431,10 @@ class WebGLCanvas
             return
         }
         else if ( mevent.button === 2 )
+        {   
+            this.canvas_elem.style.cursor = 'move'
             this.is_mouse_right_down = true
-
+        }
         if ( mevent.button === 2 )
         {
             this.drag_prev_pos_x  = mevent.clientX
@@ -464,6 +467,7 @@ class WebGLCanvas
         else if ( mevent.button === 2 )
         {
             this.is_mouse_right_down = false
+            this.canvas_elem.style.cursor = 'auto'
             return false
         }
         return true
@@ -479,8 +483,10 @@ class WebGLCanvas
         mevent.stopImmediatePropagation() // neccesary? improves performance?
         mevent.preventDefault() // prevent default treatment of mouse moves 
 
-        const fname = 'WebGLCanvas.mouseMove (right/left drag):'
+        const fname = 'WebGLCanvas.mouseMove():'
         CheckType( mevent, 'MouseEvent' )
+
+        Log(`${fname} begins`)
 
         if ( this.peeph_st.draw )
         {    
@@ -600,6 +606,26 @@ class WebGLCanvas
         this.drawFrame()
         
         return false 
+    }
+    // -------------------------------------------------------------------------------------------------
+
+    /**
+     * Called when the mouse enters the canvas element
+     * (used to de-activate dragging when user raises button out of canvas, then enters canvas)
+     * @param {MouseEvent} mevent 
+     */
+    mouseOver( mevent )
+    {
+        const fname = 'WebGLCanvas.mouseOver():'
+        //Log(`${fname}: begins buttons == ${mevent.buttons}`)
+        if ( (mevent.buttons & 2) == 0 )
+        {
+            //Log('entered with mouse right UP')
+            this.is_mouse_right_down = false 
+            this.canvas_elem.style.cursor = 'auto'
+        }
+        else
+            //Log('entered with mouse right DOWN')
     }
     
     // -------------------------------------------------------------------------------------------------

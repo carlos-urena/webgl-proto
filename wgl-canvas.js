@@ -1487,11 +1487,12 @@ class PanelSection
         this.status          = 'visible'
 
         // create head span 
+        this.triangle_id         = this.ident+'_triangle_id'
         this.head_elem           = document.createElement('span')
-        this.head_elem_id        = this.ident+'_head_id'
+        this.head_elem.id        = this.ident+'_head_id'
         this.head_elem.innerHTML = 
-            `<span class='triangle_class' id='${this.ident}_head_id'>`+ 
-                `<span id='triangle'>${down_triangle_html}</span>` + 
+            `<span class='section_head_class' id='${this.head_elem_id}'>`+ 
+                `<span id='${this.triangle_id}'>${down_triangle_html}</span>` + 
                 `&nbsp;` + 
                 `<b>${this.name}</b>` + 
             `</span>` 
@@ -1519,16 +1520,15 @@ class PanelSection
     headClick()
     {
         Log('head click')
+        let tri = document.getElementById( this.triangle_id )
         if ( this.status == 'visible')
         {
             this.status = 'hidden'
-            let tri = document.getElementById('triangle')
             tri.innerHTML = right_triangle_html
         }
         else 
         {
             this.status = 'visible'
-            let tri = document.getElementById('triangle')
             tri.innerHTML = down_triangle_html
         }
     }

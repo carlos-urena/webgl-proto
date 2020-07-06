@@ -1486,7 +1486,7 @@ class WebGLCanvas
 
 // (// see geometric shapes: https://en.wikipedia.org/wiki/Geometric_Shapes)
 const right_triangle_html = '&#9654;',
-      down_triangle_html  = '&#9654;'
+      down_triangle_html  = '&#9660;'
 
 
 // -------------------------------------------------------------------------------------------------
@@ -1497,14 +1497,22 @@ class PanelSection
         this.name            = name
         this.panel_number    = number
         this.ident           = 'panel_sect_'+this.panel_number.toString()
+        this.status          = 'visible'
 
         // create head span 
         this.head_elem           = document.createElement('span')
         this.head_elem_id        = this.ident+'_head_id'
         this.head_elem.innerHTML = 
-        `<span class='triangle_class' id='${this.ident}_head_id'></span>${right_triangle_html}&nbsp;`
-        +   `<b>${this.name}</b>`
-        this.head_elem.onclick   =  'this.headClick()' 
+            `<span class='triangle_class' id='${this.ident}_head_id'>`+ 
+                `<span id='triangle'>${down_triangle_html}</span>` + 
+                `&nbsp;` + 
+                `<b>${this.name}</b>` + 
+            `</span>` 
+           
+
+        this.head_elem.style.cursor = 'pointer'
+
+        this.head_elem.addEventListener( 'click', e => this.headClick(e) )
 
         // create content div 
         this.content_elem           = document.createElement('div')
@@ -1524,6 +1532,18 @@ class PanelSection
     headClick()
     {
         Log('head click')
+        if ( this.status == 'visible')
+        {
+            this.status = 'hidden'
+            let tri = document.getElementById('triangle')
+            tri.innerHTML = right_triangle_html
+        }
+        else 
+        {
+            this.status = 'visible'
+            let tri = document.getElementById('triangle')
+            tri.innerHTML = down_triangle_html
+        }
     }
 }
 // -------------------------------------------------------------------------------------------------

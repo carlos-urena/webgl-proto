@@ -817,6 +817,7 @@ class WebGLCanvas
         }
     }
 
+    // -------------------------------------------------------------------------------------------------
     /**
      * Called when the mouse enters the page
      * (used to restore mouse pointer)
@@ -881,16 +882,6 @@ class WebGLCanvas
         this.loadFilesInList( file_list, 0 )
 
     }
-    periodic()
-    {
-        
-        if ( ! this.is_loading_files )
-        {    window.clearInterval()
-            return
-        }
-        Log('### PERIODIC ...')
-        
-    }
     // -------------------------------------------------------------------------------------------------
     /**
      * Loads files in a file list, from a position in the list to the end 
@@ -907,9 +898,17 @@ class WebGLCanvas
         CheckNat( file_index )
         Log(`${fname} starts from index ${file_index}`)
 
-        // if we have ended processing all files, redraw the frame to reflect changes 
-        if ( file_list.length == file_index )
+        
+        if ( file_index == 0 )
         {
+             // start loading file list
+            document.body.style.cursor = 'progress'
+            this.parent_elem.style.cursor = 'progress'
+            this.is_loading_files = true 
+        }
+        else if ( file_index == file_list.length  )
+        {   
+             // if we have ended processing all files, redraw the frame to reflect changes
             document.body.style.cursor = 'auto'
             this.parent_elem.style.cursor = 'auto'
             
@@ -919,16 +918,7 @@ class WebGLCanvas
            
             return
         }
-        if ( file_index == 0 )
-        {
-            document.body.style.cursor = 'progress'
-            this.parent_elem.style.cursor = 'progress'
-
-            this.is_loading_files = true 
-            //window_timer = window.setInterval( 'PeriodicGlobal()', 10 )
-            //this.drawFrame()
-
-        }
+        
 
         const file       = file_list.item( file_index ),
               extension  = file.name.split('.').pop().toLowerCase(), 

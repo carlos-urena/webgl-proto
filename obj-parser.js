@@ -123,7 +123,7 @@ class OBJParser
                 const cx = parseFloat( tokens[1] ),
                       cy = parseFloat( tokens[2] ),
                       cz = parseFloat( tokens[3] )
-                if ( cx == NaN || cy == NaN || cz == NaN )
+                if ( isNaN(cx) || isNaN(cy) || isNaN(cz) )
                 {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
                     return
                 }
@@ -140,7 +140,7 @@ class OBJParser
                 }
                 const s  = parseFloat( tokens[1] ),
                       t  = parseFloat( tokens[2] )     // we are ignoring third texture coord ...
-                if ( s === NaN  || t === NaN )
+                if ( isNaN(s)  || isNaN(t) )
                 {   this.parse_message = `cannot convert strings '${tokens[1]}' or '${tokens[2]}' in 'vt' line to non-zero positive floats` 
                     return
                 }
@@ -191,7 +191,7 @@ class OBJParser
                         const in_vcc_ind_1 = parseInt( index_strings[0] ),
                               in_tcc_ind_1 = parseInt( index_strings[1] )
               
-                        if ( in_vcc_ind_1 === NaN || in_tcc_ind_1 === NaN )  
+                        if ( isNaN(in_vcc_ind_1) || isNaN(in_tcc_ind_1)  )  
                         {   this.parse_message = `string cannot be converted to integer value in 'f' line ('${index_pair_str}')`
                             return
                         }

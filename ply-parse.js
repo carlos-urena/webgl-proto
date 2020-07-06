@@ -89,7 +89,7 @@ class PLYParser
                     return 
                 }
                 const elem_num_lines = parseInt( tokens[2], 10 )
-                if ( elem_num_lines === NaN || elem_num_lines <= 0  )
+                if ( isNaN(elem_num_lines) || elem_num_lines <= 0  )
                 {   this.parse_message = "line starting with 'element' has invalid number of items"
                     return 
                 }
@@ -243,7 +243,7 @@ class PLYParser
                 vc_y = parseFloat( tokens[1] ),  
                 vc_z = parseFloat( tokens[2] )
 
-            if ( vc_x === NaN || vc_y === NaN || vc_z === NaN )
+            if ( isNaN(vc_x) || isNaN(vc_y)  || isNaN(vc_z) )
             {   this.parse_message = `vertex coords. line: cannot convert vertex coordinates to floating point numbers`
                 return 
             }
@@ -259,7 +259,7 @@ class PLYParser
                     vn_y = parseFloat( tokens[normals_idx + 1] ),  
                     vn_z = parseFloat( tokens[normals_idx + 2] )
 
-                if ( vn_x === NaN || vn_y === NaN || vn_z === NaN )
+                if ( isNaN(vn_x)  || isNaN(vn_y)  || isNaN(vn_z)  )
                 {   this.parse_message = `vertex coords. line: cannot convert normals coordinates to floating point numbers`
                     return 
                 }
@@ -317,7 +317,7 @@ class PLYParser
                 i1 = parseInt( tokens[2] ),
                 i2 = parseInt( tokens[3] )
 
-            if ( i0 === NaN || i1 === NaN || i2 === NaN )
+            if ( isNaN(i0)  || isNaN(i1)  || isNaN(i2) )
             {   this.parse_message = `face indices line: cannot convert indexes to integer values`
                 return
             }
@@ -346,7 +346,7 @@ class PLYParser
                 for( let i = 0 ; i < 6 ; i++ )
                 {
                     const v = parseFloat( tokens[5+i] )
-                    if ( v === NaN )
+                    if ( isNaN(v) )
                     {   this.parse_message = `face indices line: cannot convert texture coordinate to float`
                         return
                     }

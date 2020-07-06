@@ -57,7 +57,6 @@ class WebGLCanvas
         // visualization context, and program
         this.vis_ctx = new VisContext()
         
-
         // objects to be drawn: 3d mesh used to test 'IndexedTriangleMesh' class  and 'loaded_object'
         this.test_3d_mesh  = null 
         this.loaded_object = null
@@ -77,6 +76,9 @@ class WebGLCanvas
 
         // hit object which is drawn on eahc hit point
         this.hit_object = null 
+
+        // loaded objects array (initially empty)
+        this.loaded_objects = []
 
         // initialize scene object angles and scale 
         this.scene_alpha_deg  = 0.0              // scene rotation angles (alpha)
@@ -586,7 +588,7 @@ class WebGLCanvas
         if ( wevent.altKey )
         {
             const fac = 0.005
-            this.scene_scale = ( this.scene_scale + fac*wevent.deltaY )
+            this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
             this.updateSceneTransformMat()
         }
         else

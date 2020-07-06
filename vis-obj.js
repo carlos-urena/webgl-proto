@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
-// File: cameras.js
-// Includes class 'Camera' and derived clasess: SimpleOrbitalCamera, etc....
+// File: vis-obj.js
+// Includes class 'VisContext', 'DrawableObject', 'TIObject' and others
 //
 // MIT License 
 // Copyright (c) 2020 Carlos Ureña 
@@ -186,5 +186,67 @@ class Axes extends DrawableObject
        gl.vertexAttrib3f( 1, 1.0, 0.1, 0.1 ) ; this.x_axe.draw( gl, gl.LINES )
        gl.vertexAttrib3f( 1, 0.2, 1.0, 0.2 ) ; this.y_axe.draw( gl, gl.LINES )
        gl.vertexAttrib3f( 1, 0.1, 0.8, 1.0 ) ; this.z_axe.draw( gl, gl.LINES )
+    }
+}
+
+// ----------------------------------------------------------------------------------
+// A drawable object with an (optional) texture and a instantiation  matrix 
+// (that is: a Textured Instantiated Object)
+
+class TIObject extends DrawableObject
+{
+    /**
+     * initializes an instance of a 'TIObject' as a reference to a draweable object
+     * @param {DrawableObject} base_obj -- anything derived from 'DrawableObject'
+     */
+    constructor( base_obj )
+    {
+        const fname       = 'TIObject.constructor()'
+        Check( base_obj !== null )
+
+        super( null )
+        this.base_obj     = base_obj
+        this.name         = base_obj.name +" (instantiated, possibly textured)"
+        this.center_pnt   = base_obj.center_pnt
+        this.texture      = null     // by default, it doesn't has a texture 
+        this.inst_mat     = Mat4_Identity()
+        this.inst_mat_inv = Mat4_Identity() 
+    }
+    // ------------------------------------------------------
+    /**
+     * Sets a new texture for this object (use 'null' to remove texture)
+     * @param {WebGLTexture} new_gl_texture -- new texture for the object, can be null 
+     */
+    setTexture( new_gl_texture )
+    {
+        this.gl_texture = new_gl_texture 
+    }
+    // ------------------------------------------------------
+    /**
+     * 
+     * @param {*} new_matrix 
+     */
+    setInstMat( new_matrix )
+    {
+        this.inst_mat     = new Mat4( new_matrix )
+        this.inst_mat_inv = new Mat4_Inverse( this.inst_mat )
+        this.center_pnt   = new_matrix.apply_to( this.base_obj, 1 )
+    }
+    // ------------------------------------------------------
+    /**
+     * Draw this object
+     * @param {VisContext} vis_ctx -- visualization context to use for drawing in this call
+     */
+    draw( vis_ctx )
+    {
+        const fname = 'TIObject.draw():'
+        let gl      = vis_ctx.wgl_ctx,
+            pr      = vis_ctx.program
+
+        pr.setTexture( this.gl_texture )
+        pr.pushMM()
+            pr.compMM( this.inst_mat )
+            this.base_obj.draw( vis_ctx )
+        pr.popMM()        
     }
 }

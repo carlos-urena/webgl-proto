@@ -1487,20 +1487,22 @@ class PanelSection
         this.status          = 'visible'
 
         // create head span 
-        this.triangle_id         = this.ident+'_triangle_id'
-        this.head_elem           = document.createElement('span')
-        this.head_elem.id        = this.ident+'_head_id'
-        this.head_elem.innerHTML = 
+        this.triangle_id            = this.ident+'_triangle_id'
+        this.name_id                = this.ident+'_name_id'
+        this.head_elem              = document.createElement('span')
+        this.head_elem.id           = this.ident+'_head_id'
+        this.head_elem.style.cursor = 'pointer'
+        this.head_elem.innerHTML    = 
             `<span class='section_head_class' id='${this.head_elem_id}'>`+ 
                 `<span id='${this.triangle_id}'>${down_triangle_html}</span>` + 
                 `&nbsp;` + 
-                `<b>${this.name}</b>` + 
+                `<span class='section_name_class' id='${this.name_id}'>${this.name}</span>` + 
             `</span>` 
            
 
-        this.head_elem.style.cursor = 'pointer'
+        
 
-        this.head_elem.addEventListener( 'click', e => this.headClick(e) )
+        
 
         // create content div 
         this.content_elem           = document.createElement('div')
@@ -1515,11 +1517,18 @@ class PanelSection
         // add head and content to section div
         this.div_elem.appendChild( this.head_elem )
         this.div_elem.appendChild( this.content_elem )
+
+        // add event listeners
+        this.triangle_elem = document.getElementById( this.triangle_id )
+        this.triangle_elem.addEventListener( 'click', e => this.triangleClick(e) )
+
+        this.name_elem = document.getElementById( this.name_id )
+        this.name_elem.addEventListener( 'click', e => this.nameClick(e) )
     }
 
-    headClick()
+    triangleClick()
     {
-        Log('head click')
+        Log('triangle click')
         let tri = document.getElementById( this.triangle_id )
         if ( this.status == 'visible')
         {
@@ -1531,6 +1540,12 @@ class PanelSection
             this.status = 'visible'
             tri.innerHTML = down_triangle_html
         }
+    }
+
+    nameClick()
+    {
+        Log('name click')
+        
     }
 }
 // -------------------------------------------------------------------------------------------------

@@ -408,7 +408,7 @@ class WebGLCanvas
 
         const fname = 'WebGLCanvas.mouseDown:'
         CheckType( mevent, 'MouseEvent' )
-        //if ( this.debug )
+        if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
         if ( mevent.button != 0 && mevent.button != 2 )
@@ -456,7 +456,7 @@ class WebGLCanvas
 
         const fname = 'WebGLCanvas.mouseUp'
         CheckType( mevent, 'MouseEvent' )
-        //if ( this.debug )
+        if ( this.debug )
             Log(`${fname} begins, button == ${mevent.button}`)
 
         if ( mevent.button === 0 )
@@ -486,7 +486,7 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.mouseMove():'
         CheckType( mevent, 'MouseEvent' )
 
-        Log(`${fname} begins`)
+        //Log(`${fname} begins`)
 
         if ( this.peeph_st.draw )
         {    
@@ -624,7 +624,7 @@ class WebGLCanvas
             this.is_mouse_right_down = false 
             this.canvas_elem.style.cursor = 'auto'
         }
-        else
+        //else
             //Log('entered with mouse right DOWN')
     }
     

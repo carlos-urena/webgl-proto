@@ -202,48 +202,67 @@ class WebGLCanvas
     addRay( ray )
     {
         const fname = 'WebGLCanvas.addRay():'
-        const x0_org = ray.org,
-              x1_org = ray.org.plus( ray.dir ),
-              x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
-              x1_wc     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
+
+        // const fname = 'WebGLCanvas.addRay():'
+        // const x0_org = ray.org,
+        //       x1_org = ray.org.plus( ray.dir ),
+        //       x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
+        //       x1_wc     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
 
 
-        // test: intersect ray with scene  
-        let ray_wc   = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
-        let obj      = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
-        let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
+        // // test: intersect ray with scene  
+        // let ray_wc   = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
+        // let obj      = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
+        // let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
 
-        Log(`${fname} STARTS intersection .....`)
+        // Log(`${fname} STARTS intersection .....`)
         
-        zero_det_count     = 0
-        ray_tri_int_count  = 0 
+        // zero_det_count     = 0
+        // ray_tri_int_count  = 0 
 
-        obj.intersectRay( ray_wc, hit_data )
+        // obj.intersectRay( ray_wc, hit_data )
 
-        Log(`${fname} END ray-tri code.`)
-        Log(`${fname} total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
-        Log(`${fname} hit_data.hit == #### ${hit_data.hit} ####`)
+        // Log(`${fname} END ray-tri code.`)
+        // Log(`${fname} total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
+        // Log(`${fname} hit_data.hit == #### ${hit_data.hit} ####`)
         
-        if ( hit_data.hit )
-        {
-            Log(`${fname} HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
+        // if ( hit_data.hit )
+        // {
+        //     Log(`${fname} HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
             
-            let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
-            this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
-            //let audio = document.getElementById('audio_ok_id')
-            this.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
-            //if ( audio !== null )
-            //    audio.play()
-            HitBeep()
-        }
-        else
+        //     let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
+        //     this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
+        //     //let audio = document.getElementById('audio_ok_id')
+        //     this.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
+        //     //if ( audio !== null )
+        //     //    audio.play()
+        //     HitBeep()
+        // }
+        // else
+        // {
+        //     this.setStatus('Intersection not found')
+        //     // let audio = document.getElementById('audio_error_id')
+        //     // if ( audio !== null )
+        //     //     audio.play()
+        //     NohitBeep()
+        // }
+
+       
+
+        if ( this.sections_list == null )
         {
-            this.setStatus('Intersection not found')
-            // let audio = document.getElementById('audio_error_id')
-            // if ( audio !== null )
-            //     audio.play()
-            NohitBeep()
+            alert("there is no object being displayed !!! how did you got here ??")
+            ErrorBeep()
+            return
         }
+
+        let section = this.sections_list.getCurrSection()
+        if ( section == null )
+        {
+            Log(`${fname} section es null`)
+            return
+        }
+        section.addRay( ray )
         this.drawFrame()
 
     }
@@ -253,44 +272,59 @@ class WebGLCanvas
      */
     drawHitPnts()
     {
-        let gl = this.vis_ctx.wgl_ctx,
-            pr = this.vis_ctx.program
-
-        
-        const rb = 0.005
-
-        pr.useTexture( null )
-        
-        for( let ray of this.debug_rays )
+        const fname = 'WebGLCanvas.drawHitPnts():'
+        if ( this.sections_list == null )
+            return
+        let section = this.sections_list.getCurrSection()
+        if ( section == null )
         {
-            // draw ray segment 
-
-            if ( ray.vertex_arr == null )
-            {
-                const a = ray.start_pnt,
-                      b = ray.end_pnt
-                ray.vertex_arr = new VertexArray( 0, 3, 
-                        new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
-            }
-
-            gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
-            pr.doShading( false )
-            ray.vertex_arr.draw(gl, gl.LINES )
-
-            // draw sphere at ray end
-            if ( this.hit_object == null )
-            {   
-                this.hit_object = new SphereMesh( 32, 32 )
-            }
-            gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
-            pr.doShading( false )
-
-            pr.pushMM()
-                pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
-                pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
-                this.hit_object.draw( this.vis_ctx )
-            pr.popMM()
+            Log(`${fname} section es null`)
+            return
         }
+        if ( this.hit_object == null )
+            this.hit_object = new SphereMesh( 32, 32 )
+        
+        
+        section.drawHitPoints( this.vis_ctx, this.hit_object )
+
+        // let gl = this.vis_ctx.wgl_ctx,
+        //     pr = this.vis_ctx.program
+
+        
+        // const rb = 0.005
+
+        // pr.useTexture( null )
+        
+        // for( let ray of this.debug_rays )
+        // {
+        //     // draw ray segment 
+
+        //     if ( ray.vertex_arr == null )
+        //     {
+        //         const a = ray.start_pnt,
+        //               b = ray.end_pnt
+        //         ray.vertex_arr = new VertexArray( 0, 3, 
+        //                 new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
+        //     }
+
+        //     gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+        //     pr.doShading( false )
+        //     ray.vertex_arr.draw(gl, gl.LINES )
+
+        //     // draw sphere at ray end
+        //     if ( this.hit_object == null )
+        //     {   
+        //         this.hit_object = new SphereMesh( 32, 32 )
+        //     }
+        //     gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
+        //     pr.doShading( false )
+
+        //     pr.pushMM()
+        //         pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
+        //         pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
+        //         this.hit_object.draw( this.vis_ctx )
+        //     pr.popMM()
+        // }
     }
     // -------------------------------------------------------------------------------
     drawPeephole()
@@ -536,8 +570,7 @@ class WebGLCanvas
 
             let section = this.sections_list.getCurrSection()
             if ( section != null )
-                section.updateObjectAngles( -dx*0.20, dy*0.10 )
-            
+                section.updateObjectAngles( -dx*0.20, dy*0.10 )     
         }
         else
         {   // update camera
@@ -1392,81 +1425,41 @@ class WebGLCanvas
         this.gridXZ.draw( this.vis_ctx )
         this.axes.draw( this.vis_ctx )
 
-        pr.pushMM()
-  
-            pr.compMM( this.scene_tr_mat )
+       
 
-            // actually draw something.....(test)
-            if ( this.loaded_object == null )
-            {
-                if ( this.test_3d_mesh == null )
-                {
-                    const ns = 100, nt = 100
-                    //this.test_3d_mesh = new SphereMesh( ns, nt )
-                    //this.test_3d_mesh = new CylinderMesh( ns, nt )
-                    this.test_3d_mesh = new ConeMesh( ns, nt )
-                }
-                
+        
+        if ( this.gl_texture != null )
+        {    pr.useTexture( this.gl_texture )
+                //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
+        }
+        else 
+        {   pr.useTexture( null )
+            //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
+        }
+        // if ( this.test_3d_mesh.hasNormals())
+        // {
+        //     pr.doShading( true )
+        //     //Log(`#### ${fname} YES using shading for the 'test_3d_mesh'`)
+        // }
+        // else 
+        // {   pr.doShading( false )
+        //     //Log(`#### ${fname} NOT using shading for the 'test_3d_mesh'`)
+        // }
 
-                if ( this.test_3d_mesh.hasTextCoords() && this.gl_texture != null )
-                {    pr.useTexture( this.gl_texture )
-                     //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
-                }
-                else 
-                {   pr.useTexture( null )
-                    //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
-                }
-                if ( this.test_3d_mesh.hasNormals())
-                {
-                    pr.doShading( true )
-                    //Log(`#### ${fname} YES using shading for the 'test_3d_mesh'`)
-                }
-                else 
-                {   pr.doShading( false )
-                    //Log(`#### ${fname} NOT using shading for the 'test_3d_mesh'`)
-                }
+        // pr.pushMM()
+        //     //pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
+        //     this.test_3d_mesh.draw( this.vis_ctx )
+        // pr.popMM()
+        
+        if ( this.sections_list != null )
+        {
+            let section = this.sections_list.getCurrSection()
+            if ( section != null )
+                section.draw_object( this.vis_ctx )
+        }
 
-                pr.pushMM()
-                    //pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                    this.test_3d_mesh.draw( this.vis_ctx )
-                pr.popMM()
-            }
-            else
-            {
-                if ( this.loaded_object.hasTextCoords() && this.gl_texture != null )
-                {
-                    pr.useTexture( this.gl_texture )
-                    //Log(`#### ${fname} YES using textures for 'loaded_object'`)
-                }
-                else
-                {   pr.useTexture( null )
-                    //Log(`#### ${fname} NOT using textures for 'loaded_object'`)
-                }
-
-                if ( this.loaded_object.hasNormals())
-                {   pr.doShading( true )
-                    //Log(`#### ${fname} YES using shading for 'loaded_object'`)
-                }
-                else 
-                {   pr.doShading( false )
-                    //Log(`#### ${fname} NOT using shading for 'loaded_object'`)
-                }
-                //console.log('drawing loaded object')
-                
-                pr.pushMM()
-                    
-                    
-
-                    //this.loaded_object.draw( this.vis_ctx )
-                    let section = this.sections_list.getCurrSection()
-                    section.draw_object( this.vis_ctx )
-                pr.popMM()
-            }
-
-            // debug
-            this.drawHitPnts()    
-
-        pr.popMM()
+        // debug
+        this.drawHitPnts()    
 
         // draw the peep hole, if neccesary (this trashes pipeline status, must be done at the end)
         this.drawPeephole()
@@ -1568,7 +1561,7 @@ class PanelSection
 
 class ObjectPanelSection extends PanelSection
 {
-    
+    // --------------------------------------------------------------------------------------
     /**
      * 
      * @param {DrawableObject} base_object -- any object of a class derived from DrawableObject
@@ -1589,8 +1582,11 @@ class ObjectPanelSection extends PanelSection
         this.obj_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
         this.obj_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
+        this.debug_rays     = []
+
         //this.content_elem.innerHTML += 
     }
+    // --------------------------------------------------------------------------------------
 
     /**
      * Populates 'this.content_elem' with HTML or children nodes
@@ -1599,6 +1595,7 @@ class ObjectPanelSection extends PanelSection
     {
         this.content_elem.innerHTML += '(this is an object section)<br/>'
     }
+    // --------------------------------------------------------------------------------------
 
     nameClick()
     {
@@ -1607,17 +1604,23 @@ class ObjectPanelSection extends PanelSection
         this.sections_list.setCurrObjSection( this.number )
         
     }
+    // --------------------------------------------------------------------------------------
+
     updateObjectAngles( dalpha, dbeta )
     {
         this.obj_alpha_deg = Trunc( this.obj_alpha_deg + dalpha, -360, +360 )
         this.obj_beta_deg = Trunc( this.obj_beta_deg + dbeta, -88, +88 )
         this.updateObjectTransformMat()
     }
+    // --------------------------------------------------------------------------------------
+
     updateObjectScale( dscale )
     {
         this.obj_scale = Math.max( 0.03, ( this.obj_scale + dscale ))
         this.updateObjectTransformMat()
     }
+    // --------------------------------------------------------------------------------------
+
     updateObjectTransformMat()
     {
         Log(`updating object transform mat ...`)
@@ -1629,6 +1632,100 @@ class ObjectPanelSection extends PanelSection
         this.obj_tr_mat     = scale_mat.compose( rotx_mat ).compose( roty_mat )
         this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
     }
+    // --------------------------------------------------------------------------------------
+
+    addRay( ray )
+    {
+        const fname = 'ObjectPanelSection.addRay():'
+        const x0_org = ray.org,
+              x1_org = ray.org.plus( ray.dir ),
+              x0_wc     = this.obj_tr_mat_inv.apply_to( x0_org, 1 ),
+              x1_wc     = this.obj_tr_mat_inv.apply_to( x1_org, 1 )
+
+
+        // test: intersect ray with scene  
+        let ray_wc   = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
+        let obj      = this.object
+        let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
+
+        Log(`${fname} STARTS intersection .....`)
+        
+        zero_det_count     = 0
+        ray_tri_int_count  = 0 
+
+        obj.intersectRay( ray_wc, hit_data )
+
+        Log(`${fname} END ray-tri code.`)
+        Log(`${fname} total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
+        Log(`${fname} hit_data.hit == #### ${hit_data.hit} ####`)
+        
+        if ( hit_data.hit )
+        {
+            Log(`${fname} HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
+            
+            let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
+            this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
+            //let audio = document.getElementById('audio_ok_id')
+            canvas.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
+            //if ( audio !== null )
+            //    audio.play()
+            HitBeep()
+        }
+        else
+        {
+            canvas.setStatus('Intersection not found')
+            // let audio = document.getElementById('audio_error_id')
+            // if ( audio !== null )
+            //     audio.play()
+            NohitBeep()
+        }
+    }
+    // --------------------------------------------------------------------------------------
+
+    drawHitPoints( vis_ctx, hit_object )
+    {
+        let gl = vis_ctx.wgl_ctx,
+            pr = vis_ctx.program
+
+        
+        const rb = 0.005
+
+        pr.useTexture( null )
+
+        pr.pushMM()
+        pr.compMM( this.obj_tr_mat )
+        
+        for( let ray of this.debug_rays )
+        {
+            // draw ray segment 
+
+            if ( ray.vertex_arr == null )
+            {
+                const a = ray.start_pnt,
+                      b = ray.end_pnt
+                ray.vertex_arr = new VertexArray( 0, 3, 
+                        new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
+            }
+
+            gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+            pr.doShading( false )
+            ray.vertex_arr.draw(gl, gl.LINES )
+
+            // draw sphere at ray end
+           
+            gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
+            pr.doShading( false )
+
+            pr.pushMM()
+                pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
+                pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
+                hit_object.draw( vis_ctx )
+            pr.popMM()
+        }
+        pr.popMM()
+    }
+    // --------------------------------------------------------------------------------------
+
     draw_object( vis_ctx )
     {
         let pr = vis_ctx.program 

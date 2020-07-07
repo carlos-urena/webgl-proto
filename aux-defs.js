@@ -328,9 +328,9 @@ function Beep( vol, notes_array  )
 function HitBeep()
 {
     const dur_s = 0.5
-    Beep( 0.3, [ { freq:f_A5, secs: dur_s*0.1 },
-                 { freq:f_B5, secs: dur_s*0.15 },
-                 { freq:f_C6, secs: dur_s*0.2 } ] )
+    Beep( 0.3, [ { freq:f_C5, secs: dur_s*0.10 },
+                 { freq:f_A5, secs: dur_s*0.20 },
+                 { freq:f_B5, secs: dur_s*0.30 } ] )
 }
 // ----------------------------------------------------------------------------
 function NohitBeep()
@@ -341,6 +341,27 @@ function NohitBeep()
                  { freq:f_A2, secs: dur_s*0.4 } ] )
 }
 // ----------------------------------------------------------------------------
+
+function CreateElem( tag, id, class_name, parent_elem )
+{
+    let elem = document.createElement( tag )
+
+    if ( elem == null )
+        throw new Error('CreateElem(): unable to create element node')
+
+    if ( id != null )
+        elem.id = id
+    
+    if ( class_name != null )
+        elem.className = class_name
+
+    if ( parent_elem != null )
+        parent_elem.appendChild( elem )
+
+    return elem 
+}
+
+
 
 
 

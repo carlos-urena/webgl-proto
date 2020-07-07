@@ -827,7 +827,7 @@ class WebGLCanvas
     {
         const fname = 'WebGLCanvas.bodyMouseOver():'
         CheckType( mevent, 'MouseEvent' )
-        //if ( this.debug )
+        if ( this.debug )
             Log(`${fname} begins, is loading files == ${this.is_loading_files}`)
 
         if ( this.is_loading_files )
@@ -840,8 +840,11 @@ class WebGLCanvas
     {
         const fname = 'WebGLCanvas.bodyMouseLeave():'
         CheckType( mevent, 'MouseEvent' )
-        //if ( this.debug )
+        if ( this.debug )
             Log(`${fname} begins, is loading files == ${this.is_loading_files}`)
+
+        // an attempt to avoid cursor changing after leaving and reentering the page 
+        // in macOS, but it is not working
 
         mevent.preventDefault()
         mevent.stopImmediatePropagation()
@@ -1481,64 +1484,53 @@ class PanelSection
 {
     constructor( name, number )
     {
+        const fname = 'PanelSection.constructor():'
         this.name            = name
         this.panel_number    = number
         this.ident           = 'panel_sect_'+this.panel_number.toString()
         this.status          = 'visible'
 
-        // create head span 
-        this.triangle_id            = this.ident+'_triangle_id'
-        this.name_id                = this.ident+'_name_id'
-        this.head_elem              = document.createElement('span')
-        this.head_elem.id           = this.ident+'_head_id'
+
+         // create section div (orphan)
+        this.root_elem = CreateElem( 'div', this.ident+'_id', 'panel_sect_class', null )
+
+        // create head div inside section div
+        this.head_elem = CreateElem( 'div', this.ident+'_head_id', 'section_head_class', this.root_elem )
         this.head_elem.style.cursor = 'pointer'
-        this.head_elem.innerHTML    = 
-            `<span class='section_head_class' id='${this.head_elem_id}'>`+ 
-                `<span id='${this.triangle_id}'>${down_triangle_html}</span>` + 
-                `&nbsp;` + 
-                `<span class='section_name_class' id='${this.name_id}'>${this.name}</span>` + 
-            `</span>` 
-           
 
+        // create the triangle span inside the head div
+        this.triangle_id   = this.ident+'_triangle_id'
+        this.triangle_elem = CreateElem( 'span', this.triangle_id, 'section_triangle_class', this.head_elem )
+        this.triangle_elem.innerHTML = right_triangle_html+'&nbsp;' 
+
+        // create the name span inside the head div
+        this.name_id   = this.ident+'_name_id'
+        this.name_elem = CreateElem( 'span', this.name_id, 'section_name_class', this.head_elem )
+        this.name_elem.innerHTML = this.name
         
-
+        // create the content div elem
+        this.content_id = this.ident + '_content_id'
+        this.content_elem = CreateElem( 'div', this.content_id, 'section_content_class', this.root_elem )
+        this.populateContent()
         
-
-        // create content div 
-        this.content_elem           = document.createElement('div')
-        this.content_elem.id        = this.ident + '_content_id'
-        this.content_elem.innerHTML = this.getContentHTML()
-
-        // create section div
-        this.div_elem            = document.createElement('div')
-        this.div_elem.id         = this.ident+'_id'
-        this.div_elem.className  = 'panel_sect_class'
-
-        // add head and content to section div
-        this.div_elem.appendChild( this.head_elem )
-        this.div_elem.appendChild( this.content_elem )
-
-        // add event listeners
-        this.triangle_elem = document.getElementById( this.triangle_id )
+        // add event listeners for clicks on the head elem
         this.triangle_elem.addEventListener( 'click', e => this.triangleClick(e) )
-
-        this.name_elem = document.getElementById( this.name_id )
         this.name_elem.addEventListener( 'click', e => this.nameClick(e) )
     }
 
-    triangleClick()
+    triangleClick( mevent )
     {
         Log('triangle click')
         let tri = document.getElementById( this.triangle_id )
         if ( this.status == 'visible')
         {
             this.status = 'hidden'
-            tri.innerHTML = right_triangle_html
+            tri.innerHTML = right_triangle_html+'&nbsp;'
         }
         else 
         {
             this.status = 'visible'
-            tri.innerHTML = down_triangle_html
+            tri.innerHTML = down_triangle_html+'&nbsp;'
         }
     }
 
@@ -1549,6 +1541,8 @@ class PanelSection
     }
 }
 // -------------------------------------------------------------------------------------------------
+// A panel section for information about a drawable object 
+// (must define constructor and 'populateContent')
 
 class ObjectPanelSection extends PanelSection
 {
@@ -1563,9 +1557,9 @@ class ObjectPanelSection extends PanelSection
         //this.content_elem.innerHTML += 
     }
 
-    getContentHTML()
+    populateContent()
     {
-        return '(this is an object section)<br/>'
+        this.content_elem.innerHTML += '(this is an object section)<br/>'
     }
 }
 // -------------------------------------------------------------------------------------------------
@@ -1588,7 +1582,7 @@ class PanelSectionsList
 
         let section = new ObjectPanelSection( obj, this.sections.length )
         this.sections.push( section )
-        this.panel_elem.appendChild( section.div_elem )
+        this.panel_elem.appendChild( section.root_elem )
 
 
     }

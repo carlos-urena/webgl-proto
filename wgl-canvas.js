@@ -631,7 +631,9 @@ class WebGLCanvas
     mouseOver( mevent )
     {
         const fname = 'WebGLCanvas.mouseOver():'
-        Log(`${fname}: begins buttons == ${mevent.buttons}, is loading == ${this.is_loading_files}`)
+        if ( this.debug )
+            Log(`${fname}: begins buttons == ${mevent.buttons}, is loading == ${this.is_loading_files}`)
+        
         if ( this.is_loading_files )
         {
             this.parent_elem.style.cursor = 'progress'
@@ -836,15 +838,19 @@ class WebGLCanvas
             document.body.style.cursor = 'progress'
         }
     }
+    // -------------------------------------------------------------------------------------------------
+    /**
+     * an attempt to avoid cursor changing after leaving and reentering the page 
+     * in macOS, but it is not working
+     * 
+     * @param {MouseEvent} mevent 
+     */
     bodyMouseLeave( mevent )
     {
         const fname = 'WebGLCanvas.bodyMouseLeave():'
         CheckType( mevent, 'MouseEvent' )
         if ( this.debug )
             Log(`${fname} begins, is loading files == ${this.is_loading_files}`)
-
-        // an attempt to avoid cursor changing after leaving and reentering the page 
-        // in macOS, but it is not working
 
         mevent.preventDefault()
         mevent.stopImmediatePropagation()
@@ -1184,7 +1190,7 @@ class WebGLCanvas
             Log(`${fname} begins.`)
 
         let first = false 
-        if ( typeof(this.context) === 'undefined' ) 
+        if ( this.vis_ctx.wgl_ctx === null ) 
             first = true 
         
         if ( this.debug && first )
@@ -1225,8 +1231,9 @@ class WebGLCanvas
         // enable 32 bits unsigned ints extension
         if ( first )
         {
+            Log(`${fname} first call`)
             if ( this.debug )
-                console.log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
+                Log( `${fname} extensions: ${this.context.getSupportedExtensions()}` )
 
             this.showGLVersionInfo()
             
@@ -1276,14 +1283,11 @@ class WebGLCanvas
     */
     showGLVersionInfo()
     {
-        // if 'info_div_id' does not exists, does nothing
-        let info_div = document.getElementById('info_div_id')
-        if ( info_div === null )
-            return
-
+        
+        const fname = 'WebGLCanvas.showGLVersionInfo():'
         if ( this.vis_ctx.wgl_ver == 0 )
         {
-            info_div.innerHTML = "Error: unable to initialize WebGL properly."
+            throw new Error("Error: unable to initialize WebGL properly.")
             return 
         }
 
@@ -1297,15 +1301,13 @@ class WebGLCanvas
         // show info on the div (as a table)
         const 
             info_str   = 
+            `${fname} WEBGL info   
+                WebGL version : ${this.vis_ctx.wgl_ver}
+                Context class : ${ctx_class}
+                Vendor        : ${gl_vendor}
+                Version       : ${gl_version}  
             `
-                <table id='info_table_id'>
-                    <tr><td><i>WebGL</i></td>    <td>:</td> <td>${this.webgl_version}</td></tr> 
-                    <tr><td><i>Class</i></td>    <td>:</td> <td>${ctx_class}</td></tr> 
-                    <tr><td><i>Vendor</i></td>   <td>:</td> <td>${gl_vendor}</td></tr>
-                    <tr><td><i>Version</i></td>  <td>:</td> <td>${gl_version}</td></tr>
-                </table>
-            `
-        info_div.innerHTML = info_str
+        Log( info_str )
         
     }
     // -------------------------------------------------------------------------------------------------
@@ -1482,13 +1484,21 @@ const right_triangle_html = '&#9654;',
 // -------------------------------------------------------------------------------------------------
 class PanelSection 
 {
-    constructor( name, number )
+    /**
+     * 
+     * @param {String} name     -- name or title for this section
+     * @param {number} number   -- an unique sequential section number
+     * @param {PanelSectionsList} sections_list - the sections list referencing this section
+     */
+    constructor( name, number, sections_list )
     {
         const fname = 'PanelSection.constructor():'
-        this.name            = name
-        this.panel_number    = number
-        this.ident           = 'panel_sect_'+this.panel_number.toString()
-        this.status          = 'visible'
+
+        this.sections_list = sections_list
+        this.name    = name
+        this.number  = number
+        this.ident   = 'panel_sect_'+this.number.toString()
+        this.status  = 'visible'
 
 
          // create section div (orphan)
@@ -1501,7 +1511,7 @@ class PanelSection
         // create the triangle span inside the head div
         this.triangle_id   = this.ident+'_triangle_id'
         this.triangle_elem = CreateElem( 'span', this.triangle_id, 'section_triangle_class', this.head_elem )
-        this.triangle_elem.innerHTML = right_triangle_html+'&nbsp;' 
+        this.triangle_elem.innerHTML = down_triangle_html+'&nbsp;' 
 
         // create the name span inside the head div
         this.name_id   = this.ident+'_name_id'
@@ -1517,6 +1527,7 @@ class PanelSection
         this.triangle_elem.addEventListener( 'click', e => this.triangleClick(e) )
         this.name_elem.addEventListener( 'click', e => this.nameClick(e) )
     }
+    // -------------------------------------------------------------------------------------------------
 
     triangleClick( mevent )
     {
@@ -1526,18 +1537,21 @@ class PanelSection
         {
             this.status = 'hidden'
             tri.innerHTML = right_triangle_html+'&nbsp;'
+            this.content_elem.style.display = 'none'
         }
         else 
         {
             this.status = 'visible'
             tri.innerHTML = down_triangle_html+'&nbsp;'
+            this.content_elem.style.display = 'block'
         }
     }
 
     nameClick()
     {
-        Log('name click')
-        
+        const fname = 'PanelSection.nameClick():'
+        Log(`${fname} name click on base section class, name == '${this.name}', num = ${this.number}`)
+       
     }
 }
 // -------------------------------------------------------------------------------------------------
@@ -1546,9 +1560,15 @@ class PanelSection
 
 class ObjectPanelSection extends PanelSection
 {
-    constructor( base_object, number )
+    
+    /**
+     * 
+     * @param {DrawableObject} base_object -- any object of a class derived from DrawableObject
+     * @param {number} number               -- a unique serial number for this section
+     */
+    constructor( base_object, number, sections_list  )
     {
-        super( 'name' in base_object  ? base_object.name : 'unknown name', number )
+        super( 'name' in base_object  ? base_object.name : 'unknown name', number, sections_list )
         
         this.do_shading      = false 
         this.do_texture      = true
@@ -1557,20 +1577,33 @@ class ObjectPanelSection extends PanelSection
         //this.content_elem.innerHTML += 
     }
 
+    /**
+     * Populates 'this.content_elem' with HTML or children nodes
+     */
     populateContent()
     {
         this.content_elem.innerHTML += '(this is an object section)<br/>'
     }
+
+    nameClick()
+    {
+        const fname = 'ObjectPanelSection.nameClick():'
+        Log(`${fname} name click on object section class, name == '${this.name}', num = ${this.number}`)
+        this.sections_list.setCurrObjSection( this.number )
+        
+    }
 }
 // -------------------------------------------------------------------------------------------------
 
+var sections_counter = 0
 
 class PanelSectionsList
 {
     constructor()
     {
         this.panel_elem = BuscarElemId('right_panel_id')
-        this.sections    = []
+        this.sections   = new Map()
+        this.curr_section = null 
     }
     /**
      * Add a section to the panel
@@ -1580,10 +1613,39 @@ class PanelSectionsList
     {
         Check( obj != null )
 
-        let section = new ObjectPanelSection( obj, this.sections.length )
-        this.sections.push( section )
+        sections_counter ++
+        let section = new ObjectPanelSection( obj, sections_counter, this )
+        this.sections.set( sections_counter, section )
         this.panel_elem.appendChild( section.root_elem )
+        this.setCurrObjSection( sections_counter )
 
+    }
+    /**
+     * Sets the current object section
+     */
+    setCurrObjSection( section_number )
+    {
+        const fname = 'PanelSectionsList.setCurrObjSection():'
+        
+
+        if ( ! this.sections.has( section_number ) )
+        {
+            ErrorBeep()
+            throw new Error(`the sections list has not this section number ${section_number}`)
+        }
+        let section = this.sections.get( section_number )
+        Log(`${fname} name click on obj section, name == '${section.name}', num == ${section.number}`)
+        
+        if ( this.curr_section != null )
+            this.curr_section.root_elem.style.backgroundColor = 'rgb(20%,20%,20%)'
+        this.curr_section = section 
+        this.curr_section.root_elem.style.backgroundColor = 'rgb(30%,30%,30%)'
+    }
+    /**
+     * 
+     */
+    getCurrSection()
+    {
 
     }
 }

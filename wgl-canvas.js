@@ -77,9 +77,6 @@ class WebGLCanvas
         // hit object which is drawn on eahc hit point
         this.hit_object = null 
 
-        // loaded objects array (initially empty)
-        this.loaded_objects = []
-
         // initialize scene object angles and scale 
         this.scene_alpha_deg  = 0.0              // scene rotation angles (alpha)
         this.scene_beta_deg   = 0.0              // scene rotation angles (beta)
@@ -88,7 +85,7 @@ class WebGLCanvas
         this.scene_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
         // create the panel sections list 
-        this.panel_sects  = new PanelSectionsList()
+        this.sections_list  = new PanelSectionsList()
 
         // create the grid and axes drawable objects
         this.gridXZ = new GridLinesXZ()
@@ -530,16 +527,20 @@ class WebGLCanvas
         this.drag_prev_pos_x = drag_cur_pos_x
         this.drag_prev_pos_y = drag_cur_pos_y
 
-        // update camera parameters
-
         if ( mevent.altKey )
         {
+            // update object angles
             this.scene_alpha_deg = Trunc( this.scene_alpha_deg - dx*0.20, -180, +180 )
-            this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -85,  +85  )
+            this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -88,  +88  )
             this.updateSceneTransformMat()
+
+            let section = this.sections_list.getCurrSection()
+            if ( section != null )
+                section.updateObjectAngles( -dx*0.20, dy*0.10 )
+            
         }
         else
-        {
+        {   // update camera
             const facx = -0.2,
                   facy = 0.1
             this.vis_ctx.camera.moveXY( facx*dx, facy*dy )
@@ -610,6 +611,10 @@ class WebGLCanvas
             const fac = 0.005
             this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
             this.updateSceneTransformMat()
+
+            let section = this.sections_list.getCurrSection()
+            if ( section != null )
+                section.updateObjectScale( fac*wevent.deltaY )
         }
         else
         {
@@ -1170,7 +1175,7 @@ class WebGLCanvas
         }
 
         /// test: add panel section for this object
-        this.panel_sects.addObjectSection( this.loaded_object )
+        this.sections_list.addObjectSection( this.loaded_object )
 
         /// load remaining files, if any
         this.loadFilesInList( file_list, model_file_index+1 )
@@ -1450,8 +1455,11 @@ class WebGLCanvas
                 
                 pr.pushMM()
                     
-                    //pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-                    this.loaded_object.draw( this.vis_ctx )
+                    
+
+                    //this.loaded_object.draw( this.vis_ctx )
+                    let section = this.sections_list.getCurrSection()
+                    section.draw_object( this.vis_ctx )
                 pr.popMM()
             }
 
@@ -1573,6 +1581,13 @@ class ObjectPanelSection extends PanelSection
         this.do_shading      = false 
         this.do_texture      = true
         this.gl_texture      = null 
+        this.object          = base_object
+
+        this.obj_alpha_deg  = 0.0              // scene rotation angles (alpha)
+        this.obj_beta_deg   = 0.0              // scene rotation angles (beta)
+        this.obj_scale      = 1.0              // scene scale 
+        this.obj_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
+        this.obj_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
         //this.content_elem.innerHTML += 
     }
@@ -1591,6 +1606,36 @@ class ObjectPanelSection extends PanelSection
         Log(`${fname} name click on object section class, name == '${this.name}', num = ${this.number}`)
         this.sections_list.setCurrObjSection( this.number )
         
+    }
+    updateObjectAngles( dalpha, dbeta )
+    {
+        this.obj_alpha_deg = Trunc( this.obj_alpha_deg + dalpha, -360, +360 )
+        this.obj_beta_deg = Trunc( this.obj_beta_deg + dbeta, -88, +88 )
+        this.updateObjectTransformMat()
+    }
+    updateObjectScale( dscale )
+    {
+        this.obj_scale = Math.max( 0.03, ( this.obj_scale + dscale ))
+        this.updateObjectTransformMat()
+    }
+    updateObjectTransformMat()
+    {
+        Log(`updating object transform mat ...`)
+        const 
+            rotx_mat  = Mat4_RotationXdeg( this.obj_beta_deg ),
+            roty_mat  = Mat4_RotationYdeg( -this.obj_alpha_deg ),
+            scale_mat = Mat4_Scale([ this.obj_scale, this.obj_scale, this.obj_scale ])
+        
+        this.obj_tr_mat     = scale_mat.compose( rotx_mat ).compose( roty_mat )
+        this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
+    }
+    draw_object( vis_ctx )
+    {
+        let pr = vis_ctx.program 
+        pr.pushMM()
+            pr.compMM( this.obj_tr_mat )
+            this.object.draw( vis_ctx )
+        pr.popMM()
     }
 }
 // -------------------------------------------------------------------------------------------------
@@ -1640,13 +1685,15 @@ class PanelSectionsList
             this.curr_section.root_elem.style.backgroundColor = 'rgb(20%,20%,20%)'
         this.curr_section = section 
         this.curr_section.root_elem.style.backgroundColor = 'rgb(30%,30%,30%)'
+
+        canvas.drawFrame()
     }
     /**
      * 
      */
     getCurrSection()
     {
-
+        return this.curr_section 
     }
 }
 

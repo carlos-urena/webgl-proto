@@ -1757,15 +1757,21 @@ class ObjectPanelSection extends PanelSection
         let gl = vis_ctx.wgl_ctx 
 
         if ( this.texture != null )
-            pr.useTexture( this.texture )
+        {    pr.useTexture( this.texture )
+             pr.doShading( false )
+        }
+        else
+        {   pr.useTexture( null ) 
+            pr.doShading( true )
+        }
 
         pr.pushMM()
             pr.compMM( this.obj_tr_mat )
             this.object.draw( vis_ctx )
         pr.popMM()
         
-        if ( this.texture != null )
-            pr.useTexture( null )
+        pr.doShading( true )
+        pr.useTexture( null )
     }
 }
 // -------------------------------------------------------------------------------------------------

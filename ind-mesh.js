@@ -334,45 +334,51 @@ class IndexedTrianglesMesh extends DrawableObject
         Check( this.triangles_data.length == 3*this.n_tris )  
         Check( this.coords_data.length == 3*this.n_verts )  
 
-        // compute array with triangle normals
+        Log(`${fname} computing triangle normals`)
+        // compute array with triangle normals (Vec3 elements)
         let tri_normals = new Array( this.n_tris )
 
-        for( let ti = 0 ; i < this.n_tris ; ti++ )
+        for( let ti = 0 ; ti < this.n_tris ; ti++ )
         {
             const tvv   = this.getTriangleVertexes( ti ),
-                  edge1 = (tvv[1]-tvv[0]),
-                  edge2 = (tvv[2]-tvv[0])
+                  edge1 = tvv[1].minus( tvv[0] ),
+                  edge2 = tvv[2].minus( tvv[0] )
             
             tri_normals[ti] = edge1.cross( edge2 ) 
         }
 
         // create and initialize array with vertexes normals 
+        // NOTE: better use typed array fill operation
+        Log(`${fname} initializing vertex normals`)
         let normals_data = new Float32Array( 3*this.n_verts )
         for ( let i = 0 ; i < 3*this.n_verts ; i++ )
             normals_data[i] = 0.0
-        
+
         // add triangle normals onto vertex normals data
-        for( let ti = 0 ; i < this.n_tris ; ti++ )
+        Log(`${fname} accumulating vertex normals`)
+        for( let ti = 0 ; ti < this.n_tris ; ti++ )
         {
-            const pt   = 3*it,
+            const pt   = 3*ti,
                   pv0 = 3*this.triangles_data[ pt+0 ],
                   pv1 = 3*this.triangles_data[ pt+1 ],
-                  pv2 = 3*this.triangles_data[ pt+2 ]
+                  pv2 = 3*this.triangles_data[ pt+2 ],
+                  tn  = tri_normals[ ti ]
                     
-            for( let k = 0 ; k < 3 ; k++ )
-            {   normals_data[ pv0+k ] += tri_normals[ pt+k ]  
-                normals_data[ pv1+k ] += tri_normals[ pt+k ]  
-                normals_data[ pv2+k ] += tri_normals[ pt+k ]  
+            for( let k = 0 ; k < 3 ; k++ ) // 'k' runs over x,y and z axes
+            {   normals_data[ pv0+k ] += tn[k]  
+                normals_data[ pv1+k ] += tn[k]  
+                normals_data[ pv2+k ] += tn[k]  
             }
         }
 
         // normalize vertex normals 
+        Log(`${fname} normalizing vertex normals`)
         let z_count = 0 
 
         for ( let vi = 0 ; vi < this.n_verts ; vi++ )
         {
             const pv    = 3*vi,
-                  vn    = new Vec3([ normals_data[pv+0], normals_data[pv+1], normals_data[pv+2] ])
+                  vn    = new Vec3([ normals_data[pv+0], normals_data[pv+1], normals_data[pv+2] ]),
                   vnlsq = vn.len_sq()
             
             if ( vnlsq < 1e-12 )
@@ -385,7 +391,11 @@ class IndexedTrianglesMesh extends DrawableObject
             normals_data[ pv+2 ] = vnn[2]
         }
 
-        Log(`${fname} ends, z_count == ${z_count} / total tris == ${this.n_tris}`)
+        Log(`${fname} z_count == ${z_count} / total tris == ${this.n_tris}`)
+        
+        this.setNormalsData( normals_data )
+        Log(`${fname} ends`)
+
     }
     // ----------------------------------------------------------------------------------
 
@@ -466,7 +476,7 @@ class IndexedTrianglesMesh extends DrawableObject
         //Log(`Inters.ray: mesh.nt == ${this.n_tris }, triangles data length /3 == ${this.triangles_data.length/3}`)
         //Log(`Inters.ray: mesh.nv == ${this.n_verts}, coords data length /3    == ${this.coords_data.length/3}`)
         Log(`${fname} hit_data.hit = ${hit_data.hit}`)
-        Log(`${fname} --------- ends ---------------------------`)
+        Log(`${fname} ------------ ends -------------`)
     }
 }
 

@@ -191,11 +191,11 @@ class IndexedTrianglesMesh extends DrawableObject
             i1 = 3*this.triangles_data[ b+1 ],
             i2 = 3*this.triangles_data[ b+2 ]
 
-        const vv = [  new Vec3([ vc[i0+0], vc[i0+1], vc[i0+2] ]),
-                      new Vec3([ vc[i1+0], vc[i1+1], vc[i1+2] ]), 
-                      new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ])
-                   ]
-        return vv 
+        const tvv = [  new Vec3([ vc[i0+0], vc[i0+1], vc[i0+2] ]),
+                       new Vec3([ vc[i1+0], vc[i1+1], vc[i1+2] ]), 
+                       new Vec3([ vc[i2+0], vc[i2+1], vc[i2+2] ])
+                    ]
+        return tvv 
     }
     // ----------------------------------------------------------------------------------
     // (see: https://lsi.ugr.es/curena/varios/rtint/)
@@ -300,7 +300,7 @@ class IndexedTrianglesMesh extends DrawableObject
      */
     setNormalsData( normals_data )
     {
-        const fname = 'Mesh.setNormalsData():'
+        const fname = 'IndexedTriangleMesh.setNormalsData():'
         this.checkAttrData( fname, normals_data, 3 )
         this.normals_data = normals_data
         this.vertex_array.setAttrData( 2, 3, normals_data )
@@ -312,11 +312,80 @@ class IndexedTrianglesMesh extends DrawableObject
      */
     setTexCooData( texcoo_data )
     {
-        const fname = 'Mesh.setTexCooData():'
+        const fname = 'IndexedTriangleMesh.setTexCooData():'
         this.checkAttrData( fname, texcoo_data, 2 )
         this.texcoo_data = texcoo_data
         this.vertex_array.setAttrData( 3, 2, texcoo_data )
         Log(`${fname} DONE !`)
+    }
+    // ----------------------------------------------------------------------------------
+    computeVertexNormals()
+    {
+        const fname = 'IndexedTriangleMesh.computeVertexNormals():'
+
+        Log(`${fname} begins`)
+        // undefine current normals and free space (if there are any)
+
+        if ( this.normals_data != null )
+        {
+            Log(`${fname} WARNING: deleting already existing normals data`)
+            this.normals_data = null 
+        }
+        Check( this.triangles_data.length == 3*this.n_tris )  
+        Check( this.coords_data.length == 3*this.n_verts )  
+
+        // compute array with triangle normals
+        let tri_normals = new Array( this.n_tris )
+
+        for( let ti = 0 ; i < this.n_tris ; ti++ )
+        {
+            const tvv   = this.getTriangleVertexes( ti ),
+                  edge1 = (tvv[1]-tvv[0]),
+                  edge2 = (tvv[2]-tvv[0])
+            
+            tri_normals[ti] = edge1.cross( edge2 ) 
+        }
+
+        // create and initialize array with vertexes normals 
+        let normals_data = new Float32Array( 3*this.n_verts )
+        for ( let i = 0 ; i < 3*this.n_verts ; i++ )
+            normals_data[i] = 0.0
+        
+        // add triangle normals onto vertex normals data
+        for( let ti = 0 ; i < this.n_tris ; ti++ )
+        {
+            const pt   = 3*it,
+                  pv0 = 3*this.triangles_data[ pt+0 ],
+                  pv1 = 3*this.triangles_data[ pt+1 ],
+                  pv2 = 3*this.triangles_data[ pt+2 ]
+                    
+            for( let k = 0 ; k < 3 ; k++ )
+            {   normals_data[ pv0+k ] += tri_normals[ pt+k ]  
+                normals_data[ pv1+k ] += tri_normals[ pt+k ]  
+                normals_data[ pv2+k ] += tri_normals[ pt+k ]  
+            }
+        }
+
+        // normalize vertex normals 
+        let z_count = 0 
+
+        for ( let vi = 0 ; vi < this.n_verts ; vi++ )
+        {
+            const pv    = 3*vi,
+                  vn    = new Vec3([ normals_data[pv+0], normals_data[pv+1], normals_data[pv+2] ])
+                  vnlsq = vn.len_sq()
+            
+            if ( vnlsq < 1e-12 )
+            {   z_count ++
+                continue
+            }
+            const vnn = vn.scale( 1.0/Math.sqrt( vnlsq ) )
+            normals_data[ pv+0 ] = vnn[0]
+            normals_data[ pv+1 ] = vnn[1]
+            normals_data[ pv+2 ] = vnn[2]
+        }
+
+        Log(`${fname} ends, z_count == ${z_count} / total tris == ${this.n_tris}`)
     }
     // ----------------------------------------------------------------------------------
 
@@ -451,7 +520,7 @@ class Simple2DMesh extends IndexedTrianglesMesh
  */
 class ParamSurfaceMesh extends IndexedTrianglesMesh
 {
-    constructor( ns, nt, param_func )
+    constructor( ns, nt, param_func, options )
     {
         CheckNat( ns )
         CheckNat( nt )
@@ -516,7 +585,7 @@ class ParamSurfaceMesh extends IndexedTrianglesMesh
             triangles[b+5] = i01
         }
         // initialize the base Mesh instance
-        super( coords, triangles )
+        super( coords, triangles, options )
         //this.setColorsData( colors )
         this.setTexCooData( texcoords )
         this.setNormalsData( normals )
@@ -540,7 +609,8 @@ class SphereMesh extends ParamSurfaceMesh
                     v  = new Vec3([ ca*cb, sb, sa*cb ])
 
                 return { pos: v, nor: v }
-            } 
+            } ,
+            { name: 'sphere surface' }
         )
     }
 }
@@ -559,7 +629,8 @@ class CylinderMesh extends ParamSurfaceMesh
                     n  = new Vec3([ ca, 0, sa ])
 
                 return { pos: p, nor: n }
-            } 
+            },
+            { name: 'cylinder surface' } 
         )
     }
 }
@@ -578,7 +649,8 @@ class ConeMesh extends ParamSurfaceMesh
                     n  = new Vec3([ ca, 1, sa ])
 
                 return { pos: p, nor: n.normalized() }
-            } 
+            } ,
+            { name: 'cone surface' }
         )
     }
 }
@@ -739,6 +811,10 @@ class MultiMeshFromOBJLines  extends DrawableObject
 
         for( let mesh of this.meshes )
             mesh.computeTriangleDuals()
+
+        // do this, even if maybe some meshes already have normals.....
+        for( let mesh of this.meshes )
+            mesh.computeVertexNormals()
         
         //super( parser.coords_data, parser.triangles_data )
         

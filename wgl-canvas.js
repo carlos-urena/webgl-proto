@@ -256,7 +256,7 @@ class WebGLCanvas
             return
         }
 
-        let section = this.sections_list.getCurrSection()
+        let section = this.sections_list.getCurrObjSection()
         if ( section == null )
         {
             Log(`${fname} section es null`)
@@ -275,7 +275,7 @@ class WebGLCanvas
         const fname = 'WebGLCanvas.drawHitPnts():'
         if ( this.sections_list == null )
             return
-        let section = this.sections_list.getCurrSection()
+        let section = this.sections_list.getCurrObjSection()
         if ( section == null )
         {
             Log(`${fname} section es null`)
@@ -568,7 +568,7 @@ class WebGLCanvas
             this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -88,  +88  )
             this.updateSceneTransformMat()
 
-            let section = this.sections_list.getCurrSection()
+            let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.updateObjectAngles( -dx*0.20, dy*0.10 )     
         }
@@ -645,7 +645,7 @@ class WebGLCanvas
             this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
             this.updateSceneTransformMat()
 
-            let section = this.sections_list.getCurrSection()
+            let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.updateObjectScale( fac*wevent.deltaY )
         }
@@ -1125,8 +1125,17 @@ class WebGLCanvas
 
         // register the texture in 'this' instance, so it can be drawn
         ///gl.bindTexture( gl.TEXTURE_2D, null )  // unbind any texture ??? --> NO: yields warnings !
-        this.gl_texture = texture
+        //this.gl_texture = texture
 
+
+        if ( this.sections_list != null ) // probably never happens
+        {
+            let section = this.sections_list.getCurrObjSection()
+            if ( section != null )
+            {   section.setTexture( texture, file.name )
+                Log(`${fname} texture changed for the current section object`)
+            }
+        }
         // display a log messagge
         
         const msg1 = `Image file '${file.name}' loaded and decoded.` 
@@ -1453,7 +1462,7 @@ class WebGLCanvas
         
         if ( this.sections_list != null )
         {
-            let section = this.sections_list.getCurrSection()
+            let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.draw_object( this.vis_ctx )
         }
@@ -1583,6 +1592,8 @@ class ObjectPanelSection extends PanelSection
         this.obj_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
 
         this.debug_rays     = []
+        this.texture        = null 
+        this.texture_name   = 'none'
 
         //this.content_elem.innerHTML += 
     }
@@ -1593,7 +1604,7 @@ class ObjectPanelSection extends PanelSection
      */
     populateContent()
     {
-        this.content_elem.innerHTML += '(this is an object section)<br/>'
+        this.content_elem.innerHTML = `Texture: ${this.texture_name}.<br/>`
     }
     // --------------------------------------------------------------------------------------
 
@@ -1633,7 +1644,21 @@ class ObjectPanelSection extends PanelSection
         this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
     }
     // --------------------------------------------------------------------------------------
-
+    
+    /**
+     * Set a new texture for this section's object
+     * @param {WebGLTexture} new_texture -- texture to use for this object, can be null 
+     *                                       (when it is null, the program texture status is not changed when rendering this object)
+     * @param {String}       new_texture_name -- visible name for this texture
+     */
+    setTexture( new_texture, new_texture_name )
+    {
+        this.texture      = new_texture
+        this.texture_name = (this.texture != null) ? new_texture_name : 'none'
+        this.populateContent()
+    }
+    
+    // --------------------------------------------------------------------------------------
     addRay( ray )
     {
         const fname = 'ObjectPanelSection.addRay():'
@@ -1729,10 +1754,18 @@ class ObjectPanelSection extends PanelSection
     draw_object( vis_ctx )
     {
         let pr = vis_ctx.program 
+        let gl = vis_ctx.wgl_ctx 
+
+        if ( this.texture != null )
+            pr.useTexture( this.texture )
+
         pr.pushMM()
             pr.compMM( this.obj_tr_mat )
             this.object.draw( vis_ctx )
         pr.popMM()
+        
+        if ( this.texture != null )
+            pr.useTexture( null )
     }
 }
 // -------------------------------------------------------------------------------------------------
@@ -1788,7 +1821,7 @@ class PanelSectionsList
     /**
      * 
      */
-    getCurrSection()
+    getCurrObjSection()
     {
         return this.curr_section 
     }

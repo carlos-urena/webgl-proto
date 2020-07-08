@@ -1440,14 +1440,14 @@ class WebGLCanvas
        
 
         
-        if ( this.gl_texture != null )
-        {    pr.useTexture( this.gl_texture )
-                //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
-        }
-        else 
-        {   pr.useTexture( null )
-            //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
-        }
+        // if ( this.gl_texture != null )
+        // {    pr.useTexture( this.gl_texture )
+        //         //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
+        // }
+        // else 
+        // {   pr.useTexture( null )
+        //     //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
+        // }
         // if ( this.test_3d_mesh.hasNormals())
         // {
         //     pr.doShading( true )
@@ -1759,9 +1759,12 @@ class ObjectPanelSection extends PanelSection
         let pr = vis_ctx.program 
         let gl = vis_ctx.wgl_ctx 
 
+        // base color for all vertexes used when the model has no vertex colors
+        gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+
         if ( this.texture != null )
         {    pr.useTexture( this.texture )
-             pr.doShading( true )
+             pr.doShading( false )
         }
         else
         {   pr.useTexture( null ) 

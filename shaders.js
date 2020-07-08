@@ -124,26 +124,21 @@ const fragment_functions =
         //    vcol : interpolated vertex color at the shading point position
         //    unor : shading point normal (not neccesarily normalized)
         
-        vec3 Shade( vec3 pos, vec3 base_color, vec3 unor, vec3 view )
+        vec3 Shade( vec3 pos, vec3 base_color, vec3 nor, vec3 view, vec3 light_dir, vec3 light_col )
         {
-            vec3  nor     = normalize(unor);
-
+            
             // compute diffuse component
-            vec3  light   = normalize( vec3( 1.0, 1.0, 1.0 ) );
-            float ln      = dot( nor, light );
-            if ( ln < 0.0 )
-            {   nor = -nor ;
-                ln  = -ln ;
-            } 
-            vec3 diff     = max( 0.2, ln ) * base_color ;
+            
+            float ln      = dot( nor, light_dir ); 
+            vec3 diff     = (max( 0.2, ln ) * base_color) * light_col;
 
             // compute specular component
-            vec3  halfw   = normalize( view+light );
-            float hv      = max( 0.0, dot( halfw,view ) );
-            float expon   = 50.0 ;
-            vec3  spec    = pow(hv,expon)*vec3( 1.0, 1.0, 1.0 ) ; 
+            vec3  halfw   = normalize( view+light_dir );
+            float hn      = max( 0.0, dot( halfw, nor ) );
+            float expon   = 10.0 ;
+            vec3  spec    = pow( hn, expon )*light_col ; 
 
-            return 0.8*diff + spec ;
+            return 0.8*diff + 0.5*spec ;
         }
 
         // returns 'base color', (the surface reflectivity), which is either the 
@@ -151,13 +146,17 @@ const fragment_functions =
 
         vec3 BaseColor()
         {
+            vec3 res ;
             if ( do_texture == 0 )
-                return vertex_color ;
+                res = vertex_color ;
             else
             {
                 vec4 tcol = QUERY_TEXTURE_2D( tsampler0, vertex_texcoo ) ;
-                return tcol.xyz ;
+                res = tcol.xyz ;
             }
+            //float maxb = max( res.r, max( res.g, res.b )) ;
+            //return res/maxb ;
+            return res ;
         }
 
         vec4 FragColor()
@@ -165,9 +164,28 @@ const fragment_functions =
             if ( do_shading == 0 )
                 return vec4( BaseColor(), 1.0 ) ;
             else
-            {
-                vec3  view_wcc    = normalize( obs_pos_wcc - vertex_pos_wcc );
-                return vec4( Shade( vertex_pos_wcc, BaseColor(), vertex_norm_wcc, view_wcc ), 1.0  );
+            {   // do shading in world cordinates space
+                vec3  view_wcc       = normalize( obs_pos_wcc - vertex_pos_wcc );
+                vec3  nor_wcc        = normalize( vertex_norm_wcc );
+
+                vec3  light1_dir_wcc = normalize( vec3( 1.0, 1.0, 1.0 ) );
+                vec3  light1_col     = vec3( 1.0, 1.0, 1.0 );
+                
+                vec3  light2_dir_wcc = normalize( vec3( -1.0, 1.0, -1.0 ) );
+                vec3  light2_col     = vec3( 1.0, 1.0, 1.0 );
+
+                // vec3  light3_dir_wcc = normalize( vec3( +1.0, 0.2, -1.0 ) );
+                // vec3  light3_col     = vec3( 0.0, 0.0, 1.0 );
+
+                // vec3  light4_dir_wcc = normalize( vec3( -1.0, 0.2, +1.0 ) );
+                // vec3  light4_col     = vec3( 1.0, 0.0, 0.0 );
+
+                vec3  c1 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light1_dir_wcc, light1_col );
+                vec3  c2 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light2_dir_wcc, light2_col );
+                //vec3  c3 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light3_dir_wcc, light3_col );
+                //vec3  c4 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light4_dir_wcc, light4_col );
+
+                return vec4( 0.7*(c1+c2), 1.0  );
             }
         }
 

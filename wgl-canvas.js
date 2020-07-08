@@ -1760,7 +1760,7 @@ class ObjectPanelSection extends PanelSection
         let gl = vis_ctx.wgl_ctx 
 
         // base color for all vertexes used when the model has no vertex colors
-        gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+        gl.vertexAttrib3f( 1, 0.0,0.6,1.0 )
 
         if ( this.texture != null )
         {    pr.useTexture( this.texture )

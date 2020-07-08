@@ -135,10 +135,10 @@ const fragment_functions =
             // compute specular component
             vec3  halfw   = normalize( view+light_dir );
             float hn      = max( 0.0, dot( halfw, nor ) );
-            float expon   = 10.0 ;
+            float expon   = 20.0 ;
             vec3  spec    = pow( hn, expon )*light_col ; 
 
-            return 0.8*diff + 0.5*spec ;
+            return diff + 0.3*spec ;
         }
 
         // returns 'base color', (the surface reflectivity), which is either the 
@@ -174,17 +174,9 @@ const fragment_functions =
                 vec3  light2_dir_wcc = normalize( vec3( -1.0, 1.0, -1.0 ) );
                 vec3  light2_col     = vec3( 1.0, 1.0, 1.0 );
 
-                // vec3  light3_dir_wcc = normalize( vec3( +1.0, 0.2, -1.0 ) );
-                // vec3  light3_col     = vec3( 0.0, 0.0, 1.0 );
-
-                // vec3  light4_dir_wcc = normalize( vec3( -1.0, 0.2, +1.0 ) );
-                // vec3  light4_col     = vec3( 1.0, 0.0, 0.0 );
-
                 vec3  c1 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light1_dir_wcc, light1_col );
                 vec3  c2 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light2_dir_wcc, light2_col );
-                //vec3  c3 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light3_dir_wcc, light3_col );
-                //vec3  c4 = Shade( vertex_pos_wcc, BaseColor(), nor_wcc, view_wcc, light4_dir_wcc, light4_col );
-
+                
                 return vec4( 0.7*(c1+c2), 1.0  );
             }
         }

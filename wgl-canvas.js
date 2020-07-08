@@ -1430,6 +1430,9 @@ class WebGLCanvas
         // activate the current camera (sets projection and modelview matrixes in the shader prog)
         this.vis_ctx.camera.activate( this.vis_ctx )
 
+        // set uniform with observer position 
+        pr.setObserverPosWCC( this.vis_ctx.camera.getObserverPosWCC() )
+
         // draw axes and grid (axes allways hide grid ....)
         this.gridXZ.draw( this.vis_ctx )
         this.axes.draw( this.vis_ctx )
@@ -1553,7 +1556,7 @@ class PanelSection
         {
             this.status = 'visible'
             tri.innerHTML = down_triangle_html+'&nbsp;'
-            this.content_elem.style.display = 'block'
+            this.content_elem.style.display = 'initial'
         }
     }
 
@@ -1758,7 +1761,7 @@ class ObjectPanelSection extends PanelSection
 
         if ( this.texture != null )
         {    pr.useTexture( this.texture )
-             pr.doShading( false )
+             pr.doShading( true )
         }
         else
         {   pr.useTexture( null ) 

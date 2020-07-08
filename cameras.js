@@ -65,8 +65,6 @@ class Camera
         vis_ctx.program.setViewMat( this.view_mat  )
         vis_ctx.program.setProjMat( this.proj_mat )
     }
-
-    
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -93,7 +91,11 @@ class PerspectiveCamera extends Camera
     {
         this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
     }
-
+    getObserverPosWCC()
+    {
+        const org_ec = new Vec3([0 ,0,0 ])
+        return this.view_mat_inv.apply_to( org_ec, 1 )
+    }
      
     /**
      *  Generates a ray through the center of a pixel in world coordinates

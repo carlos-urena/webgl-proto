@@ -747,6 +747,9 @@ class TriMeshFromPLYLines extends IndexedTrianglesMesh
 
         // compute triangle duals 
         this.computeTriangleDuals()
+
+        // compute vertex normals ....
+        this.computeVertexNormals()
         
     }
 }

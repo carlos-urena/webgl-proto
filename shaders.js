@@ -38,12 +38,13 @@ const uniforms_decls =
     glsl`
         // Uniforms declarations (GLSL ES 1.0 or 3.0)
 
-        uniform int       do_shading ; // 1-> do shading, 0->do not do shading (just use vertex colors)
-        uniform mat4      model_mat ;  // modelling matrix (master vertex coords --> world vertex coords)
-        uniform mat4      view_mat ;   // view matrix (world coords. --> camera coords.)
-        uniform mat4      proj_mat ;   // projection matrix (camera coords. --> n.d.c. coords)
-        uniform mat4      norm_mat ;   // normal matrix (master normal coords --> world normal coords)
-        uniform int       do_texture ; // 1 -> use texture color, 0 -> do not use
+        uniform int       do_shading ;   // 1-> do shading, 0->do not do shading (just use vertex colors)
+        uniform mat4      model_mat ;    // modelling matrix (master vertex coords --> world vertex coords)
+        uniform mat4      view_mat ;     // view matrix (world coords. --> camera coords.)
+        uniform mat4      proj_mat ;     // projection matrix (camera coords. --> n.d.c. coords)
+        uniform mat4      norm_mat ;     // normal matrix (master normal coords --> world normal coords)
+        uniform int       do_texture ;   // 1 -> use texture color, 0 -> do not use
+        uniform vec3      obs_pos_wcc ;  // observer position in world coordinates
         uniform sampler2D tsampler0 ;    // texture sampler, accesed only when 'do_texture' is 1                                 
     `
 
@@ -123,19 +124,26 @@ const fragment_functions =
         //    vcol : interpolated vertex color at the shading point position
         //    unor : shading point normal (not neccesarily normalized)
         
-        vec3 Shade( vec3 pos, vec3 base_color, vec3 unor )
+        vec3 Shade( vec3 pos, vec3 base_color, vec3 unor, vec3 view )
         {
-            vec3 nor   = normalize(unor);
-            vec3 light = normalize( vec3( 1.0, 1.0, 1.0 ) );
-            vec3 diff  = max( 0.2, 1.2*dot( light, nor )) * base_color ;
+            vec3  nor     = normalize(unor);
 
-            vec3  view    = normalize( vec3( 0.0, 0.0, 1.0 ) );
+            // compute diffuse component
+            vec3  light   = normalize( vec3( 1.0, 1.0, 1.0 ) );
+            float ln      = dot( nor, light );
+            if ( ln < 0.0 )
+            {   nor = -nor ;
+                ln  = -ln ;
+            } 
+            vec3 diff     = max( 0.2, ln ) * base_color ;
+
+            // compute specular component
             vec3  halfw   = normalize( view+light );
             float hv      = max( 0.0, dot( halfw,view ) );
-            float expon   = 10.0 ;
+            float expon   = 50.0 ;
             vec3  spec    = pow(hv,expon)*vec3( 1.0, 1.0, 1.0 ) ; 
 
-            return diff ;//+ spec ;
+            return 0.8*diff + spec ;
         }
 
         // returns 'base color', (the surface reflectivity), which is either the 
@@ -157,7 +165,10 @@ const fragment_functions =
             if ( do_shading == 0 )
                 return vec4( BaseColor(), 1.0 ) ;
             else
-                return vec4( Shade( vertex_pos_wcc, BaseColor(), vertex_norm_wcc ), 1.0 );
+            {
+                vec3  view_wcc    = normalize( obs_pos_wcc - vertex_pos_wcc );
+                return vec4( Shade( vertex_pos_wcc, BaseColor(), vertex_norm_wcc, view_wcc ), 1.0  );
+            }
         }
 
     ` // ends fragment_functions
@@ -333,13 +344,15 @@ class SimpleGPUProgram
         this.tsampler0_loc   = gl.getUniformLocation( this.program, 'tsampler0' )
         this.do_shading_loc  = gl.getUniformLocation( this.program, 'do_shading' )
         this.do_texture_loc  = gl.getUniformLocation( this.program, 'do_texture' )
+        this.obs_pos_wcc_loc = gl.getUniformLocation( this.program, 'obs_pos_wcc' )
 
-        Check( this.model_mat_loc  != null, 'unable to get location of model matrix' )
-        Check( this.view_mat_loc   != null, 'unable to get location of view matrix' )
-        Check( this.tsampler0_loc  != null, 'unable to get location of `tsampler1` sampler' )
-        Check( this.do_shading_loc != null, 'unable to get location of `do_shading` uniform' )
-        Check( this.do_shading_loc != null, 'unable to get location of `do_shading` uniform' )
-        Check( this.do_texture_loc != null, 'unable to get location of `do_texture` uniform' )
+        Check( this.model_mat_loc   != null, 'unable to get location of model matrix' )
+        Check( this.view_mat_loc    != null, 'unable to get location of view matrix' )
+        Check( this.tsampler0_loc   != null, 'unable to get location of `tsampler1` sampler' )
+        Check( this.do_shading_loc  != null, 'unable to get location of `do_shading` uniform' )
+        Check( this.do_shading_loc  != null, 'unable to get location of `do_shading` uniform' )
+        Check( this.do_texture_loc  != null, 'unable to get location of `do_texture` uniform' )
+        Check( this.obs_pos_wcc_loc != null, 'unable to get location of `obs_pos_wcc_loc` uniform' )
 
         // will be created when 'useTexture( null )' is called 
         this.default_gl_texture = null
@@ -542,6 +555,12 @@ class SimpleGPUProgram
         CheckType( new_proj_mat, 'Mat4' )
         this.proj_mat = new Mat4( new_proj_mat )
         this.context.uniformMatrix4fv( this.proj_mat_loc, false, this.proj_mat )        
+    }
+    // -----------------------------------------------------------------------------------------------
+    setObserverPosWCC( new_obs_pos_wcc )
+    {
+        CheckType( new_obs_pos_wcc, 'Vec3' )
+        this.context.uniform3fv( this.obs_pos_wcc_loc, new_obs_pos_wcc )
     }
     // -----------------------------------------------------------------------------------------------
     // sets the current modeling matrix 

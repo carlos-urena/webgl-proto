@@ -1735,6 +1735,8 @@ class PanelSectionsList
         this.panel_elem = BuscarElemId('right_panel_id')
         this.sections   = new Map()
         this.curr_section = null 
+
+        this.addConfigSection()
     }
     /**
      * Add a section to the panel
@@ -1750,6 +1752,17 @@ class PanelSectionsList
         this.panel_elem.appendChild( section.root_elem )
         this.setCurrObjSection( sections_counter )
 
+    }
+    /**
+     * Add a section to the panel
+     * @param {PanelSection} section  -- class 'PanelSection' or derived 
+     */
+    addConfigSection(  )
+    {
+        sections_counter ++
+        let section = new ConfigPanelSection( sections_counter, this )
+        this.sections.set( sections_counter, section )
+        this.panel_elem.appendChild( section.root_elem )
     }
     /**
      * Sets the current object section
@@ -1782,4 +1795,33 @@ class PanelSectionsList
         return this.curr_section 
     }
 }
+
+// -------------------------------------------------------------------------------------------------
+// A panel section for the global config information
+
+class ConfigPanelSection extends PanelSection
+{
+    // --------------------------------------------------------------------------------------
+    /**
+     * 
+     * @param {DrawableObject} base_object -- any object of a class derived from DrawableObject
+     * @param {number} number               -- a unique serial number for this section
+     */
+    constructor( sections_list  )
+    {
+        Check( section_list )
+        super( 'Config', number, sections_list )
+        
+    }
+    // --------------------------------------------------------------------------------------
+    /**
+     * Populates 'this.content_elem' with HTML or children nodes
+     */
+    populateContent()
+    {
+        this.content_elem.innerHTML = `this is the config panel section`
+    }
+   
+}
+// -------------------------------------------------------------------------------------------------
 

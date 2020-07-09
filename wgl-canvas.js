@@ -77,13 +77,6 @@ class WebGLCanvas
         // hit object which is drawn on eahc hit point
         this.hit_object = null 
 
-        // initialize scene object angles and scale 
-        this.scene_alpha_deg  = 0.0              // scene rotation angles (alpha)
-        this.scene_beta_deg   = 0.0              // scene rotation angles (beta)
-        this.scene_scale      = 1.0              // scene scale 
-        this.scene_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
-        this.scene_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
-
         // create the panel sections list 
         this.sections_list  = new PanelSectionsList()
 
@@ -564,10 +557,6 @@ class WebGLCanvas
         if ( mevent.altKey )
         {
             // update object angles
-            this.scene_alpha_deg = Trunc( this.scene_alpha_deg - dx*0.20, -180, +180 )
-            this.scene_beta_deg  = Trunc( this.scene_beta_deg  + dy*0.10, -88,  +88  )
-            this.updateSceneTransformMat()
-
             let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.updateObjectAngles( -dx*0.20, dy*0.10 )     
@@ -642,8 +631,8 @@ class WebGLCanvas
         if ( wevent.altKey )
         {
             const fac = 0.005
-            this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
-            this.updateSceneTransformMat()
+            // this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
+            // this.updateSceneTransformMat()
 
             let section = this.sections_list.getCurrObjSection()
             if ( section != null )
@@ -1360,25 +1349,6 @@ class WebGLCanvas
     // -------------------------------------------------------------------------------------------------
 
     /**
-     * Updates 'this.scene_transform_mat' 
-     * (from 'this.scene_alpha_deg' and 'this.scene_beta_deg' and 'this.scene_scale')
-     */
-    updateSceneTransformMat()
-    {
-        const 
-            rotx_mat  = Mat4_RotationXdeg( this.scene_beta_deg ),
-            roty_mat  = Mat4_RotationYdeg( -this.scene_alpha_deg ),
-            scale_mat = Mat4_Scale([ this.scene_scale, this.scene_scale, this.scene_scale ])
-        
-        this.scene_tr_mat     = scale_mat.compose( rotx_mat ).compose( roty_mat )
-        this.scene_tr_mat_inv = this.scene_tr_mat.inverse()
-
-        //let ident = this.scene_tr_mat.compose( this.scene_tr_mat_inv )
-        //Log(`ident == ${ident}`)
-    }
-    // -------------------------------------------------------------------------------------------------
-
-    /**
      * Draws a frame into the context and issues a 'gl.flush()' call at the end
      */
     drawFrame()
@@ -1436,33 +1406,7 @@ class WebGLCanvas
         // draw axes and grid (axes allways hide grid ....)
         this.gridXZ.draw( this.vis_ctx )
         this.axes.draw( this.vis_ctx )
-
-       
-
-        
-        // if ( this.gl_texture != null )
-        // {    pr.useTexture( this.gl_texture )
-        //         //Log(`#### ${fname} using texture for the 'test_3d_mesh'`)
-        // }
-        // else 
-        // {   pr.useTexture( null )
-        //     //Log(`#### ${fname} NOT using texture for the 'test_3d_mesh'`)
-        // }
-        // if ( this.test_3d_mesh.hasNormals())
-        // {
-        //     pr.doShading( true )
-        //     //Log(`#### ${fname} YES using shading for the 'test_3d_mesh'`)
-        // }
-        // else 
-        // {   pr.doShading( false )
-        //     //Log(`#### ${fname} NOT using shading for the 'test_3d_mesh'`)
-        // }
-
-        // pr.pushMM()
-        //     //pr.compMM( new Mat4_Scale( [0.5, 0.5, 0.5] ) )
-        //     this.test_3d_mesh.draw( this.vis_ctx )
-        // pr.popMM()
-        
+ 
         if ( this.sections_list != null )
         {
             let section = this.sections_list.getCurrObjSection()

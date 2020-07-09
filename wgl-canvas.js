@@ -77,8 +77,9 @@ class WebGLCanvas
         // hit object which is drawn on eahc hit point
         this.hit_object = null 
 
-        // create the panel sections list 
+        // create the panel sections list, add the config section 
         this.sections_list  = new PanelSectionsList()
+        
 
         // create the grid and axes drawable objects
         this.gridXZ = new GridLinesXZ()
@@ -1732,11 +1733,11 @@ class PanelSectionsList
 {
     constructor()
     {
-        this.panel_elem = BuscarElemId('right_panel_id')
-        this.sections   = new Map()
-        this.curr_section = null 
+        this.panel_elem   = BuscarElemId('right_panel_id') // panel element on the page DOM
+        this.sections     = new Map()   // map witj keys == sections numbers, values == sections
+        this.curr_section = null        // current object type section
 
-        this.addConfigSection()
+        this.addConfigSection()  // add first section for global configuration parameters
     }
     /**
      * Add a section to the panel
@@ -1807,9 +1808,9 @@ class ConfigPanelSection extends PanelSection
      * @param {DrawableObject} base_object -- any object of a class derived from DrawableObject
      * @param {number} number               -- a unique serial number for this section
      */
-    constructor( sections_list  )
+    constructor( number, sections_list  )
     {
-        Check( section_list )
+        
         super( 'Config', number, sections_list )
         
     }
@@ -1824,4 +1825,53 @@ class ConfigPanelSection extends PanelSection
    
 }
 // -------------------------------------------------------------------------------------------------
+
+var widgets_dict = new Map()
+
+class Widget 
+{
+    /**
+     * Builds a new widget
+     * @param {String}  ident  -- a unique string, with no spaces, which identifies the widget  
+     * @param {String}  type   -- a string describing the type (can be 'check',)
+     * @param {String}  text   -- text which is displayed along the widget
+     */
+    constructor( ident, type, text, parent_elem )
+    {
+        if ( widgets_dict.has( ident ))
+            throw new Error(`cannot create widget: duplicate widget identifier ('${ident}')`)
+
+        this.ident  = ident 
+        this.type   = type
+        this.text   = text
+        this.elem   = null 
+        this.parent = parent_elem
+    }
+    appendToParent()
+    {
+        if ( this.parent != null && this.elem != null )
+            this.parent.appendChild( this.elem )
+        else 
+            throw new Error('cannot add widget element to parent')
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+class CheckWidget extends Widget 
+{
+    /**
+     * Builds a new toggle widget, from an unique identifier
+     * @param {String}  ident          -- a unique string, with no spaces, which identifies the widget  
+     * @param {String}  text           -- text which is displayed along the widget
+     * @param {Boolean} initial_value  -- initial value (true= checked, false =unchecked)
+     */
+    constructor( ident, text, parent_elem, initial_value )
+    {
+        super( ident, 'check', text, parent_elem )
+        this.elem = new HTMLSpanElement()
+        this.elem.id = 'toggle_widget_'+this.ident+'_id'
+        this.innerHTML =  ........ poner unicode de check mark y no check mark ...
+        this.appendToParent()
+    }
+}
 

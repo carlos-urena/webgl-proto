@@ -1489,7 +1489,7 @@ class PanelSection
 
     triangleClick( mevent )
     {
-        Log('triangle click')
+        //Log('triangle click')
         let tri = document.getElementById( this.triangle_id )
         if ( this.status == 'visible')
         {
@@ -1508,7 +1508,7 @@ class PanelSection
     nameClick()
     {
         const fname = 'PanelSection.nameClick():'
-        Log(`${fname} name click on base section class, name == '${this.name}', num = ${this.number}`)
+        //Log(`${fname} name click on base section class, name == '${this.name}', num = ${this.number}`)
        
     }
 }
@@ -1553,13 +1553,16 @@ class ObjectPanelSection extends PanelSection
     populateContent()
     {
         this.content_elem.innerHTML = `Texture: ${this.texture_name}.<br/>`
+        this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',     this.content_elem, true )
+        this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',      this.content_elem, true )
+        this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y<->Z axes', this.content_elem, false )
     }
     // --------------------------------------------------------------------------------------
 
     nameClick()
     {
         const fname = 'ObjectPanelSection.nameClick():'
-        Log(`${fname} name click on object section class, name == '${this.name}', num = ${this.number}`)
+        //Log(`${fname} name click on object section class, name == '${this.name}', num = ${this.number}`)
         this.sections_list.setCurrObjSection( this.number )
         
     }
@@ -1582,7 +1585,7 @@ class ObjectPanelSection extends PanelSection
 
     updateObjectTransformMat()
     {
-        Log(`updating object transform mat ...`)
+        //Log(`updating object transform mat ...`)
         const 
             rotx_mat  = Mat4_RotationXdeg( this.obj_beta_deg ),
             roty_mat  = Mat4_RotationYdeg( -this.obj_alpha_deg ),
@@ -1755,13 +1758,17 @@ class PanelSectionsList
 
     }
     /**
-     * Add a section to the panel
+     * Adds the configuration section to the panel
      * @param {PanelSection} section  -- class 'PanelSection' or derived 
      */
     addConfigSection(  )
     {
         sections_counter ++
+
+        // create section 
         let section = new ConfigPanelSection( sections_counter, this )
+         
+        // add the section to the dictionary and the DOM
         this.sections.set( sections_counter, section )
         this.panel_elem.appendChild( section.root_elem )
     }
@@ -1819,8 +1826,9 @@ class ConfigPanelSection extends PanelSection
      * Populates 'this.content_elem' with HTML or children nodes
      */
     populateContent()
-    {
-        this.content_elem.innerHTML = `this is the config panel section`
+    {    
+        // populate the section with widgets.....
+        this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
     }
    
 }
@@ -1841,21 +1849,28 @@ class Widget
         if ( widgets_dict.has( ident ))
             throw new Error(`cannot create widget: duplicate widget identifier ('${ident}')`)
 
-        this.ident  = ident 
-        this.type   = type
-        this.text   = text
-        this.elem   = null 
-        this.parent = parent_elem
+        this.ident        = ident 
+        this.type         = type
+        this.text         = text
+        this.root_elem    = null 
+        this.parent_elem  = parent_elem
     }
     appendToParent()
     {
-        if ( this.parent != null && this.elem != null )
-            this.parent.appendChild( this.elem )
+        if ( this.parent_elem != null && this.root_elem != null )
+            this.parent_elem.appendChild( this.root_elem )
         else 
             throw new Error('cannot add widget element to parent')
     }
 }
 // -------------------------------------------------------------------------------------------------
+
+// See UNICODE for geometric shape characters: https://en.wikipedia.org/wiki/Geometric_Shapes
+// https://www.unicode.org/charts/PDF/U25A0.pdf
+
+var 
+    checked_sym        = '&#x2B24;',   // 2B24 https://www.unicode.org/charts/PDF/U25A0.pdf 
+    unchecked_sym      = '&#x2B55;&nbsp;'    // 2B55 https://www.unicode.org/charts/PDF/U25A0.pdf 
 
 class CheckWidget extends Widget 
 {
@@ -1868,10 +1883,28 @@ class CheckWidget extends Widget
     constructor( ident, text, parent_elem, initial_value )
     {
         super( ident, 'check', text, parent_elem )
-        this.elem = new HTMLSpanElement()
-        this.elem.id = 'toggle_widget_'+this.ident+'_id'
-        this.innerHTML =  ........ poner unicode de check mark y no check mark ...
+        
+        // create the DOM elements (note: the root elem can be a div or a span ...here we use a div for this app)
+        this.root_elem  = CreateElem( 'div', this.ident+'_root_id', 'widget_root_class', parent_elem )
+        this.check_elem = CreateElem( 'span', this.ident+'_check_id', 'check_elem_class', this.root_elem )
+        this.text_elem  = CreateElem( 'span', this.ident+'_text_id', 'check_text_elem_class', this.root_elem )
+        this.curr_value = initial_value
+
+        this.root_elem.style.cursor = 'pointer'
+        this.root_elem.onclick = e => 
+        {  
+            this.curr_value = ! this.curr_value
+            this.check_elem.innerHTML = this.curr_value ? checked_sym : unchecked_sym 
+        }
+
+        // populate elements
+        this.text_elem.innerHTML = '&nbsp;&nbsp;'+text 
+        this.check_elem.innerHTML = this.curr_value ? checked_sym : unchecked_sym 
         this.appendToParent()
+    }
+    getValue()
+    {
+        return curr_value
     }
 }
 

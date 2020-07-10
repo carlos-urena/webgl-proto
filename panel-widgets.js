@@ -52,7 +52,6 @@ class PanelSection
         // create the content div elem
         this.content_id = this.ident + '_content_id'
         this.content_elem = CreateElem( 'div', this.content_id, 'section_content_class', this.root_elem )
-        this.populateContent()
         
         // add event listeners for clicks on the head elem
         this.triangle_elem.addEventListener( 'click', e => this.triangleClick(e) )
@@ -99,7 +98,9 @@ class ObjectPanelSection extends PanelSection
      */
     constructor( base_object, number, sections_list  )
     {
-        super( 'name' in base_object  ? base_object.name : 'unknown name', number, sections_list )
+        const base_name = 'name' in base_object  ? base_object.name : 'unknown name'
+        
+        super( base_name, number, sections_list )
         
         this.do_shading      = false 
         this.do_texture      = true
@@ -115,20 +116,16 @@ class ObjectPanelSection extends PanelSection
         this.debug_rays     = []
         this.texture        = null 
         this.texture_name   = 'none'
+        this.texture_name_elem = null 
 
-        //this.content_elem.innerHTML += 
-    }
-    // --------------------------------------------------------------------------------------
+        this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
+        this.updateTextureNameElem()
 
-    /**
-     * Populates 'this.content_elem' with HTML or children nodes
-     */
-    populateContent()
-    {
-        this.content_elem.innerHTML = `Texture: ${this.texture_name}.<br/>`
         this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',   this.content_elem, true )
         this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true )
         this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false )
+
+        //this.content_elem.innerHTML += 
     }
     // --------------------------------------------------------------------------------------
 
@@ -168,6 +165,13 @@ class ObjectPanelSection extends PanelSection
         this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
     }
     // --------------------------------------------------------------------------------------
+    updateTextureNameElem()
+    {
+        Log(`UPTNE : this.texture_name_elem == ${this.texture_name_elem}`)
+        this.texture_name_elem.innerHTML = `Texture: ${this.texture_name}`
+    }
+    // --------------------------------------------------------------------------------------
+
     
     /**
      * Set a new texture for this section's object
@@ -179,7 +183,7 @@ class ObjectPanelSection extends PanelSection
     {
         this.texture      = new_texture
         this.texture_name = (this.texture != null) ? new_texture_name : 'none'
-        this.populateContent()
+        this.updateTextureNameElem()
     }
     
     // --------------------------------------------------------------------------------------
@@ -392,18 +396,10 @@ class ConfigPanelSection extends PanelSection
     {
         
         super( 'Config', number, sections_list )
+
+        this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
         
     }
-    // --------------------------------------------------------------------------------------
-    /**
-     * Populates 'this.content_elem' with HTML or children nodes
-     */
-    populateContent()
-    {    
-        // populate the section with widgets.....
-        this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
-    }
-   
 }
 // -------------------------------------------------------------------------------------------------
 

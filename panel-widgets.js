@@ -125,6 +125,13 @@ class ObjectPanelSection extends PanelSection
         this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true )
         this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false )
 
+        // set proper vertical separations with margins ...
+        const sstr = '5px'
+        this.texture_name_elem.style.marginTop =  sstr
+        this.use_texture_widget.root_elem.style.marginTop = sstr
+        this.do_shading_widget.root_elem.style.marginTop = sstr
+        this.flip_widget.root_elem.style.marginTop = sstr
+
         //this.content_elem.innerHTML += 
     }
     // --------------------------------------------------------------------------------------

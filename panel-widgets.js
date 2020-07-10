@@ -470,13 +470,25 @@ class CheckWidget extends Widget
         this.root_elem.onclick = e => 
         {  
             this.curr_value = ! this.curr_value
-            this.check_elem.innerHTML = this.curr_value ? checked_sym : unchecked_sym 
+            this.configureCheckElem()
         }
 
         // populate elements
         this.text_elem.innerHTML = '&nbsp;&nbsp;'+text 
-        this.check_elem.innerHTML = this.curr_value ? checked_sym : unchecked_sym 
+        this.configureCheckElem()
         this.appendToParent()
+    }
+    configureCheckElem()
+    {
+        
+        let filled_circle = this.curr_value ?  `<circle cx="8" cy="8" r="5" fill="sandybrown" />` : ''
+        let content = 
+            `<svg width="16" height="16">` + 
+            `<circle cx="8" cy="8" r="7" stroke="white" stroke-width="1" />` +
+            filled_circle +
+            `</svg>`
+        this.check_elem.innerHTML = content
+
     }
     getValue()
     {

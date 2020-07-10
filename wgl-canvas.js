@@ -205,52 +205,6 @@ class WebGLCanvas
     {
         const fname = 'WebGLCanvas.addRay():'
 
-        // const fname = 'WebGLCanvas.addRay():'
-        // const x0_org = ray.org,
-        //       x1_org = ray.org.plus( ray.dir ),
-        //       x0_wc     = this.scene_tr_mat_inv.apply_to( x0_org, 1 ),
-        //       x1_wc     = this.scene_tr_mat_inv.apply_to( x1_org, 1 )
-
-
-        // // test: intersect ray with scene  
-        // let ray_wc   = new Ray( x0_wc, x1_wc.minus(x0_wc) ) // transformed ray
-        // let obj      = this.loaded_object != null ? this.loaded_object : this.test_3d_mesh 
-        // let hit_data = { hit: false, dist: -1, it: -1 } // todo: add group (move to hit_data to its own class??)
-
-        // Log(`${fname} STARTS intersection .....`)
-        
-        // zero_det_count     = 0
-        // ray_tri_int_count  = 0 
-
-        // obj.intersectRay( ray_wc, hit_data )
-
-        // Log(`${fname} END ray-tri code.`)
-        // Log(`${fname} total ray-tri count == ${ray_tri_int_count} / almost zero det count == ${zero_det_count}`)
-        // Log(`${fname} hit_data.hit == #### ${hit_data.hit} ####`)
-        
-        // if ( hit_data.hit )
-        // {
-        //     Log(`${fname} HIT it = ${hit_data.it}, dist = ${hit_data.dist}`)
-            
-        //     let x1_wc_dist = x0_wc.plus( ray_wc.dir.scale( hit_data.dist ))
-        //     this.debug_rays.push( { start_pnt: x0_wc, end_pnt: x1_wc_dist, vertex_arr: null } )
-        //     //let audio = document.getElementById('audio_ok_id')
-        //     this.setStatus(`Found intersection: added point # ${this.debug_rays.length}`)
-        //     //if ( audio !== null )
-        //     //    audio.play()
-        //     HitBeep()
-        // }
-        // else
-        // {
-        //     this.setStatus('Intersection not found')
-        //     // let audio = document.getElementById('audio_error_id')
-        //     // if ( audio !== null )
-        //     //     audio.play()
-        //     NohitBeep()
-        // }
-
-       
-
         if ( this.sections_list == null )
         {
             alert("there is no object being displayed !!! how did you got here ??")
@@ -288,45 +242,6 @@ class WebGLCanvas
         
         
         section.drawHitPoints( this.vis_ctx, this.hit_object )
-
-        // let gl = this.vis_ctx.wgl_ctx,
-        //     pr = this.vis_ctx.program
-
-        
-        // const rb = 0.005
-
-        // pr.useTexture( null )
-        
-        // for( let ray of this.debug_rays )
-        // {
-        //     // draw ray segment 
-
-        //     if ( ray.vertex_arr == null )
-        //     {
-        //         const a = ray.start_pnt,
-        //               b = ray.end_pnt
-        //         ray.vertex_arr = new VertexArray( 0, 3, 
-        //                 new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
-        //     }
-
-        //     gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
-        //     pr.doShading( false )
-        //     ray.vertex_arr.draw(gl, gl.LINES )
-
-        //     // draw sphere at ray end
-        //     if ( this.hit_object == null )
-        //     {   
-        //         this.hit_object = new SphereMesh( 32, 32 )
-        //     }
-        //     gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
-        //     pr.doShading( false )
-
-        //     pr.pushMM()
-        //         pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
-        //         pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
-        //         this.hit_object.draw( this.vis_ctx )
-        //     pr.popMM()
-        // }
     }
     // -------------------------------------------------------------------------------
     drawPeephole()
@@ -640,9 +555,7 @@ class WebGLCanvas
         if ( wevent.altKey )
         {
             const fac = 0.005
-            // this.scene_scale = Math.max( 0.03, ( this.scene_scale + fac*wevent.deltaY ))
-            // this.updateSceneTransformMat()
-
+           
             let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.updateObjectScale( fac*wevent.deltaY )
@@ -752,8 +665,6 @@ class WebGLCanvas
         this.cLog(msg)
 
         // update camera params
-        //this.cam_alpha_deg = Trunc( this.cam_alpha_deg - dx*0.20, -180, +180 )
-        //this.cam_beta_deg  = Trunc( this.cam_beta_deg  + dy*0.10, -85,  +85  )
         const facx = -0.2,
               facy = 0.1
         this.vis_ctx.camera.moveXY( facx*dx, facy*dy )
@@ -1023,29 +934,6 @@ class WebGLCanvas
             st.innerHTML = msg
     }
     // -------------------------------------------------------------------------------------------------
-    // /**
-    //  * Process a new image file which has been just dropped onto the canvas
-    //  * @param {File} img_file 
-    //  */
-    // imageFileDropped( img_file )
-    // {
-    //     CheckType( img_file, 'File' )
-    //     Check( img_file.type == 'image/jpeg' )
-    //     const fname = `WebGLCanvas.jpgFileDropped():`
-    //     console.log(`${fname} begins, file name == '${img_file.name}', type == '${img_file.type}'`)
-        
-    //     this.setStatus(`Loading JPG file '${img_file.name}' ...`)
-
-    //     /// Read the image, this is based on
-    //     /// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-
-    //     let reader = new FileReader()
-    //     reader.onloadend = e => this.imageFileLoaded( e )
-    //     reader.onerror   = e => this.fileLoadError( e, 'imgFileDropped', img_file.name )
-
-    //     reader.readAsDataURL( img_file )
-    // }
-    // -------------------------------------------------------------------------------------------------
     /**
      * Called after the JPG File (Blob) has been loaded, this  trigers decoding
      *   @param {ProgressEvent} evt              -- progress event ..
@@ -1179,13 +1067,6 @@ class WebGLCanvas
 
         const file = file_list.item( model_file_index ),
               ext  = file.name.split('.').pop().toLowerCase()
-
-        // if ( ext == 'obj' )
-        // {
-        //     alert(`Sorry, 'obj' files can't be parsed right now, giving up on: '${file.name}'`)
-        //     this.loadFilesInList( file_list, model_file_index+1 )
-        //     return
-        // }
 
         if ( this.debug )
         {   Log(`${fname} event class  == ${evt.constructor.name}`)

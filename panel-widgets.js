@@ -481,13 +481,16 @@ class CheckWidget extends Widget
     configureCheckElem()
     {
         
-        let filled_circle = this.curr_value ?  `<circle cx="8" cy="8" r="5" fill="sandybrown" />` : ''
-        let content = 
+        const filled_circle = `<circle cx="8" cy="8" r="5" fill="sandybrown" />`,
+              empty_circle  = '',
+              inner_circle  = this.curr_value ? filled_circle : empty_circle
+
+        this.check_elem.innerHTML = 
             `<svg width="16" height="16">` + 
             `<circle cx="8" cy="8" r="7" stroke="white" stroke-width="1" />` +
-            filled_circle +
+            inner_circle +
             `</svg>`
-        this.check_elem.innerHTML = content
+        
 
     }
     getValue()

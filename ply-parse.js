@@ -247,10 +247,10 @@ class PLYParser
             {   this.parse_message = `vertex coords. line: cannot convert vertex coordinates to floating point numbers`
                 return 
             }
-            /// store vertex coordinates (swap Y <-> Z and negate X)
-            this.coords_data[p+0] = -vc_x
-            this.coords_data[p+1] = vc_z   
-            this.coords_data[p+2] = vc_y
+            /// store vertex coordinates 
+            this.coords_data[p+0] = vc_x
+            this.coords_data[p+1] = vc_y   
+            this.coords_data[p+2] = vc_z
 
             if ( parse_normals )
             {

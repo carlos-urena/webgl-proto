@@ -127,8 +127,8 @@ class OBJParser
                 {   this.parse_message = `coordinates in 'v' line cannot be parsed as floats` 
                     return
                 }
-                //this.input_coords.push( new Float32Array([ cx, cy, cz ]) )
-                this.input_coords.push( new Float32Array([ cx, cz, -cy ]) )
+                this.input_coords.push( new Float32Array([ cx, cy, cz ]) )
+                //this.input_coords.push( new Float32Array([ cx, cz, -cy ]) )
                 curr_group.in_num_coords ++
             }
             else if ( tokens[0] == 'vt' )

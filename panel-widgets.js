@@ -460,10 +460,21 @@ class CheckWidget extends Widget
     {
         super( ident, 'check', text, parent_elem )
         
-        // create the DOM elements (note: the root elem can be a div or a span ...here we use a div for this app)
+        // create the DOM elements (note: the root elem can be a div or a span 
+        // here we use a div with 'display: flex' and 'align-items:center' to verticaly center the text line and the check mark)
         this.root_elem  = CreateElem( 'div', this.ident+'_root_id', 'widget_root_class', parent_elem )
+
+        this.root_elem.style.display  = 'flex'
+        this.root_elem.style.alignItems  = 'center'
+
         this.check_elem = CreateElem( 'span', this.ident+'_check_id', 'check_elem_class', this.root_elem )
+        this.check_elem.style.align = 'center'
+        
+        //this.check_elem.style.align = 'center'
+
         this.text_elem  = CreateElem( 'span', this.ident+'_text_id', 'check_text_elem_class', this.root_elem )
+        this.text_elem.style.align = 'center'
+        
         this.curr_value = initial_value
 
         this.root_elem.style.cursor = 'pointer'
@@ -480,18 +491,26 @@ class CheckWidget extends Widget
     }
     configureCheckElem()
     {
+        const 
+            side_l    = 22,
+            stroke_w  = 2,
+            cx        = side_l/2,
+            cy        = side_l/2,
+            outer_rad = side_l/2-stroke_w,
+            inner_rad = outer_rad-stroke_w-1,
+            circ_col  = 'white',
+            fill_col  = 'sandybrown'
         
-        const filled_circle = `<circle cx="8" cy="8" r="5" fill="sandybrown" />`,
-              empty_circle  = '',
-              inner_circle  = this.curr_value ? filled_circle : empty_circle
-
+        const 
+            filled_circle = `<circle cx="${cx}" cy="${cy}" r="${inner_rad}" fill="${fill_col}" />`,
+            empty_circle  = '',
+            inner_circle  = this.curr_value ? filled_circle : empty_circle
+            
         this.check_elem.innerHTML = 
-            `<svg width="16" height="16">` + 
-            `<circle cx="8" cy="8" r="7" stroke="white" stroke-width="1" />` +
+            `<svg align='center' width="${side_l}" height="${side_l}">` + 
+            `<circle cx="${cx}" cy="${cy}" r="${outer_rad}" stroke="${circ_col}" stroke-width="${stroke_w}" />` +
             inner_circle +
-            `</svg>`
-        
-
+            `</svg></span>`
     }
     getValue()
     {

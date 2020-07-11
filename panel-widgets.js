@@ -438,10 +438,6 @@ class Widget
 // See UNICODE for geometric shape characters: https://en.wikipedia.org/wiki/Geometric_Shapes
 // https://www.unicode.org/charts/PDF/U25A0.pdf
 
-var 
-    checked_sym        = '&#x2B24;',   // 2B24 https://www.unicode.org/charts/PDF/U25A0.pdf 
-    unchecked_sym      = '&#x2B55;&nbsp;'    // 2B55 https://www.unicode.org/charts/PDF/U25A0.pdf 
-
 class CheckWidget extends Widget 
 {
     /**
@@ -468,16 +464,16 @@ class CheckWidget extends Widget
         this.root_elem.onclick = e => 
         {  
             this.curr_value = ! this.curr_value
-            this.configureCheckElem()
+            this.setRootElemHTML()
         }
 
         // populate elements
         
-        this.configureCheckElem()
+        this.setRootElemHTML()
         this.appendToParent()
     }
 
-    configureCheckElem()
+    setRootElemHTML()
     {
         const 
             side_l    = 22,
@@ -487,9 +483,7 @@ class CheckWidget extends Widget
             outer_rad = side_l/2-stroke_w,
             inner_rad = outer_rad-stroke_w-1,
             circ_col  = 'white',
-            fill_col  = 'sandybrown'
-        
-        const 
+            fill_col  = 'sandybrown',
             filled_circle = `<circle cx="${cx}" cy="${cy}" r="${inner_rad}" fill="${fill_col}"></circle>`,
             empty_circle  = '',
             inner_circle  = this.curr_value ? filled_circle : empty_circle
@@ -504,7 +498,50 @@ class CheckWidget extends Widget
     }
     getValue()
     {
-        return curr_value
+        return this.curr_value
     }
 }
+// -------------------------------------------------------------------------------------------------
+
+
+
+class DropdownWidget extends Widget 
+{
+    /**
+     * Builds a new toggle widget, from an unique identifier
+     * @param {String}        ident           -- a unique string, with no spaces, which identifies the widget  
+     * @param {String}        text            -- text which is displayed along the widget
+     * @param {HTMLElement}   parent_elem -- 
+     * @param {number}        initial_choice  -- a 0-based index with the initial choice 
+     * @param {Array<String>} choices   -- array of strings with the different choices
+     * 
+     */
+    constructor( ident, text, parent_elem, initial_choice, choices )
+    {
+        super( ident, 'dropdown', text, parent_elem )
+        
+        // create the DOM elements (note: the root elem can be a div or a span 
+        // here we use a div with 'display: flex' and 'align-items:center' to verticaly center the text line and the check mark)
+        this.root_elem  = CreateElem( 'div', this.ident+'_root_id', 'widget_root_class', parent_elem )
+
+        this.root_elem.style.display     = 'flex'
+        this.root_elem.style.alignItems  = 'center'
+        this.root_elem.style.marginTop   = '10px'
+
+        this.curr_value = initial_choice
+
+        
+        
+       
+        this.appendToParent()
+    }
+
+    
+    getValue()
+    {
+        return this.curr_value
+    }
+}
+
+
 

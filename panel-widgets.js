@@ -52,6 +52,7 @@ class PanelSection
         // create the content div elem
         this.content_id = this.ident + '_content_id'
         this.content_elem = CreateElem( 'div', this.content_id, 'section_content_class', this.root_elem )
+        this.content_elem.style.display = 'block'
         
         // add event listeners for clicks on the head elem
         this.triangle_elem.addEventListener( 'click', e => this.triangleClick(e) )
@@ -73,7 +74,7 @@ class PanelSection
         {
             this.status = 'visible'
             tri.innerHTML = down_triangle_html+'&nbsp;'
-            this.content_elem.style.display = 'initial'
+            this.content_elem.style.display = 'block'
         }
     }
 
@@ -119,20 +120,13 @@ class ObjectPanelSection extends PanelSection
         this.texture_name_elem = null 
 
         this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
+        this.texture_name_elem.style.marginTop = '12px' 
         this.updateTextureNameElem()
 
         this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',   this.content_elem, true )
         this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true )
         this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false )
 
-        // set proper vertical separations with margins ...
-        const sstr = '5px'
-        this.texture_name_elem.style.marginTop =  sstr
-        this.use_texture_widget.root_elem.style.marginTop = sstr
-        this.do_shading_widget.root_elem.style.marginTop = sstr
-        this.flip_widget.root_elem.style.marginTop = sstr
-
-        //this.content_elem.innerHTML += 
     }
     // --------------------------------------------------------------------------------------
 
@@ -464,17 +458,10 @@ class CheckWidget extends Widget
         // here we use a div with 'display: flex' and 'align-items:center' to verticaly center the text line and the check mark)
         this.root_elem  = CreateElem( 'div', this.ident+'_root_id', 'widget_root_class', parent_elem )
 
-        this.root_elem.style.display  = 'flex'
+        this.root_elem.style.display     = 'flex'
         this.root_elem.style.alignItems  = 'center'
+        this.root_elem.style.marginTop   = '10px'
 
-        this.check_elem = CreateElem( 'span', this.ident+'_check_id', 'check_elem_class', this.root_elem )
-        this.check_elem.style.align = 'center'
-        
-        //this.check_elem.style.align = 'center'
-
-        this.text_elem  = CreateElem( 'span', this.ident+'_text_id', 'check_text_elem_class', this.root_elem )
-        this.text_elem.style.align = 'center'
-        
         this.curr_value = initial_value
 
         this.root_elem.style.cursor = 'pointer'
@@ -485,10 +472,11 @@ class CheckWidget extends Widget
         }
 
         // populate elements
-        this.text_elem.innerHTML = '&nbsp;&nbsp;'+text 
+        
         this.configureCheckElem()
         this.appendToParent()
     }
+
     configureCheckElem()
     {
         const 
@@ -502,15 +490,17 @@ class CheckWidget extends Widget
             fill_col  = 'sandybrown'
         
         const 
-            filled_circle = `<circle cx="${cx}" cy="${cy}" r="${inner_rad}" fill="${fill_col}" />`,
+            filled_circle = `<circle cx="${cx}" cy="${cy}" r="${inner_rad}" fill="${fill_col}"></circle>`,
             empty_circle  = '',
             inner_circle  = this.curr_value ? filled_circle : empty_circle
-            
-        this.check_elem.innerHTML = 
-            `<svg align='center' width="${side_l}" height="${side_l}">` + 
-            `<circle cx="${cx}" cy="${cy}" r="${outer_rad}" stroke="${circ_col}" stroke-width="${stroke_w}" />` +
+
+        this.root_elem.innerHTML = 
+            `<svg width="${side_l}" height="${side_l}">` + 
+            `<circle cx="${cx}" cy="${cy}" r="${outer_rad}" stroke="${circ_col}" stroke-width="${stroke_w}"></circle>` +
             inner_circle +
-            `</svg></span>`
+            `</svg>` + 
+            `<span>&nbsp;${this.text}</span>` 
+            
     }
     getValue()
     {

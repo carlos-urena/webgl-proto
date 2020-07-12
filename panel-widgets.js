@@ -534,78 +534,68 @@ class DropdownWidget extends Widget
 
         // create the DOM elements 
 
-        this.root_elem  = CreateElem( 'div', this.ident+'_root_id', 'widget_root_class', this.parent_elem )
+        this.root_elem  = CreateElem( 'div', null, null, this.parent_elem )
         this.root_elem.style.display     = 'flex'
         this.root_elem.style.alignItems  = 'center'
         this.root_elem.style.marginTop   = '10px'
 
-        this.text_elem = CreateElem( 'span', this.ident+'_text_id', 'widget_text_class', this.root_elem ) 
+        this.text_elem = CreateElem( 'span', null, null, this.root_elem ) 
         this.text_elem.innerHTML = this.text+'&nbsp;&nbsp;'
 
         // this div elem is shown as an inline block ('dropdown' elem in the example)
-        this.div_elem = CreateElem( 'div', this.ident+'_div_id','dd_div_class', this.root_elem )
+        this.div_elem = CreateElem( 'div', null,null, this.root_elem )
         this.div_elem.style.position = 'relative'
         this.div_elem.style.display  = 'inline-block'
 
         // button elem
-        this.button_elem = CreateElem( 'button', this.ident+'_button_id','bsp_class', this.div_elem  )
-        this.button_elem.style.backgroundColor = 'black'
+        this.button_elem = CreateElem( 'button', null,'bsp_class', this.div_elem  )
         this.button_elem.innerHTML = `${this.choices[ this.curr_choice_index ]}&nbsp;&nbsp;${down_triangle_html}`
         this.button_elem.onclick = e => 
         {
-            Log(`dropdown button click, shown = ${this.is_shown}`)
+            //Log(`dropdown button click, shown = ${this.is_shown}`)
             if ( this.is_shown ) // shown: hide
             {
                 this.is_shown = false
-                this.content_elem.style.display = 'none'
+                this.choices_list_elem.style.display = 'none'
             }
             else // not shown: show
             {
                 this.is_shown = true
-                this.content_elem.style.display = 'block'
+                this.choices_list_elem.style.display = 'block'
             }
         }
 
         // content elem (list of choices)
-        this.content_elem = CreateElem( 'div', this.ident+'_cnt_id', 'dd_cnt_class', this.div_elem )
-        //this.content_elem.setAttribute( 'width', '300px' )
+        this.choices_list_elem = CreateElem( 'div', null, 'dropdown_choices_list_class', this.div_elem )
+        this.choices_list_elem.style.display  = 'none'
         
-        this.content_elem.style.display  = 'none'        /// move all this to CSS file....
-        this.content_elem.style.position = 'absolute'
-        this.content_elem.style.zIndex   = '1'
-        this.content_elem.style.backgroundColor = 'black'
-        this.content_elem.style.borderWidth  = '2px'
-        this.content_elem.style.borderStyle  = 'solid'
-        this.content_elem.style.borderColor  = 'sandybrown'
-        this.content_elem.style.borderRadius = '10px'
-        this.content_elem.style.paddingTop   = '5px'
-        this.content_elem.style.paddingBottom   = '5px'
-        
-        this.content_elem.style.boxShadow    = '0px 8px 16px 0px rgba(0,0,0,0.2)'
-
-
         for( let i = 0 ; i < this.choices.length ; i++ )
         {
-            let choice_elem = CreateElem( 'div', `${this.ident}_choice_${i}`, 'dd_choice_class', this.content_elem )
-            //choice_elem.style.display = 'block'
+            let choice_elem = CreateElem( 'div', null, 'dropdown_choice_class', this.choices_list_elem )
+            
             choice_elem.index_num = i
-            choice_elem.style.paddingTop    = '5px'    /// move all this to CSS file....
-            choice_elem.style.paddingBottom = '5px'     
-            choice_elem.style.paddingLeft   =  '15px'
-            choice_elem.style.paddingRight  =  '15px'
-            choice_elem.style.cursor        = 'pointer'
-            choice_elem.onmouseover = e => { e.target.style.backgroundColor = 'rgb(40%,40%,40%'} 
-            choice_elem.onmouseout  = e => { e.target.style.backgroundColor = 'black'} 
-            choice_elem.onclick     = e => 
-            { 
-                this.curr_choice_index = e.target.index_num 
+            choice_elem.innerHTML = this.choices[ i ]
+            choice_elem.onmouseover = e => 
+            {   e.target.style.backgroundColor = 'black'
+            } 
+            choice_elem.onmouseout = e => 
+            {   e.target.style.backgroundColor = 'rgb(30%,30%,30%)'
+            } 
+            choice_elem.onclick = e => 
+            {   this.curr_choice_index = e.target.index_num 
                 this.button_elem.innerHTML = `${this.choices[ this.curr_choice_index ]}&nbsp;&nbsp;${down_triangle_html}`
                 this.is_shown = false 
-                this.content_elem.style.display = 'none'
+                this.choices_list_elem.style.display = 'none'
             }
+            document.addEventListener( 'click', e => 
+            {   if ( e.target != this.button_elem )
+                {   this.choices_list_elem.style.display = 'none'
+                    this.is_shown = false
+                }
+            }, 
+            false )
 
-            choice_elem.innerHTML = this.choices[ i ]
-            this.content_elem.appendChild( choice_elem )
+            this.choices_list_elem.appendChild( choice_elem )
         }
 
         this.appendToParent()

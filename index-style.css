@@ -193,7 +193,28 @@ a
    font-size   : 11pt ; 
 }
 
+.dropdown_choices_list_class
+{
+   position          : absolute ;
+   z-index           : 1 ;
+   background-color  : rgb(30%,30%,30%) ; 
+   border-width      : 2px ;
+   border-style      : solid ;
+   border-color      : sandybrown ;
+   border-radius     : 10px ;
+   padding-top       : 5px ;
+   padding-bottom    : 5px ;
+   box-shadow        : 0px 8px 16px 0px rgba(0,0,0,0.1) ;
+}
 
+.dropdown_choice_class 
+{
+   padding-top    : 5px ;   
+   padding-bottom : 5px ;   
+   padding-left   : 15px ;
+   padding-right  : 15px ;
+   cursor         : pointer ;
+}
 
 
 .popup_style_class

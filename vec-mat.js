@@ -486,6 +486,7 @@ function Mat4_Frustum( l, r, b, t, n, f )
 // ------
 /**
  * Returns the OpenGL orthogonal proj matrix (http://docs.gl/gl2/glOrtho)
+ * * (adjusted so visible region is on the -Z axis, as in perspective projection)
  * @param {number} l -- left (X lower limit  at z=n) 
  * @param {number} r -- right (X upper limit at z=n)
  * @param {number} b -- bottom (Y lower limit at z=n)
@@ -504,18 +505,18 @@ function Mat4_Ortho( l, r, b, t, n, f )
         irl = 1.0/(r-l) ,
         itb = 1.0/(t-b) ,
         inf = 1.0/(n-f) ,
-        sx = 2.0*irl,
-        sy = 2.0*itb,
-        sz = -2.0*inf,
+        sx =  2.0*irl,
+        sy =  2.0*itb,
+        sz =  2.0*inf,      // here sign is negative in 'glOrtho'
         tx = -(r+l)*irl,
         ty = -(t+b)*itb,
-        tz = -(n+f)*inf
+        tz = +(n+f)*inf    // here sign is negative in 'glOrtho'
 
     return new Mat4
     ([  [ sx,    0.0,    0.0,   tx  ],
         [ 0.0,   sy,     0.0,   ty  ],
-        [ 0.0,   0.0,    sz,    tz  ],
-        [ 0.0,   0.0,   1.0,    0.0 ]
+        [ 0.0,   0.0,    sz,    tz  ],    
+        [ 0.0,   0.0,    0.0,  1.0  ]    
     ])
 }
 
@@ -534,8 +535,8 @@ function Mat4_Orthogonal( asp_rat, hsy, n, f )
     Check( asp_rat > eps )
     Check( hsy > eps )
 
-    const l = -asp_rat/hsy,
-          r = -l,
+    const r = hsy/asp_rat,
+          l = -r,
           b = -hsy,
           t = +hsy 
 

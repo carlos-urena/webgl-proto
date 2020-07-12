@@ -87,7 +87,7 @@ class SimpleCamera extends Camera
         this.far      = this.near+1000.0
         this.fovy_deg = 60.0
         
-        this.half_size_y   = 2.0    // half size in Y for orthogonal projection
+        this.half_size_y   = 1.5    // half size in Y for orthogonal projection
 
         this.updateProjMat()
     }

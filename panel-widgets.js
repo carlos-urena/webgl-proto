@@ -402,12 +402,10 @@ class ConfigPanelSection extends PanelSection
         // camera projection type dropdown
         this.test_widget = new DropdownWidget
         (   'cfg_test_dd', 'Camera type', this.content_elem,  // id, text, parent
-            0,  // initial choice index
-            [   'Perspective', // choice 0
-                'Orthogonal'   // choice 1
-            ], 
-            (index,choice_str) =>      // when a choice is selected
+            0, [ 'Perspective', 'Orthogonal' ], 
+            ( index, choice_str ) =>     
             {   Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
+                canvas.setCameraProjTypeStr( choice_str )
             }
         )
     }

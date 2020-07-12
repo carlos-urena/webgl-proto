@@ -71,41 +71,63 @@ class Camera
 
 // Base class for perspective cameras
 
-class PerspectiveCamera extends Camera
+class SimpleCamera extends Camera
 {
-    constructor( initial_name )
+    // ----------------------------------------------------------------------------------------
+    constructor( initial_name, initial_proj_type_str )
     {
         super( initial_name )
+
+        this.proj_types = ['Perspective', 'Orthogonal' ]
+        this.proj_type_str = initial_proj_type_str
+        Check( this.proj_types.includes( this.proj_type_str ))
 
         // initialize projection matrix by using a perspective matrix
         this.near     = 0.05, 
         this.far      = this.near+1000.0
         this.fovy_deg = 60.0
+        
+        this.half_size_y   = 2.0    // half size in Y for orthogonal projection
 
         this.updateProjMat()
     }
+    // ----------------------------------------------------------------------------------------
+    setProjTypeStr( new_proj_type_str )
+    {
+        Log(`### new proj type str == ${new_proj_type_str}`)
+        Check( this.proj_types.includes( new_proj_type_str ) )
+        this.proj_type_str = new_proj_type_str
+        this.updateProjMat()
+    }
+    // ----------------------------------------------------------------------------------------
     /**
-     * updates 'proj_mat' from 'fovy_deg', 'viewport', 'near', 'far'
+     * updates 'proj_mat' from 'fovy_deg', 'viewport', 'near', 'far', 'half_size_y'
      */
     updateProjMat()
     {
-        this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
+        if ( this.proj_type_str == 'Perspective' )
+            this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
+        else if ( this.proj_type_str == 'Orthogonal' )
+        {
+            this.proj_mat = Mat4_Orthogonal( this.viewport.ratio_yx, this.half_size_y, this.near, this.far )    
+        }
+        else 
+            throw new Error(`invalid string in 'proj_type'`)
     }
+    // ----------------------------------------------------------------------------------------
     getObserverPosWCC()
     {
         const org_ec = new Vec3([0 ,0,0 ])
         return this.view_mat_inv.apply_to( org_ec, 1 )
     }
-     
+     // ----------------------------------------------------------------------------------------
     /**
      *  Generates a ray through the center of a pixel in world coordinates
      */ 
     genRay( pix_x, pix_y )
     {
-        const fname = 'PerspectiveCamera.genRay():'
+        const fname = 'SimpleCamera.genRay():'
 
-        //CheckNat( pix_x )
-        //CheckNat( pix_y )
         Check( 0 <= pix_x && pix_x < this.viewport.width )
         Check( 0 <= pix_y && pix_y < this.viewport.height )
 
@@ -126,23 +148,36 @@ class PerspectiveCamera extends Camera
         // Log(`${fname} M·v == ${Mv}`)
         // end debug
 
-        const 
-            r_yx   = this.viewport.ratio_yx,  // viewport ratio (height/width)
-            fovy_r = (this.fovy_deg*Math.PI)/180.0,  // fovy, in radians
-            h_ec   = Math.tan(0.5*fovy_r),
-            w_ec   = h_ec/r_yx,
-            cx     = w_ec * ( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
-            cy     = h_ec * ( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
-            dir_ec = new Vec3([ cx, cy, -1 ]),
-            org_ec = new Vec3([ 0.0, 0.0, 0.0])
+        let org_wc = null, dir_wc = null
+
+        if ( this.proj_type_str == 'Perspective' )
+        {
+            const 
+                r_yx   = this.viewport.ratio_yx,  // viewport ratio (height/width)
+                fovy_r = (this.fovy_deg*Math.PI)/180.0,  // fovy, in radians
+                h_ec   = Math.tan(0.5*fovy_r),
+                w_ec   = h_ec/r_yx,
+                cx     = w_ec * ( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
+                cy     = h_ec * ( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
+                dir_ec = new Vec3([ cx, cy, -1 ]),
+                org_ec = new Vec3([ 0.0, 0.0, 0.0])
         
-        // compute the ray dir and org in world coordinates, by using inverse view matrix
+            // compute the ray dir and org in world coordinates, by using inverse view matrix
 
-        const org_wc = this.view_mat_inv.apply_to( org_ec, 1 ),
-              dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
+            org_wc = this.view_mat_inv.apply_to( org_ec, 1 )
+            dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
+        }
+        else if ( this.proj_type_str == 'Orthogonal' )
+        {
+            throw new Error(`${fname} I still don't know how to do this`)
+        }
+        else 
+            throw new Error(`${fname} invalid string in 'proj_type'`)
 
+        // done
         return new Ray( org_wc, dir_wc )
     } 
+    // ----------------------------------------------------------------------------------------
 
     
 }
@@ -152,11 +187,11 @@ class PerspectiveCamera extends Camera
 // A class for a simple orbital camera with perspective projection
 
 
-class OrbitalCamera extends PerspectiveCamera
+class OrbitalCamera extends SimpleCamera
 {
-    constructor( )
+    constructor( proj_type_str )
     {
-        super( "Orbital Camera" )
+        super( "Orbital Camera", proj_type_str )
 
         this.look_at_pnt   = new Vec3([ 0, 0,  0 ])
         this.obs_pnt       = new Vec3([ 0, 0,  1 ])
@@ -195,8 +230,16 @@ class OrbitalCamera extends PerspectiveCamera
     }
     moveZ ( dz )
     {
-        this.dist = Trunc( this.dist + dz, 0.01, 50.0 )
-        this.updateViewMat()
+        if ( this.proj_type_str == 'Perspective' )
+        {
+            this.dist = Trunc( this.dist + dz, 0.01, 50.0 )
+            this.updateViewMat()
+        }
+        else if ( this.proj_type_str == 'Orthogonal' ) // for parallel camera, mouse wheel changes frustum size...??
+        {
+            this.half_size_y = Math.max( 0.05, this.half_size_y + dz )
+            this.updateProjMat()
+        }
     }
 }
 // -------------------------------------------------------------------------------------------------

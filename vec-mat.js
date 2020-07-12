@@ -483,10 +483,68 @@ function Mat4_Frustum( l, r, b, t, n, f )
         [ 0.0,   0.0,   -1.0,   0.0 ]
     ])
 }
+// ------
+/**
+ * Returns the OpenGL orthogonal proj matrix (http://docs.gl/gl2/glOrtho)
+ * @param {number} l -- left (X lower limit  at z=n) 
+ * @param {number} r -- right (X upper limit at z=n)
+ * @param {number} b -- bottom (Y lower limit at z=n)
+ * @param {number} t -- top (Y upper limit at z=n)
+ * @param {number} n -- near (distance to Z limit, nearest to viewer)
+ * @param {number} f -- far  (distance to Z limit, farthest to viewer)
+ * @returns {Mat4}   -- a matrix with the entries corresponding to glOrtho call.
+ */
+
+function Mat4_Ortho( l, r, b, t, n, f )
+{
+    const eps = 1e-6 
+    Check( Math.abs(r-l) > eps && Math.abs(t-b) > eps  && Math.abs(n-f) > eps );
+
+    const 
+        irl = 1.0/(r-l) ,
+        itb = 1.0/(t-b) ,
+        inf = 1.0/(n-f) ,
+        sx = 2.0*irl,
+        sy = 2.0*itb,
+        sz = -2.0*inf,
+        tx = -(r+l)*irl,
+        ty = -(t+b)*itb,
+        tz = -(n+f)*inf
+
+    return new Mat4
+    ([  [ sx,    0.0,    0.0,   tx  ],
+        [ 0.0,   sy,     0.0,   ty  ],
+        [ 0.0,   0.0,    sz,    tz  ],
+        [ 0.0,   0.0,   1.0,    0.0 ]
+    ])
+}
 
 // ------------------------------------------------------------------------------------------------
 /**
- * Returns a frustum perspective matrix, by using an alternative parameter set
+ * Returns the an OpenGL orthogonal proj matrix which takes into account size and viewport ratio
+ * @param {number} asp_rat  -- viewport aspect ratio (Y/X)  (>0)
+ * @param {number} hsy      -- half size of visible region in Y (half height...)
+ * @param {number} n        -- near (distance to Z limit, nearest to viewer)
+ * @param {number} f        -- far  (distance to Z limit, farthest to viewer)
+ * @returns {Mat4}          -- a matrix with the entries corresponding to glFrustum call.
+ */
+function Mat4_Orthogonal( asp_rat, hsy, n, f )
+{
+    const eps = 1e-6 
+    Check( asp_rat > eps )
+    Check( hsy > eps )
+
+    const l = -asp_rat/hsy,
+          r = -l,
+          b = -hsy,
+          t = +hsy 
+
+    return Mat4_Ortho( l, r, b, t, n, f )
+}
+
+// ------------------------------------------------------------------------------------------------
+/**
+ * Returns a frustum perspective matrix, by using an alternative parameter set (calls Mat4_Frustum)
  * (see: https://stackoverflow.com/questions/16571981/gluperspective-parameters-what-do-they-mean)
  * 
  * @param {number} fovy_deg -- vertical field of view angle (in degrees) (0..180)

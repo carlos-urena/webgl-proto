@@ -117,7 +117,8 @@ class WebGLCanvas
         this.vis_ctx.program = new SimpleGPUProgram( this.vis_ctx.wgl_ctx )
 
         // Create the camera 
-        this.vis_ctx.camera = new OrbitalCamera()
+        this.camera_proj_type_str = 'Perspective'
+        this.vis_ctx.camera = new OrbitalCamera( this.camera_proj_type_str )
 
         // set of rays for debugging
         this.debug_rays = []
@@ -178,7 +179,16 @@ class WebGLCanvas
         if ( this.debug )
             Log(`${fname} WebGLCanvas constructor: end`)
     }
-    // ----
+    // -------------------------------------------------------------------------------------------------
+    setCameraProjTypeStr( new_camera_proj_type_str )
+    {
+        const fname = 'WebGLCanvas.setCameraProjTypeStr():'
+        Log(`${fname} - camera proj type set to: '${new_camera_proj_type_str}'`)
+        this.camera_proj_type_str = new_camera_proj_type_str 
+        this.vis_ctx.camera.setProjTypeStr( this.camera_proj_type_str )
+        this.drawFrame()
+    }
+    // -------------------------------------------------------------------------------------------------
     clearPnts()
     {
         this.setStatus('Hits points cleared')

@@ -401,11 +401,11 @@ class ConfigPanelSection extends PanelSection
         
         super( 'Config', number, sections_list )
 
-        this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
+        //this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
 
         // constructor( ident, text, parent_elem, initial_choice_index, choices )
         this.test_widget = new DropdownWidget( 'cfg_test_dd', 'Camera type', this.content_elem, 0, 
-            ['Perspective','Orthogonal','Another?'] )
+            ['Perspective','Orthogonal'] )
         
     }
 }

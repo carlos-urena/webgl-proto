@@ -537,7 +537,7 @@ class DropdownWidget extends Widget
         this.root_elem  = CreateElem( 'div', null, null, this.parent_elem )
         this.root_elem.style.display     = 'flex'
         this.root_elem.style.alignItems  = 'center'
-        this.root_elem.style.marginTop   = '10px'
+        this.root_elem.style.marginTop   = '15px'
 
         this.text_elem = CreateElem( 'span', null, null, this.root_elem ) 
         this.text_elem.innerHTML = this.text+'&nbsp;&nbsp;'
@@ -548,7 +548,7 @@ class DropdownWidget extends Widget
         this.div_elem.style.display  = 'inline-block'
 
         // button elem
-        this.button_elem = CreateElem( 'button', null,'bsp_class', this.div_elem  )
+        this.button_elem = CreateElem( 'span', null,'bsp_class', this.div_elem  )   // was 'button'
         this.button_elem.innerHTML = `${this.choices[ this.curr_choice_index ]}&nbsp;&nbsp;${down_triangle_html}`
         this.button_elem.onclick = e => 
         {

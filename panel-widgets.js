@@ -398,17 +398,21 @@ class ConfigPanelSection extends PanelSection
      */
     constructor( number, sections_list  )
     {
-        
         super( 'Config', number, sections_list )
-
-        //this.proj_widget  = new CheckWidget( 'cfg_projection_type',  'perspective projection', this.content_elem, true )
-
-        // constructor( ident, text, parent_elem, initial_choice_index, choices )
-        this.test_widget = new DropdownWidget( 'cfg_test_dd', 'Camera type', this.content_elem, 0, 
-            ['Perspective','Orthogonal'] )
-        
+        // camera projection type dropdown
+        this.test_widget = new DropdownWidget
+        (   'cfg_test_dd', 'Camera type', this.content_elem,  // id, text, parent
+            0,  // initial choice index
+            [   'Perspective', // choice 0
+                'Orthogonal'   // choice 1
+            ], 
+            (index,choice_str) =>      // when a choice is selected
+            {   Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
+            }
+        )
     }
 }
+
 // -------------------------------------------------------------------------------------------------
 
 var widgets_dict = new Map()
@@ -521,9 +525,9 @@ class DropdownWidget extends Widget
      * @param {HTMLElement}   parent_elem -- 
      * @param {number}        initial_choice_index  -- a 0-based index with the initial choice 
      * @param {Array<String>} choices   -- array of strings with the different choices
-     * 
+     * @param {object}        on_selection -- what to do on a selection (index and str are passed)
      */
-    constructor( ident, text, parent_elem, initial_choice_index, choices )
+    constructor( ident, text, parent_elem, initial_choice_index, choices, on_selection_func )
     {
         CheckType( choices, 'Array' )
         Check( 0 < choices.length )
@@ -534,6 +538,7 @@ class DropdownWidget extends Widget
         this.choices = choices 
         this.curr_choice_index = initial_choice_index
         this.is_shown = false
+        this.on_selection_func = on_selection_func
 
         // create the DOM elements 
 
@@ -589,6 +594,8 @@ class DropdownWidget extends Widget
                 this.button_elem.innerHTML = `${this.choices[ this.curr_choice_index ]}&nbsp;&nbsp;${down_triangle_html}`
                 this.is_shown = false 
                 this.choices_list_elem.style.display = 'none'
+                if ( this.on_selection_func != null )
+                    this.on_selection_func( this.curr_choice_index, this.choices[ this.curr_choice_index ] )
             }
             document.addEventListener( 'click', e => 
             {   if ( e.target != this.button_elem )

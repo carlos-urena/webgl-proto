@@ -38,6 +38,7 @@ class PanelSection
         // create head div inside section div
         this.head_elem = CreateElem( 'div', this.ident+'_head_id', 'section_head_class', this.root_elem )
         this.head_elem.style.cursor = 'pointer'
+        this.head_elem.style.color  = 'sandybrown'
 
         // create the triangle span inside the head div
         this.triangle_id   = this.ident+'_triangle_id'
@@ -47,7 +48,9 @@ class PanelSection
         // create the name span inside the head div
         this.name_id   = this.ident+'_name_id'
         this.name_elem = CreateElem( 'span', this.name_id, 'section_name_class', this.head_elem )
-        this.name_elem.innerHTML = this.name
+        this.name_elem.style.fontWeight = 'bold'
+        this.name_elem.style.fontSize   = '15pt'
+        this.name_elem.innerHTML        = this.name
         
         // create the content div elem
         this.content_id = this.ident + '_content_id'

@@ -258,17 +258,17 @@ class WebGLCanvas
     drawHitPnts()
     {
         const fname = 'WebGLCanvas.drawHitPnts():'
+        
         if ( this.sections_list == null )
             return
+        
         let section = this.sections_list.getCurrObjSection()
+        
         if ( section == null )
-        {
-            Log(`${fname} section es null`)
             return
-        }
+        
         if ( this.hit_object == null )
             this.hit_object = new SphereMesh( 32, 32 )
-        
         
         section.drawHitPoints( this.vis_ctx, this.hit_object )
     }

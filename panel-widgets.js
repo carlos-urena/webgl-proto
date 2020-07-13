@@ -121,22 +121,35 @@ class ObjectPanelSection extends PanelSection
         this.texture        = null 
         this.texture_name   = 'none'
         this.texture_name_elem = null 
+        
+        
 
         this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
         this.texture_name_elem.style.marginTop = '12px' 
         this.updateTextureNameElem()
 
-        this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',   this.content_elem, true, new_value => 
+        this.use_texture = true
+        this.use_texture_widget = new CheckWidget( this.ident+'_use_texture', 'Use current texture', this.content_elem, this.use_texture, new_value => 
         { 
             Log(`use texture switched to ${new_value}`)
+            this.use_texture = new_value
+            canvas.drawFrame()
         })
-        this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true, new_value => 
+
+        this.do_shading = true
+        this.do_shading_widget = new CheckWidget( this.ident+'_do_shading',  'Do shading', this.content_elem, this.do_shading, new_value => 
         { 
             Log(`do shading switched to ${new_value}`)
+            this.do_shading = new_value
+            canvas.drawFrame()
         }) 
-        this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false, new_value => 
+
+        this.flip_axes = false
+        this.flip_widget = new CheckWidget( this.ident+'_flip', 'Flip Y/Z axes', this.content_elem, this.flip_axes, new_value => 
         { 
             Log(`flip switched to ${new_value}`)
+            this.flip_axes = new_value 
+            canvas.drawFrame()
         }) 
 
     }
@@ -300,15 +313,13 @@ class ObjectPanelSection extends PanelSection
         // base color for all vertexes used when the model has no vertex colors
         gl.vertexAttrib3f( 1, 0.0,0.6,1.0 )
 
-        if ( this.texture != null )
-        {    pr.useTexture( this.texture )
-             pr.doShading( false )
-        }
+        if ( this.texture != null && this.use_texture ) 
+            pr.useTexture( this.texture )
         else
-        {   pr.useTexture( null ) 
-            pr.doShading( true )
-        }
+            pr.useTexture( null ) 
 
+        pr.doShading( this.do_shading )
+        
         pr.pushMM()
             pr.compMM( this.obj_tr_mat )
             this.object.draw( vis_ctx )
@@ -408,27 +419,28 @@ class ConfigPanelSection extends PanelSection
     constructor( number, sections_list  )
     {
         super( 'Config', number, sections_list )
-        // camera projection type dropdown
-        this.test_widget = new DropdownWidget
-        (   'cfg_test_dd', 'Camera type', this.content_elem,  // id, text, parent
-            0, [ 'Perspective', 'Orthogonal' ], 
-            ( index, choice_str ) =>     
-            {   //Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
-                canvas.setCameraProjTypeStr( choice_str )
-            }
-        )
+        
+        // camera type dropdown
+        const types = [ 'Perspective', 'Orthogonal' ]
+        this.test_widget = new DropdownWidget( 'cfg_test_dd', 'Camera type', this.content_elem,  0, types, ( index, choice_str ) =>     
+        {   
+            //Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
+            canvas.setCameraProjTypeStr( choice_str )
+        })
 
+        // draw axes checkbox
         this.draw_axes_widget = new CheckWidget( 'cfg_draw_axes', 'Draw axes', this.content_elem, initial_draw_axes, new_value =>
         {
-            Log(`draw axes widget changed to '${new_value}'`)
+            //Log(`draw axes widget changed to '${new_value}'`)
             canvas.setDrawAxes( new_value )
         })
+
+        // draw grid checkbox
         this.draw_grid_widget = new CheckWidget( 'cfg_draw_grid', 'Draw grid', this.content_elem, initial_draw_grid, new_value =>
         {
-            Log(`draw grid widget changed to '${new_value}'`)
+            //Log(`draw grid widget changed to '${new_value}'`)
             canvas.setDrawGrid( new_value )
         })
-        
     }
 }
 

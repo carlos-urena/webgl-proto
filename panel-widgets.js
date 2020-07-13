@@ -141,6 +141,7 @@ class ObjectPanelSection extends PanelSection
         this.flip_axes = false
         this.flip_widget = new CheckWidget( this.ident+'_flip', 'Flip Y/Z axes', this.content_elem, this.flip_axes, new_value => 
         {   this.flip_axes = new_value 
+            this.updateObjectTransformMat()
             canvas.drawFrame()
         })
         
@@ -181,11 +182,23 @@ class ObjectPanelSection extends PanelSection
     {
         //Log(`updating object transform mat ...`)
         const 
-            rotx_mat  = Mat4_RotationXdeg( this.obj_beta_deg ),
-            roty_mat  = Mat4_RotationYdeg( -this.obj_alpha_deg ),
-            scale_mat = Mat4_Scale([ this.obj_scale, this.obj_scale, this.obj_scale ])
+            rotx_mat    = Mat4_RotationXdeg( this.obj_beta_deg ),
+            roty_mat    = Mat4_RotationYdeg( -this.obj_alpha_deg ),
+            scale_mat   = Mat4_Scale([ this.obj_scale, this.obj_scale, this.obj_scale ])
+        let
+            initial_mat = Mat4_Identity()
+
+        if ( this.flip_axes )
+        {
+            initial_mat = new Mat4
+            ([  [ -1,  0,  0,  0 ], // negate X so orientation is preserved ...
+                [  0,  0,  1,  0 ], // exchange Y <--> Z
+                [  0,  1,  0,  0 ],
+                [  0,  0,  0,  1 ]
+            ])
+        }
         
-        this.obj_tr_mat     = scale_mat.compose( rotx_mat ).compose( roty_mat )
+        this.obj_tr_mat     = initial_mat.compose( scale_mat ).compose( rotx_mat ).compose( roty_mat )
         this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
     }
     // --------------------------------------------------------------------------------------
@@ -290,7 +303,7 @@ class ObjectPanelSection extends PanelSection
                 ray.vertex_arr.draw( gl, gl.LINES )
             }
 
-            gl.vertexAttrib3f( 1, 1.0, 1.0, 1.0 )
+            gl.vertexAttrib3f( 1, 1.2, 0.8, 0.7 )
             pr.doShading( true )
 
             for( let ray of this.debug_rays )

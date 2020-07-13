@@ -109,7 +109,8 @@ class SimpleCamera extends Camera
             this.proj_mat = Mat4_Perspective( this.fovy_deg, this.viewport.ratio_yx, this.near, this.far )
         else if ( this.proj_type_str == 'Orthogonal' )
         {
-            this.proj_mat = Mat4_Orthogonal( this.viewport.ratio_yx, this.half_size_y, this.near, this.far )    
+            const near_adjust = 5.0 // this is used so the grid is not clipped
+            this.proj_mat = Mat4_Orthogonal( this.viewport.ratio_yx, this.half_size_y, this.near-near_adjust, this.far )    
         }
         else 
             throw new Error(`invalid string in 'proj_type'`)

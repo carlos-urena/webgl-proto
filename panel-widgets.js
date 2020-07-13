@@ -126,9 +126,18 @@ class ObjectPanelSection extends PanelSection
         this.texture_name_elem.style.marginTop = '12px' 
         this.updateTextureNameElem()
 
-        this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',   this.content_elem, true )
-        this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true )
-        this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false )
+        this.use_texture_widget     = new CheckWidget( this.ident+'_use_texture', 'use texture',   this.content_elem, true, new_value => 
+        { 
+            Log(`use texture switched to ${new_value}`)
+        })
+        this.do_shading_widget      = new CheckWidget( this.ident+'_do_shading',  'do shading',    this.content_elem, true, new_value => 
+        { 
+            Log(`do shading switched to ${new_value}`)
+        }) 
+        this.flip_widget            = new CheckWidget( this.ident+'_flip',        'flip Y/Z axes', this.content_elem, false, new_value => 
+        { 
+            Log(`flip switched to ${new_value}`)
+        }) 
 
     }
     // --------------------------------------------------------------------------------------
@@ -404,10 +413,22 @@ class ConfigPanelSection extends PanelSection
         (   'cfg_test_dd', 'Camera type', this.content_elem,  // id, text, parent
             0, [ 'Perspective', 'Orthogonal' ], 
             ( index, choice_str ) =>     
-            {   Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
+            {   //Log(`clicked on camera dropdown widget, index == ${index}, choice str == ${choice_str}`)
                 canvas.setCameraProjTypeStr( choice_str )
             }
         )
+
+        this.draw_axes_widget = new CheckWidget( 'cfg_draw_axes', 'Draw axes', this.content_elem, initial_draw_axes, new_value =>
+        {
+            Log(`draw axes widget changed to '${new_value}'`)
+            canvas.setDrawAxes( new_value )
+        })
+        this.draw_grid_widget = new CheckWidget( 'cfg_draw_grid', 'Draw grid', this.content_elem, initial_draw_grid, new_value =>
+        {
+            Log(`draw grid widget changed to '${new_value}'`)
+            canvas.setDrawGrid( new_value )
+        })
+        
     }
 }
 
@@ -454,8 +475,10 @@ class CheckWidget extends Widget
      * @param {String}  ident          -- a unique string, with no spaces, which identifies the widget  
      * @param {String}  text           -- text which is displayed along the widget
      * @param {Boolean} initial_value  -- initial value (true= checked, false =unchecked)
+     * @param {object}  on_change_func -- function to call when the user clicks and state switches (new state is passed as a param) 
+     *                                    (can be null, then the widget is usable by using 'getValue', but the app is not notified when state changes)
      */
-    constructor( ident, text, parent_elem, initial_value )
+    constructor( ident, text, parent_elem, initial_value, on_change_func )
     {
         super( ident, 'check', text, parent_elem )
         
@@ -466,6 +489,7 @@ class CheckWidget extends Widget
         this.root_elem.style.display     = 'flex'
         this.root_elem.style.alignItems  = 'center'
         this.root_elem.style.marginTop   = '10px'
+        this.on_change_func              = on_change_func 
 
         this.curr_value = initial_value
 
@@ -474,6 +498,8 @@ class CheckWidget extends Widget
         {  
             this.curr_value = ! this.curr_value
             this.setRootElemHTML()
+            if ( this.on_change_func != null )
+                this.on_change_func( this.curr_value )
         }
 
         // populate elements
@@ -523,7 +549,7 @@ class DropdownWidget extends Widget
      * @param {HTMLElement}   parent_elem -- 
      * @param {number}        initial_choice_index  -- a 0-based index with the initial choice 
      * @param {Array<String>} choices   -- array of strings with the different choices
-     * @param {object}        on_selection -- what to do on a selection (index and str are passed)
+     * @param {object}        on_selection_func -- what to do on a selection (index and str are passed)
      */
     constructor( ident, text, parent_elem, initial_choice_index, choices, on_selection_func )
     {
@@ -544,6 +570,7 @@ class DropdownWidget extends Widget
         this.root_elem.style.display     = 'flex'
         this.root_elem.style.alignItems  = 'center'
         this.root_elem.style.marginTop   = '15px'
+        this.root_elem.style.marginBottom  = '20px'
 
         this.text_elem = CreateElem( 'span', null, null, this.root_elem ) 
         this.text_elem.innerHTML = this.text+'&nbsp;&nbsp;'
@@ -552,6 +579,7 @@ class DropdownWidget extends Widget
         this.div_elem = CreateElem( 'div', null,null, this.root_elem )
         this.div_elem.style.position = 'relative'
         this.div_elem.style.display  = 'inline-block'
+        
 
         // button elem
         this.button_elem = CreateElem( 'span', null,'bsp_class', this.div_elem  )   // was 'button'

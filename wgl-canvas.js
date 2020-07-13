@@ -8,6 +8,8 @@
 // -----------------------------------------------------------------------------
 
 var redraws_count = 0
+var initial_draw_axes = true 
+var initial_draw_grid = true
 
 // -------------------------------------------------------------------------------------------------
 // A class for objects with a canvas element 
@@ -62,6 +64,10 @@ class WebGLCanvas
         this.innerHTML          = `Tu navegador u ordendor parece no soportar <code>&lt;canvas&gt;</code>.<br/>
                                    <i>It looks like your browser or computer does not support <code>&lt;canvas&gt;</code> element.</i>`
         
+        // visualize axes, grid 
+        this.draw_axes = initial_draw_axes 
+        this.draw_grid = initial_draw_grid
+
         // visualization context, and program
         this.vis_ctx = new VisContext()
         
@@ -180,6 +186,19 @@ class WebGLCanvas
             Log(`${fname} WebGLCanvas constructor: end`)
     }
     // -------------------------------------------------------------------------------------------------
+    setDrawAxes( new_draw_axes )
+    {
+        this.draw_axes = new_draw_axes 
+        this.drawFrame()
+    }
+    // -------------------------------------------------------------------------------------------------
+    setDrawGrid( new_draw_grid )
+    {
+        this.draw_grid = new_draw_grid 
+        this.drawFrame()
+    }
+    // -------------------------------------------------------------------------------------------------
+
     setCameraProjTypeStr( new_camera_proj_type_str )
     {
         const fname = 'WebGLCanvas.setCameraProjTypeStr():'
@@ -1304,8 +1323,11 @@ class WebGLCanvas
         pr.setObserverPosWCC( this.vis_ctx.camera.getObserverPosWCC() )
 
         // draw axes and grid (axes allways hide grid ....)
-        this.gridXZ.draw( this.vis_ctx )
-        this.axes.draw( this.vis_ctx )
+        if ( this.draw_grid )
+            this.gridXZ.draw( this.vis_ctx )
+        
+        if ( this.draw_axes )
+            this.axes.draw( this.vis_ctx )
  
         if ( this.sections_list != null )
         {

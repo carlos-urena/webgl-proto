@@ -131,24 +131,10 @@ class SimpleCamera extends Camera
         Check( 0 <= pix_x && pix_x < this.viewport.width )
         Check( 0 <= pix_y && pix_y < this.viewport.height )
 
-        // generate the ray in eye coords (EC) from the viewport dimensions and ratio, and fovy
-        // (compute 'dir_ec', 'org_ec')
+        // compute ray origin and direction in Eye Cords, according to camera type
 
-        // debug: view mat, view mat inverse, applying a matrix to a vector
-        // const ident_mat = this.view_mat.compose( this.view_mat_inv )
-        // Log(`${fname} test view mat * inv view mat == ${ident_mat}`)
-        // const ident_mat_2 = this.view_mat_inv.compose( this.view_mat )
-        // Log(`${fname} test view mat * inv view mat == ${ident_mat_2}`)
-        // const v = new Vec3([ 0.0, 0.0, 1.0 ])
-        // const M = Mat4_RotationZdeg( 90.0 ).compose( Mat4_RotationYdeg( 90.0 ) )
-        // const Mv = M.apply_to( v, 0.0 )
-        // Log(`${fname} ---------`)
-        // Log(`${fname} M == ${M}`)
-        // Log(`${fname} v == ${v}`)
-        // Log(`${fname} M·v == ${Mv}`)
-        // end debug
-
-        let org_wc = null, dir_wc = null
+        let org_ec = null, 
+            dir_ec = null
 
         if ( this.proj_type_str == 'Perspective' )
         {
@@ -158,13 +144,10 @@ class SimpleCamera extends Camera
                 h_ec   = Math.tan(0.5*fovy_r),
                 w_ec   = h_ec/r_yx,
                 cx     = w_ec * ( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
-                cy     = h_ec * ( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
-                dir_ec = new Vec3([ cx, cy, -1 ]),
-                org_ec = new Vec3([ 0.0, 0.0, 0.0])  // z == -this.near, i think ....
-        
-            // compute the ray dir and org in world coordinates, by using inverse view matrix
-            org_wc = this.view_mat_inv.apply_to( org_ec, 1 )
-            dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
+                cy     = h_ec * ( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height )
+            
+            dir_ec = new Vec3([ cx, cy, -1 ])
+            org_ec = new Vec3([ 0.0, 0.0, 0.0])  // z == -this.near, i think ....
         }
         else if ( this.proj_type_str == 'Orthogonal' )
         {
@@ -178,17 +161,18 @@ class SimpleCamera extends Camera
                 b       = -hsy,
                 t       = +hsy,
                 cx      = r *( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
-                cy      = t *( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
-                dir_ec  = new Vec3([ 0, 0, -1 ]),
-                org_ec  = new Vec3([ cx, cy, -this.near ])
+                cy      = t *( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height )
 
-            // compute the ray dir and org in world coordinates, by using inverse view matrix
-            org_wc = this.view_mat_inv.apply_to( org_ec, 1 )
-            dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
-            
+            dir_ec  = new Vec3([ 0, 0, -1 ])
+            org_ec  = new Vec3([ cx, cy, -this.near ]) 
         }
         else 
             throw new Error(`${fname} invalid string in 'proj_type'`)
+
+        // compute the ray dir and org in world coordinates, by using inverse view matrix
+        let
+            org_wc = this.view_mat_inv.apply_to( org_ec, 1 ),
+            dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
 
         // done
         return new Ray( org_wc, dir_wc )
@@ -198,10 +182,8 @@ class SimpleCamera extends Camera
     
 }
 
-
 // -------------------------------------------------------------------------------------------------
 // A class for a simple orbital camera with perspective projection
-
 
 class OrbitalCamera extends SimpleCamera
 {

@@ -122,34 +122,33 @@ class ObjectPanelSection extends PanelSection
         this.texture_name   = 'none'
         this.texture_name_elem = null 
         
-
         this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
         this.texture_name_elem.style.marginTop = '12px' 
         this.updateTextureNameElem()
 
         this.use_texture = true
         this.use_texture_widget = new CheckWidget( this.ident+'_use_texture', 'Use current texture', this.content_elem, this.use_texture, new_value => 
-        { 
-            //Log(`use texture switched to ${new_value}`)
-            this.use_texture = new_value
+        {   this.use_texture = new_value
             canvas.drawFrame()
         })
 
         this.do_shading = true
         this.do_shading_widget = new CheckWidget( this.ident+'_do_shading',  'Do shading', this.content_elem, this.do_shading, new_value => 
-        { 
-            //Log(`do shading switched to ${new_value}`)
-            this.do_shading = new_value
+        {   this.do_shading = new_value
             canvas.drawFrame()
         }) 
 
         this.flip_axes = false
         this.flip_widget = new CheckWidget( this.ident+'_flip', 'Flip Y/Z axes', this.content_elem, this.flip_axes, new_value => 
-        { 
-            //Log(`flip switched to ${new_value}`)
-            this.flip_axes = new_value 
+        {   this.flip_axes = new_value 
             canvas.drawFrame()
-        }) 
+        })
+        
+        this.draw_hit_pnts = true
+        this.draw_hit_pnts_widget = new CheckWidget( this.ident+'_dhp', 'Draw hit points', this.content_elem, this.draw_hit_pnts, new_value => 
+        {   this.draw_hit_pnts = new_value 
+            canvas.drawFrame()
+        })
 
     }
     // --------------------------------------------------------------------------------------
@@ -262,44 +261,47 @@ class ObjectPanelSection extends PanelSection
 
     drawHitPoints( vis_ctx, hit_object )
     {
+        if ( ! this.draw_hit_pnts )
+            return 
+            
         let gl = vis_ctx.wgl_ctx,
             pr = vis_ctx.program
-
-        
-        const rb = 0.005
+        const 
+            rb = 0.005
 
         pr.useTexture( null )
-
+    
         pr.pushMM()
-        pr.compMM( this.obj_tr_mat )
-        
-        for( let ray of this.debug_rays )
-        {
-            // draw ray segment 
+            pr.compMM( this.obj_tr_mat )
 
-            if ( ray.vertex_arr == null )
+            pr.doShading( false )
+            gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
+            
+            for( let ray of this.debug_rays )
             {
-                const a = ray.start_pnt,
-                      b = ray.end_pnt
-                ray.vertex_arr = new VertexArray( 0, 3, 
-                        new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
+                // draw ray segment 
+                if ( ray.vertex_arr == null )
+                {
+                    const a = ray.start_pnt,
+                        b = ray.end_pnt
+                    ray.vertex_arr = new VertexArray( 0, 3, 
+                            new Float32Array([ a[0], a[1], a[2], b[0], b[1], b[2] ]) )
+                }
+                ray.vertex_arr.draw( gl, gl.LINES )
             }
 
-            gl.vertexAttrib3f( 1, 1.0,1.0,1.0 )
-            pr.doShading( false )
-            ray.vertex_arr.draw(gl, gl.LINES )
+            gl.vertexAttrib3f( 1, 1.0, 1.0, 1.0 )
+            pr.doShading( true )
 
-            // draw sphere at ray end
-           
-            gl.vertexAttrib3f( 1, 1.0,0.5,0.5 )
-            pr.doShading( false )
-
-            pr.pushMM()
-                pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
-                pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
-                hit_object.draw( vis_ctx )
-            pr.popMM()
-        }
+            for( let ray of this.debug_rays )
+            {
+                // draw sphere at ray end
+                pr.pushMM()
+                    pr.compMM( Mat4_Translate([ ray.end_pnt[0], ray.end_pnt[1], ray.end_pnt[2] ]) )
+                    pr.compMM( Mat4_Scale([ rb, rb, rb ]) )
+                    hit_object.draw( vis_ctx )
+                pr.popMM()
+            }
         pr.popMM()
     }
     // --------------------------------------------------------------------------------------

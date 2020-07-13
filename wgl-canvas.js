@@ -111,7 +111,7 @@ class WebGLCanvas
         // get canvas button elements
         this.help_button       = BuscarElemId('help_button_id')
         this.log_button        = BuscarElemId('log_button_id')
-        this.clear_pnts_button = BuscarElemId('clear_pnts_button_id')
+       
         
         // add the canvas element to the page
         this.parent_elem.appendChild( this.canvas_elem )
@@ -125,9 +125,6 @@ class WebGLCanvas
         // Create the camera 
         this.camera_proj_type_str = 'Perspective'
         this.vis_ctx.camera = new OrbitalCamera( this.camera_proj_type_str )
-
-        // set of rays for debugging
-        this.debug_rays = []
 
         /// ADD Various event handlers
 
@@ -172,8 +169,8 @@ class WebGLCanvas
             //this.log_button.addEventListener( 'click', e => ShowLogWin() )
             this.log_button.onclick = e => ShowLogWin()
 
-        if ( this.clear_pnts_button != null )
-            this.clear_pnts_button.addEventListener( 'click', e => this.clearPnts(e) )
+        //if ( this.clear_pnts_button != null )
+        //    this.clear_pnts_button.addEventListener( 'click', e => this.clearPnts(e) )
 
         // call 'this.dragDrop' when the user drops some files on this canvas element
         this.canvas_elem.addEventListener( 'drop', e => this.dragDrop(e), true )
@@ -205,13 +202,6 @@ class WebGLCanvas
         Log(`${fname} - camera proj type set to: '${new_camera_proj_type_str}'`)
         this.camera_proj_type_str = new_camera_proj_type_str 
         this.vis_ctx.camera.setProjTypeStr( this.camera_proj_type_str )
-        this.drawFrame()
-    }
-    // -------------------------------------------------------------------------------------------------
-    clearPnts()
-    {
-        this.setStatus('Hits points cleared')
-        this.debug_rays = []
         this.drawFrame()
     }
     // -------------------------------------------------------------------------------------------------

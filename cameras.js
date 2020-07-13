@@ -160,16 +160,32 @@ class SimpleCamera extends Camera
                 cx     = w_ec * ( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
                 cy     = h_ec * ( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
                 dir_ec = new Vec3([ cx, cy, -1 ]),
-                org_ec = new Vec3([ 0.0, 0.0, 0.0])
+                org_ec = new Vec3([ 0.0, 0.0, 0.0])  // z == -this.near, i think ....
         
             // compute the ray dir and org in world coordinates, by using inverse view matrix
-
             org_wc = this.view_mat_inv.apply_to( org_ec, 1 )
             dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
         }
         else if ( this.proj_type_str == 'Orthogonal' )
         {
-            throw new Error(`${fname} I still don't know how to do this`)
+            //throw new Error(`${fname} I still don't know how to do this`)
+            // compute r,l,b,t,n as in 'Mat4_Orthogonal'
+            const 
+                hsy     = this.half_size_y,
+                asp_rat = this.viewport.ratio_yx,
+                r       = hsy/asp_rat,
+                l       = -r,
+                b       = -hsy,
+                t       = +hsy,
+                cx      = r *( -1.0 + (2.0*(pix_x+0.5))/this.viewport.width  ),
+                cy      = t *( -1.0 + (2.0*(pix_y+0.5))/this.viewport.height ),
+                dir_ec  = new Vec3([ 0, 0, -1 ]),
+                org_ec  = new Vec3([ cx, cy, -this.near ])
+
+            // compute the ray dir and org in world coordinates, by using inverse view matrix
+            org_wc = this.view_mat_inv.apply_to( org_ec, 1 )
+            dir_wc = this.view_mat_inv.apply_to( dir_ec, 0 )
+            
         }
         else 
             throw new Error(`${fname} invalid string in 'proj_type'`)

@@ -122,7 +122,6 @@ class ObjectPanelSection extends PanelSection
         this.texture_name   = 'none'
         this.texture_name_elem = null 
         
-        
 
         this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
         this.texture_name_elem.style.marginTop = '12px' 
@@ -131,7 +130,7 @@ class ObjectPanelSection extends PanelSection
         this.use_texture = true
         this.use_texture_widget = new CheckWidget( this.ident+'_use_texture', 'Use current texture', this.content_elem, this.use_texture, new_value => 
         { 
-            Log(`use texture switched to ${new_value}`)
+            //Log(`use texture switched to ${new_value}`)
             this.use_texture = new_value
             canvas.drawFrame()
         })
@@ -139,7 +138,7 @@ class ObjectPanelSection extends PanelSection
         this.do_shading = true
         this.do_shading_widget = new CheckWidget( this.ident+'_do_shading',  'Do shading', this.content_elem, this.do_shading, new_value => 
         { 
-            Log(`do shading switched to ${new_value}`)
+            //Log(`do shading switched to ${new_value}`)
             this.do_shading = new_value
             canvas.drawFrame()
         }) 
@@ -147,7 +146,7 @@ class ObjectPanelSection extends PanelSection
         this.flip_axes = false
         this.flip_widget = new CheckWidget( this.ident+'_flip', 'Flip Y/Z axes', this.content_elem, this.flip_axes, new_value => 
         { 
-            Log(`flip switched to ${new_value}`)
+            //Log(`flip switched to ${new_value}`)
             this.flip_axes = new_value 
             canvas.drawFrame()
         }) 

@@ -497,15 +497,23 @@ class WebGLCanvas
         this.drag_prev_pos_x = drag_cur_pos_x
         this.drag_prev_pos_y = drag_cur_pos_y
 
-        if ( mevent.altKey )
+        if ( mevent.altKey && ! mevent.metaKey ) // ALT key (but not CMD key)
         {
             // update object angles
             let section = this.sections_list.getCurrObjSection()
             if ( section != null )
                 section.updateObjectAngles( -dx*0.20, dy*0.10 )     
         }
-        else
-        {   // update camera
+        else if ( mevent.metaKey && ! mevent.altKey )  // CMD key or windows key ...
+        {   
+            // update object translation 
+            let section = this.sections_list.getCurrObjSection()
+            if ( section != null )
+                section.updateObjectTranslation( dx*0.001, 0.0, dy*0.001 ) 
+        }
+        else 
+        {   
+            // update camera angles
             const facx = -0.2,
                   facy = 0.1
             this.vis_ctx.camera.moveXY( facx*dx, facy*dy )

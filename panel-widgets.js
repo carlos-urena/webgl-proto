@@ -111,15 +111,20 @@ class ObjectPanelSection extends PanelSection
         this.gl_texture      = null 
         this.object          = base_object
 
-        this.obj_alpha_deg  = 0.0              // scene rotation angles (alpha)
-        this.obj_beta_deg   = 0.0              // scene rotation angles (beta)
-        this.obj_scale      = 1.0              // scene scale 
-        this.obj_tr_mat     = Mat4_Identity()  // scene transform matrix (rotation + scale)
-        this.obj_tr_mat_inv = Mat4_Identity()  // inverse of scene_tr_mat
+        this.obj_alpha_deg   = 0.0              // object rotation angles (alpha)
+        this.obj_beta_deg    = 0.0              // object rotation angles (beta)
+        this.obj_scale       = 1.0              // object scale 
 
-        this.debug_rays     = []
-        this.texture        = null 
-        this.texture_name   = 'none'
+        this.obj_transl_x    = 0.0    // object translation transform, (initially none)
+        this.obj_transl_y    = 0.0
+        this.obj_transl_z    = 0.0
+
+        this.obj_tr_mat      = Mat4_Identity()  // scene transform matrix (rotation + scale)
+        this.obj_tr_mat_inv  = Mat4_Identity()  // inverse of scene_tr_mat
+
+        this.debug_rays        = []
+        this.texture           = null 
+        this.texture_name      = 'none'
         this.texture_name_elem = null 
         
         this.texture_name_elem  = CreateElem( 'div', this.ident+'_texture_name_id', 'section_texture_div', this.content_elem )
@@ -169,6 +174,15 @@ class ObjectPanelSection extends PanelSection
         this.obj_beta_deg = Trunc( this.obj_beta_deg + dbeta, -88, +88 )
         this.updateObjectTransformMat()
     }
+    // ---------------------------------------------------------------------------------------
+
+    updateObjectTranslation( dx, dy, dz )
+    {
+        this.obj_transl_x += dx
+        this.obj_transl_y += dy
+        this.obj_transl_z += dz
+        this.updateObjectTransformMat()
+    }
     // --------------------------------------------------------------------------------------
 
     updateObjectScale( dscale )
@@ -184,7 +198,8 @@ class ObjectPanelSection extends PanelSection
         const 
             rotx_mat    = Mat4_RotationXdeg( this.obj_beta_deg ),
             roty_mat    = Mat4_RotationYdeg( -this.obj_alpha_deg ),
-            scale_mat   = Mat4_Scale([ this.obj_scale, this.obj_scale, this.obj_scale ])
+            scale_mat   = Mat4_Scale([ this.obj_scale, this.obj_scale, this.obj_scale ]),
+            transl_mat  = Mat4_Translate([ this.obj_transl_x, this.obj_transl_y, this.obj_transl_z ])
         let
             initial_mat = Mat4_Identity()
 
@@ -198,7 +213,7 @@ class ObjectPanelSection extends PanelSection
             ])
         }
         
-        this.obj_tr_mat     = initial_mat.compose( scale_mat ).compose( rotx_mat ).compose( roty_mat )
+        this.obj_tr_mat     = initial_mat.compose( scale_mat ).compose( rotx_mat ).compose( roty_mat ).compose( transl_mat )
         this.obj_tr_mat_inv = this.obj_tr_mat.inverse()
     }
     // --------------------------------------------------------------------------------------
